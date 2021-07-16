@@ -327,3 +327,33 @@ func TestContainsAddr(t *testing.T) {
 		})
 	}
 }
+
+func TestSize(t *testing.T) {
+	tests := []struct {
+		description string
+		prefix      Prefix
+		expected    int
+	}{
+		{
+			description: "all",
+			prefix:      unsafeParsePrefix("0.0.0.0/0"),
+			expected:    0x100000000,
+		},
+		{
+			description: "private",
+			prefix:      unsafeParsePrefix("172.16.0.0/12"),
+			expected:    0x00100000,
+		},
+		{
+			description: "host",
+			prefix:      unsafeParsePrefix("172.16.244.117/32"),
+			expected:    1,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.prefix.Size())
+		})
+	}
+}
