@@ -152,3 +152,26 @@ func (me Prefix) Host() Prefix {
 		length: me.length,
 	}
 }
+
+// ContainsPrefix returns true if the given containee is wholly contained
+// within this Prefix. If the two Prefixes are equal, true is returned. The
+// host bits in the address are ignored when testing containership.
+func (me Prefix) ContainsPrefix(other Prefix) bool {
+	if other.length < me.length {
+		return false
+	}
+	mask := me.Mask().ui
+	return me.Addr.ui&mask == other.Addr.ui&mask
+}
+
+// ContainsAddr returns true if the given containee is wholly contained
+// within this Prefix. It is equivalent to calling ContainsPrefix with the
+// given address interpreted as a host route.
+func (me Prefix) ContainsAddr(other Addr) bool {
+	return me.ContainsPrefix(
+		Prefix{
+			Addr:   other,
+			length: SIZE,
+		},
+	)
+}

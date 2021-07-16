@@ -213,3 +213,117 @@ func TestNetworkHostBroadcast(t *testing.T) {
 		})
 	}
 }
+
+func TestContainsPrefix(t *testing.T) {
+	tests := []struct {
+		description          string
+		container, containee Prefix
+	}{
+		{
+			description: "all",
+			container:   unsafeParsePrefix("0.0.0.0/0"),
+			containee:   unsafeParsePrefix("1.2.3.4/32"),
+		},
+		{
+			description: "same host",
+			container:   unsafeParsePrefix("1.2.3.4/32"),
+			containee:   unsafeParsePrefix("1.2.3.4/32"),
+		},
+		{
+			description: "same host route",
+			container:   unsafeParsePrefix("1.2.3.4/32"),
+			containee:   unsafeParsePrefix("1.2.3.4/32"),
+		},
+		{
+			description: "same prefix",
+			container:   unsafeParsePrefix("192.168.20.0/24"),
+			containee:   unsafeParsePrefix("192.168.20.0/24"),
+		},
+		{
+			description: "contained smaller",
+			container:   unsafeParsePrefix("192.168.0.0/16"),
+			containee:   unsafeParsePrefix("192.168.20.0/24"),
+		},
+		{
+			description: "ignore host part",
+			container:   unsafeParsePrefix("1.2.3.4/24"),
+			containee:   unsafeParsePrefix("1.2.3.5/32"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			assert.True(t, tt.container.ContainsPrefix(tt.containee))
+			if tt.container.Equal(tt.containee) {
+				assert.True(t, tt.containee.ContainsPrefix(tt.container))
+			} else {
+				assert.False(t, tt.containee.ContainsPrefix(tt.container))
+			}
+		})
+	}
+}
+
+func TestContainsAddr(t *testing.T) {
+	tests := []struct {
+		description     string
+		container       Prefix
+		containees, not []Addr
+	}{
+		{
+			description: "all",
+			container:   unsafeParsePrefix("0.0.0.0/0"),
+			containees: []Addr{
+				unsafeParseAddr("1.2.3.4"),
+				unsafeParseAddr("192.168.4.2"),
+			},
+		},
+		{
+			description: "host route",
+			container:   unsafeParsePrefix("1.2.3.4/32"),
+			containees: []Addr{
+				unsafeParseAddr("1.2.3.4"),
+			},
+			not: []Addr{
+				unsafeParseAddr("1.2.3.5"),
+				unsafeParseAddr("1.2.3.3"),
+			},
+		},
+		{
+			description: "same prefix",
+			container:   unsafeParsePrefix("192.168.20.0/24"),
+			containees: []Addr{
+				unsafeParseAddr("192.168.20.0"),
+			},
+		},
+		{
+			description: "contained smaller",
+			container:   unsafeParsePrefix("192.168.0.0/16"),
+			containees: []Addr{
+				unsafeParseAddr("192.168.20.0"),
+			},
+		},
+		{
+			description: "ignore host part",
+			container:   unsafeParsePrefix("1.2.3.4/24"),
+			containees: []Addr{
+				unsafeParseAddr("1.2.3.5"),
+				unsafeParseAddr("1.2.3.245"),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			for i, containee := range tt.containees {
+				t.Run(fmt.Sprintf("contains %d", i), func(t *testing.T) {
+					assert.True(t, tt.container.ContainsAddr(containee))
+				})
+			}
+			for i, notContainee := range tt.not {
+				t.Run(fmt.Sprintf("doesn't contain %d", i), func(t *testing.T) {
+					assert.False(t, tt.container.ContainsAddr(notContainee))
+				})
+			}
+		})
+	}
+}

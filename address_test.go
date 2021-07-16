@@ -8,6 +8,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func unsafeParseAddr(str string) Addr {
+	addr, _ := ParseAddr(str)
+	return addr
+}
+
 func TestParseAddr(t *testing.T) {
 	ip, err := ParseAddr("10.224.24.1")
 	assert.Nil(t, err)
