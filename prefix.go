@@ -5,6 +5,10 @@ import (
 	"net"
 )
 
+const (
+	allOnes uint32 = ^uint32(0)
+)
+
 // Prefix represents an IPv4 prefix which is IPv4 address along with prefix
 // length, or the number of bits which are significant in the network portion.
 // Note that any bits in the address can be 0 or 1 regardless if they in the
@@ -13,6 +17,11 @@ import (
 type Prefix struct {
 	Addr
 	length uint32
+}
+
+// IP returns the address part of the prefix alone
+func (me Prefix) IP() Addr {
+	return me.Addr
 }
 
 // PrefixFromUint32 returns the IPv4 address from its 32 bit unsigned representation
@@ -75,4 +84,71 @@ func ParsePrefix(prefix string) (Prefix, error) {
 		return Prefix{}, err
 	}
 	return PrefixFromStdIPNet(ipNet)
+}
+
+// Equal reports whether this IPv4 address is the same as other
+func (me Prefix) Equal(other Prefix) bool {
+	return me == other
+}
+
+// LessThan reports whether this IPv4 prefix comes strictly before `other`
+// lexigraphically.
+func (me Prefix) LessThan(other Prefix) bool {
+	meNet, otherNet := me.Network(), other.Network()
+	if !meNet.IP().Equal(otherNet.IP()) {
+		return meNet.IP().LessThan(otherNet.IP())
+	}
+	if me.length == other.length {
+		return me.Host().IP().LessThan(other.Host().IP())
+	}
+	return me.length < other.length
+}
+
+// Mask returns a new Addr with 1s in the first `length` bits and then 0s
+// representing the network mask for this prefix.
+func (me Prefix) Mask() Addr {
+	return Addr{
+		ui: allOnes << (SIZE - me.length),
+	}
+}
+
+// Network returns a new Prefix with all bits after `length` zeroed out so that
+// only the bits in the `network` part of the prefix are present. Note that
+// this method ignores special cases where a network address doesn't make
+// sense like in a host route or point-to-point prefix (/32 and /31). It just
+// does the math.
+func (me Prefix) Network() Prefix {
+	network := me.Addr.ui & me.Mask().ui
+	return Prefix{
+		Addr: Addr{
+			ui: network,
+		},
+		length: me.length,
+	}
+}
+
+// Broadcast returns a new Prefix with all bits after `length` set to 1s. Note
+// that this method ignores special cases where a broadcast address doesn't
+// make sense like in a host route or point-to-point prefix (/32 and /31). It
+// just does the math.
+func (me Prefix) Broadcast() Prefix {
+	network := me.Addr.ui | ^me.Mask().ui
+	return Prefix{
+		Addr: Addr{
+			ui: network,
+		},
+		length: me.length,
+	}
+}
+
+// Host returns a new Prefix with the first `length` bits zeroed out so
+// that only the bits in the `host` part of the prefix are present
+func (me Prefix) Host() Prefix {
+	host := me.Addr.ui & ^me.Mask().ui
+	return Prefix{
+		Addr: Addr{
+			ui: host,
+		},
+		length: me.length,
+	}
 }

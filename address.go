@@ -60,3 +60,30 @@ func ParseAddr(address string) (Addr, error) {
 
 	return AddrFromStdIP(netIPv4)
 }
+
+// Min returns the address, a or b, which comes first in lexigraphical order
+func Min(a, b Addr) Addr {
+	if a.LessThan(b) {
+		return a
+	}
+	return b
+}
+
+// Max returns the address, a or b, which comes last in lexigraphical order
+func Max(a, b Addr) Addr {
+	if a.LessThan(b) {
+		return b
+	}
+	return a
+}
+
+// Equal reports whether this IPv4 address is the same as other
+func (me Addr) Equal(other Addr) bool {
+	return me == other
+}
+
+// LessThan reports whether this IPv4 address comes strictly before `other`
+// lexigraphically.
+func (me Addr) LessThan(other Addr) bool {
+	return me.ui < other.ui
+}

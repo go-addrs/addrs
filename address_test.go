@@ -2,6 +2,7 @@ package ipv4
 
 import (
 	"net"
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -48,4 +49,47 @@ func TestAddrFromStdIP(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestAddrEquality(t *testing.T) {
+	first, second := AddrFromUint32(0x0ae01801), AddrFromUint32(0x0ae01801)
+	assert.Equal(t, first, second)
+	assert.True(t, first.Equal(second))
+	assert.True(t, first == second)
+	assert.True(t, reflect.DeepEqual(first, second))
+
+	third := AddrFromUint32(0x0ae01701)
+	assert.NotEqual(t, third, second)
+	assert.False(t, third.Equal(first))
+	assert.False(t, third == first)
+	assert.False(t, reflect.DeepEqual(third, first))
+}
+
+func TestAddrLessThan(t *testing.T) {
+	first, second, third := AddrFromUint32(0x0ae01701), AddrFromUint32(0x0ae01801), AddrFromUint32(0x0ae01901)
+	assert.True(t, first.LessThan(second))
+	assert.True(t, second.LessThan(third))
+	assert.True(t, first.LessThan(third))
+
+	assert.False(t, second.LessThan(first))
+	assert.False(t, third.LessThan(second))
+	assert.False(t, third.LessThan(first))
+
+	assert.False(t, first.LessThan(first))
+	assert.False(t, second.LessThan(second))
+	assert.False(t, third.LessThan(third))
+}
+
+func TestAddrMin(t *testing.T) {
+	first, second := AddrFromUint32(0x0ae01701), AddrFromUint32(0x0ae01801)
+
+	assert.Equal(t, Min(first, second), first)
+	assert.Equal(t, Min(second, first), first)
+}
+
+func TestAddrMax(t *testing.T) {
+	first, second := AddrFromUint32(0x0ae01701), AddrFromUint32(0x0ae01801)
+
+	assert.Equal(t, Max(first, second), second)
+	assert.Equal(t, Max(second, first), second)
 }
