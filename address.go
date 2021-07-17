@@ -2,6 +2,7 @@ package ipv4
 
 import (
 	"fmt"
+	"math/bits"
 	"net"
 )
 
@@ -120,4 +121,33 @@ func (me Addr) LessThan(other Addr) bool {
 func (me Addr) DefaultMask() Mask {
 	ones, _ := me.ToStdIP().DefaultMask().Size()
 	return lengthToMask(ones)
+}
+
+// MaskFromBytes returns the IPv4 address of the `a.b.c.d`.
+func MaskFromBytes(a, b, c, d byte) Mask {
+	return Mask(AddrFromBytes(a, b, c, d))
+}
+
+// MaskFromUint32 returns the IPv4 address from its 32 bit unsigned representation
+func MaskFromUint32(ui uint32) Mask {
+	return Mask{ui}
+}
+
+// MaskFromStdIPMask converts a net.IPMask to a Mask
+func MaskFromStdIPMask(mask net.IPMask) (Mask, error) {
+	ones, bits := mask.Size()
+	if bits != SIZE {
+		return Mask{}, fmt.Errorf("failed to convert IPMask with size != 32")
+	}
+	return CreateMask(ones)
+}
+
+// Length returns the number of leading 1s in the mask
+func (me Mask) Length() int {
+	return bits.LeadingZeros32(^me.ui)
+}
+
+// ToStdIPMask returns the net.IPMask representation of this Mask
+func (me Mask) ToStdIPMask() net.IPMask {
+	return net.CIDRMask(me.Length(), SIZE)
 }
