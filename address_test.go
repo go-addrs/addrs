@@ -98,3 +98,8 @@ func TestAddrMax(t *testing.T) {
 	assert.Equal(t, Max(first, second), second)
 	assert.Equal(t, Max(second, first), second)
 }
+
+func TestDefaultMask(t *testing.T) {
+	ip, _ := ParseAddr("192.0.2.1")
+	assert.Equal(t, Mask{ui: 0xffffff00}, ip.DefaultMask())
+}

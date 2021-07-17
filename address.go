@@ -7,13 +7,17 @@ import (
 
 const (
 	// SIZE is the number of bits that an IPv4 address takes
-	SIZE uint32 = 32
+	SIZE int = 32
 )
 
 // Addr represents an IPv4 address
 type Addr struct {
 	ui uint32
 }
+
+// Mask represents an IPv4 prefix mask. It has 0-32 leading 1s and then all
+// remaining bits are 0s
+type Mask Addr
 
 // AddrFromUint32 returns the IPv4 address from its 32 bit unsigned representation
 func AddrFromUint32(ui uint32) Addr {
@@ -77,6 +81,30 @@ func Max(a, b Addr) Addr {
 	return a
 }
 
+func lengthToMask(length int) Mask {
+	return Mask{
+		ui: ^uint32(0) << (SIZE - length),
+	}
+}
+
+// CreateMask converts the given length (0-32) into a mask with that number of leading 1s
+func CreateMask(length int) (Mask, error) {
+	if length < 0 || SIZE < length {
+		return Mask{}, fmt.Errorf("failed to create Mask where length %d isn't between 0 and 32", length)
+	}
+
+	return lengthToMask(length), nil
+}
+
+// ToStdIP returns a net.IP representation of the address which always has 4 bytes
+func (me Addr) ToStdIP() net.IP {
+	a := byte(me.ui & 0xff000000 >> 24)
+	b := byte(me.ui & 0xff0000 >> 16)
+	c := byte(me.ui & 0xff00 >> 8)
+	d := byte(me.ui & 0xff)
+	return net.IPv4(a, b, c, d)
+}
+
 // Equal reports whether this IPv4 address is the same as other
 func (me Addr) Equal(other Addr) bool {
 	return me == other
@@ -86,4 +114,10 @@ func (me Addr) Equal(other Addr) bool {
 // lexigraphically.
 func (me Addr) LessThan(other Addr) bool {
 	return me.ui < other.ui
+}
+
+// DefaultMask returns the default IP mask for the given IP
+func (me Addr) DefaultMask() Mask {
+	ones, _ := me.ToStdIP().DefaultMask().Size()
+	return lengthToMask(ones)
 }

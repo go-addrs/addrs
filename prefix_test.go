@@ -14,7 +14,7 @@ func unsafeParsePrefix(cidr string) Prefix {
 	return prefix
 }
 
-func unsafePrefixFromUint32(ip, length uint32) Prefix {
+func unsafePrefixFromUint32(ip uint32, length int) Prefix {
 	prefix, _ := PrefixFromUint32(ip, length)
 	return prefix
 }

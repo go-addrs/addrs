@@ -5,10 +5,6 @@ import (
 	"net"
 )
 
-const (
-	allOnes uint32 = ^uint32(0)
-)
-
 // Prefix represents an IPv4 prefix which is IPv4 address along with prefix
 // length, or the number of bits which are significant in the network portion.
 // Note that any bits in the address can be 0 or 1 regardless if they in the
@@ -25,21 +21,21 @@ func (me Prefix) IP() Addr {
 }
 
 // PrefixFromUint32 returns the IPv4 address from its 32 bit unsigned representation
-func PrefixFromUint32(ui, length uint32) (Prefix, error) {
-	if SIZE < length {
-		return Prefix{}, fmt.Errorf("failed to convert prefix, length %d is greater than 32", length)
+func PrefixFromUint32(ui uint32, length int) (Prefix, error) {
+	if length < 0 || SIZE < length {
+		return Prefix{}, fmt.Errorf("failed to convert prefix, length %d isn't between 0 and 32", length)
 	}
-	return Prefix{Addr{ui}, length}, nil
+	return Prefix{Addr{ui}, uint32(length)}, nil
 }
 
 // PrefixFromBytes returns the IPv4 address of the `a.b.c.d`.
-func PrefixFromBytes(a, b, c, d byte, length uint32) (Prefix, error) {
-	if SIZE < length {
-		return Prefix{}, fmt.Errorf("failed to convert prefix, length %d is greater than 32", length)
+func PrefixFromBytes(a, b, c, d byte, length int) (Prefix, error) {
+	if length < 0 || SIZE < length {
+		return Prefix{}, fmt.Errorf("failed to convert prefix, length %d isn't between 0 and 32", length)
 	}
 	return Prefix{
 		Addr:   AddrFromBytes(a, b, c, d),
-		length: length,
+		length: uint32(length),
 	}, nil
 }
 
@@ -49,7 +45,7 @@ func PrefixFromStdIPNet(net *net.IPNet) (Prefix, error) {
 		return Prefix{}, fmt.Errorf("failed to convert nil *net.IPNet")
 	}
 	ones, bits := net.Mask.Size()
-	if bits != int(SIZE) {
+	if bits != SIZE {
 		return Prefix{}, fmt.Errorf("failed to convert IPNet with size != 32")
 	}
 	addr, err := AddrFromStdIP(net.IP)
@@ -104,12 +100,15 @@ func (me Prefix) LessThan(other Prefix) bool {
 	return me.length < other.length
 }
 
+// Length returns the number of leading 1s in the mask.
+func (me Prefix) Length() int {
+	return int(me.length)
+}
+
 // Mask returns a new Addr with 1s in the first `length` bits and then 0s
 // representing the network mask for this prefix.
-func (me Prefix) Mask() Addr {
-	return Addr{
-		ui: allOnes << (SIZE - me.length),
-	}
+func (me Prefix) Mask() Mask {
+	return lengthToMask(me.Length())
 }
 
 // Network returns a new Prefix with all bits after `length` zeroed out so that
@@ -171,7 +170,7 @@ func (me Prefix) ContainsAddr(other Addr) bool {
 	return me.ContainsPrefix(
 		Prefix{
 			Addr:   other,
-			length: SIZE,
+			length: uint32(SIZE),
 		},
 	)
 }
@@ -179,5 +178,5 @@ func (me Prefix) ContainsAddr(other Addr) bool {
 // Size returns the number of addresses in the prefix, including network and
 // broadcast addresses. It ignores any bits set in the host part of the address.
 func (me Prefix) Size() int {
-	return 1 << int(SIZE-me.length)
+	return 1 << (SIZE - me.Length())
 }
