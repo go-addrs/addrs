@@ -361,3 +361,17 @@ func TestSize(t *testing.T) {
 func TestToStdIPNet(t *testing.T) {
 	assert.Equal(t, "10.224.24.1/24", unsafeParsePrefix("10.224.24.1/24").ToStdIPNet().String())
 }
+
+func TestPrefixString(t *testing.T) {
+	cidrs := []string{
+		"0.0.0.0/0",
+		"10.224.24.117/25",
+		"1.2.3.4/32",
+	}
+
+	for _, cidr := range cidrs {
+		t.Run(cidr, func(t *testing.T) {
+			assert.Equal(t, cidr, unsafeParsePrefix(cidr).String())
+		})
+	}
+}

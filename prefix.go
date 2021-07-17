@@ -188,3 +188,9 @@ func (me Prefix) ContainsAddr(other Addr) bool {
 func (me Prefix) Size() int {
 	return 1 << (SIZE - me.Length())
 }
+
+// String returns the string representation of this prefix in dotted-quad cidr
+// format (e.g 10.224.24.1/24)
+func (me Prefix) String() string {
+	return fmt.Sprintf("%s/%d", me.Addr.String(), me.Length())
+}

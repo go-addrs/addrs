@@ -97,12 +97,17 @@ func CreateMask(length int) (Mask, error) {
 	return lengthToMask(length), nil
 }
 
+func (me Addr) toBytes() (a, b, c, d byte) {
+	a = byte(me.ui & 0xff000000 >> 24)
+	b = byte(me.ui & 0xff0000 >> 16)
+	c = byte(me.ui & 0xff00 >> 8)
+	d = byte(me.ui & 0xff)
+	return
+}
+
 // ToStdIP returns a net.IP representation of the address which always has 4 bytes
 func (me Addr) ToStdIP() net.IP {
-	a := byte(me.ui & 0xff000000 >> 24)
-	b := byte(me.ui & 0xff0000 >> 16)
-	c := byte(me.ui & 0xff00 >> 8)
-	d := byte(me.ui & 0xff)
+	a, b, c, d := me.toBytes()
 	return net.IPv4(a, b, c, d)
 }
 
@@ -121,6 +126,12 @@ func (me Addr) LessThan(other Addr) bool {
 func (me Addr) DefaultMask() Mask {
 	ones, _ := me.ToStdIP().DefaultMask().Size()
 	return lengthToMask(ones)
+}
+
+// String returns a string representing the address in dotted-quad notation
+func (me Addr) String() string {
+	a, b, c, d := me.toBytes()
+	return fmt.Sprintf("%d.%d.%d.%d", a, b, c, d)
 }
 
 // MaskFromBytes returns the IPv4 address of the `a.b.c.d`.
@@ -150,4 +161,9 @@ func (me Mask) Length() int {
 // ToStdIPMask returns the net.IPMask representation of this Mask
 func (me Mask) ToStdIPMask() net.IPMask {
 	return net.CIDRMask(me.Length(), SIZE)
+}
+
+// String returns the net.IPMask representation of this Mask
+func (me Mask) String() string {
+	return Addr(me).String()
 }

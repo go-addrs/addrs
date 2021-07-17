@@ -143,3 +143,40 @@ func TestMaskFromStdIPMask(t *testing.T) {
 func TestMaskToStdIPMask(t *testing.T) {
 	assert.Equal(t, net.CIDRMask(25, SIZE), Mask{ui: 0xffffff80}.ToStdIPMask())
 }
+
+func TestAddrString(t *testing.T) {
+	ips := []string{
+		"0.0.0.0",
+		"10.224.24.117",
+		"255.255.255.255",
+		"1.2.3.4",
+	}
+
+	for _, ip := range ips {
+		t.Run(ip, func(t *testing.T) {
+			assert.Equal(t, ip, unsafeParseAddr(ip).String())
+		})
+	}
+}
+
+func TestMaskString(t *testing.T) {
+	tests := []struct {
+		length int
+		str    string
+	}{
+		{
+			length: 0,
+			str:    "0.0.0.0",
+		},
+		{
+			length: 32,
+			str:    "255.255.255.255",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.str, func(t *testing.T) {
+			assert.Equal(t, tt.str, lengthToMask(tt.length).String())
+		})
+	}
+}
