@@ -357,3 +357,7 @@ func TestSize(t *testing.T) {
 		})
 	}
 }
+
+func TestToStdIPNet(t *testing.T) {
+	assert.Equal(t, "10.224.24.1/24", unsafeParsePrefix("10.224.24.1/24").ToStdIPNet().String())
+}

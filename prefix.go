@@ -82,6 +82,14 @@ func ParsePrefix(prefix string) (Prefix, error) {
 	return PrefixFromStdIPNet(ipNet)
 }
 
+// ToStdIPNet returns a *net.IPNet representation of this prefix
+func (me Prefix) ToStdIPNet() *net.IPNet {
+	return &net.IPNet{
+		IP:   me.Addr.ToStdIP(),
+		Mask: net.CIDRMask(me.Length(), SIZE),
+	}
+}
+
 // Equal reports whether this IPv4 address is the same as other
 func (me Prefix) Equal(other Prefix) bool {
 	return me == other
