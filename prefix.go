@@ -58,6 +58,14 @@ func PrefixFromStdIPNet(net *net.IPNet) (Prefix, error) {
 	}, nil
 }
 
+// PrefixFromAddrMask combines the address and mask into a prefix
+func PrefixFromAddrMask(address Addr, mask Mask) Prefix {
+	return Prefix{
+		Addr:   address,
+		length: uint32(mask.Length()),
+	}
+}
+
 // ParseCIDRToNet returns a single *net.IPNet that unifies the IP address and
 // the mask. It leaves out the network address which net.ParseCIDR returns.
 // This may be considered an abuse of the IPNet construct as it is documented

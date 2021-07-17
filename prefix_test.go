@@ -381,3 +381,9 @@ func TestUint32(t *testing.T) {
 	assert.Equal(t, uint32(0x0ae01801), address)
 	assert.Equal(t, uint32(0xffffff00), mask)
 }
+
+func TestPrefixFromAddrMask(t *testing.T) {
+	address := Addr{ui: 0x0ae01801}
+	mask, _ := CreateMask(24)
+	assert.Equal(t, Prefix{Addr: address, length: 24}, PrefixFromAddrMask(address, mask))
+}
