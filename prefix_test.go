@@ -375,3 +375,9 @@ func TestPrefixString(t *testing.T) {
 		})
 	}
 }
+
+func TestUint32(t *testing.T) {
+	address, mask := unsafeParsePrefix("10.224.24.1/24").Uint32()
+	assert.Equal(t, uint32(0x0ae01801), address)
+	assert.Equal(t, uint32(0xffffff00), mask)
+}

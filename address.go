@@ -134,6 +134,11 @@ func (me Addr) String() string {
 	return fmt.Sprintf("%d.%d.%d.%d", a, b, c, d)
 }
 
+// Uint32 returns the address as a uint32
+func (me Addr) Uint32() uint32 {
+	return me.ui
+}
+
 // MaskFromBytes returns the IPv4 address of the `a.b.c.d`.
 func MaskFromBytes(a, b, c, d byte) Mask {
 	return Mask(AddrFromBytes(a, b, c, d))
@@ -166,4 +171,9 @@ func (me Mask) ToStdIPMask() net.IPMask {
 // String returns the net.IPMask representation of this Mask
 func (me Mask) String() string {
 	return Addr(me).String()
+}
+
+// Uint32 returns the mask as a uint32
+func (me Mask) Uint32() uint32 {
+	return me.ui
 }

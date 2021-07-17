@@ -194,3 +194,10 @@ func (me Prefix) Size() int {
 func (me Prefix) String() string {
 	return fmt.Sprintf("%s/%d", me.Addr.String(), me.Length())
 }
+
+// Uint32 returns the address and mask as uint32s
+func (me Prefix) Uint32() (address, mask uint32) {
+	address = me.Addr.Uint32()
+	mask = me.Mask().Uint32()
+	return
+}
