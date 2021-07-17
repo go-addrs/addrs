@@ -139,6 +139,41 @@ func (me Addr) Uint32() uint32 {
 	return me.ui
 }
 
+// IsGlobalUnicast calls the same method from net.IP
+func (me Addr) IsGlobalUnicast() bool {
+	return me.ToStdIP().IsGlobalUnicast()
+}
+
+// IsInterfaceLocalMulticast calls the same method from net.IP
+func (me Addr) IsInterfaceLocalMulticast() bool {
+	return me.ToStdIP().IsInterfaceLocalMulticast()
+}
+
+// IsLinkLocalMulticast calls the same method from net.IP
+func (me Addr) IsLinkLocalMulticast() bool {
+	return me.ToStdIP().IsLinkLocalMulticast()
+}
+
+// IsLinkLocalUnicast calls the same method from net.IP
+func (me Addr) IsLinkLocalUnicast() bool {
+	return me.ToStdIP().IsLinkLocalUnicast()
+}
+
+// IsLoopback calls the same method from net.IP
+func (me Addr) IsLoopback() bool {
+	return me.ToStdIP().IsLoopback()
+}
+
+// IsMulticast calls the same method from net.IP
+func (me Addr) IsMulticast() bool {
+	return me.ToStdIP().IsMulticast()
+}
+
+// IsUnspecified calls the same method from net.IP
+func (me Addr) IsUnspecified() bool {
+	return me.ToStdIP().IsUnspecified()
+}
+
 // MaskFromBytes returns the IPv4 address of the `a.b.c.d`.
 func MaskFromBytes(a, b, c, d byte) Mask {
 	return Mask(AddrFromBytes(a, b, c, d))
