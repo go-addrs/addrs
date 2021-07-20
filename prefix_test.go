@@ -332,12 +332,12 @@ func TestSize(t *testing.T) {
 	tests := []struct {
 		description string
 		prefix      Prefix
-		expected    int
+		expected    int64
 	}{
 		{
 			description: "all",
 			prefix:      unsafeParsePrefix("0.0.0.0/0"),
-			expected:    0x100000000,
+			expected:    int64(0x100000000),
 		},
 		{
 			description: "private",

@@ -193,7 +193,7 @@ func (me Prefix) ContainsAddr(other Addr) bool {
 
 // Size returns the number of addresses in the prefix, including network and
 // broadcast addresses. It ignores any bits set in the host part of the address.
-func (me Prefix) Size() int {
+func (me Prefix) Size() int64 {
 	return 1 << (SIZE - me.Length())
 }
 
