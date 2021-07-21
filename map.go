@@ -1,6 +1,6 @@
 package ipv4
 
-// IPMap is a structure that maps IP prefixes to values. For example, you can
+// Map is a structure that maps IP prefixes to values. For example, you can
 // insert the following values and they will all exist as distinct prefix/value
 // pairs in the map.
 //
@@ -11,23 +11,23 @@ package ipv4
 // The map supports looking up values based on a longest prefix match and also
 // supports efficient aggregation of prefix/value pairs based on equality of
 // values. See the README.md file for a more detailed discussion..
-type IPMap struct {
+type Map struct {
 	trie trie32
 }
 
 // Size returns the number of exact prefixes stored in the map
-func (m *IPMap) Size() int {
+func (m *Map) Size() int {
 	return m.trie.Size()
 }
 
 // InsertPrefix inserts the given prefix with the given value into the map
-func (m *IPMap) InsertPrefix(prefix Prefix, value interface{}) error {
+func (m *Map) InsertPrefix(prefix Prefix, value interface{}) error {
 	return m.trie.Insert(prefix, value)
 }
 
 // Insert is a convenient alternative to InsertPrefix that treats the given IP
 // address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *IPMap) Insert(ip Addr, value interface{}) error {
+func (m *Map) Insert(ip Addr, value interface{}) error {
 	return m.trie.Insert(
 		ipToKey(ip),
 		value,
@@ -36,13 +36,13 @@ func (m *IPMap) Insert(ip Addr, value interface{}) error {
 
 // InsertOrUpdatePrefix inserts the given prefix with the given value into the map.
 // If the prefix already existed, it updates the associated value in place.
-func (m *IPMap) InsertOrUpdatePrefix(prefix Prefix, value interface{}) error {
+func (m *Map) InsertOrUpdatePrefix(prefix Prefix, value interface{}) error {
 	return m.trie.InsertOrUpdate(prefix, value)
 }
 
 // InsertOrUpdate is a convenient alternative to InsertOrUpdatePrefix that treats
 // the given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *IPMap) InsertOrUpdate(ip Addr, value interface{}) error {
+func (m *Map) InsertOrUpdate(ip Addr, value interface{}) error {
 	return m.trie.InsertOrUpdate(
 		ipToKey(ip),
 		value,
@@ -53,7 +53,7 @@ func (m *IPMap) InsertOrUpdate(ip Addr, value interface{}) error {
 // with an exact match: both the IP and the prefix length must match. If an
 // exact match is not found, found is false and value is nil and should be
 // ignored.
-func (m *IPMap) GetPrefix(prefix Prefix) (interface{}, bool) {
+func (m *Map) GetPrefix(prefix Prefix) (interface{}, bool) {
 	match, _, value := m.trie.Match(prefix)
 
 	if match == MatchExact {
@@ -65,7 +65,7 @@ func (m *IPMap) GetPrefix(prefix Prefix) (interface{}, bool) {
 
 // Get is a convenient alternative to GetPrefix that treats the given IP address
 // as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *IPMap) Get(ip Addr) (interface{}, bool) {
+func (m *Map) Get(ip Addr) (interface{}, bool) {
 	key := ipToKey(ip)
 	match, _, value := m.trie.Match(key)
 
@@ -79,13 +79,13 @@ func (m *IPMap) Get(ip Addr) (interface{}, bool) {
 // GetOrInsertPrefix returns the value associated with the given prefix if it
 // already exists. If it does not exist, it inserts it with the given value and
 // returns that.
-func (m *IPMap) GetOrInsertPrefix(prefix Prefix, value interface{}) (interface{}, error) {
+func (m *Map) GetOrInsertPrefix(prefix Prefix, value interface{}) (interface{}, error) {
 	return m.trie.GetOrInsert(prefix, value)
 }
 
 // GetOrInsert is a convenient alternative to GetOrInsertPrefix that treats the
 // given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *IPMap) GetOrInsert(ip Addr, value interface{}) (interface{}, error) {
+func (m *Map) GetOrInsert(ip Addr, value interface{}) (interface{}, error) {
 	key := ipToKey(ip)
 	return m.trie.GetOrInsert(key, value)
 }
@@ -94,26 +94,26 @@ func (m *IPMap) GetOrInsert(ip Addr, value interface{}) (interface{}, error) {
 // prefix using a longest prefix match. If a match is found, it returns a
 // Prefix representing the longest prefix matched. If a match is *not*
 // found, matched is MatchNone and the other fields should be ignored
-func (m *IPMap) MatchPrefix(searchPrefix Prefix) (matched Match, prefix Prefix, value interface{}) {
+func (m *Map) MatchPrefix(searchPrefix Prefix) (matched Match, prefix Prefix, value interface{}) {
 	return m.trie.Match(searchPrefix)
 }
 
 // Match is a convenient alternative to MatchPrefix that treats the given IP
 // address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *IPMap) Match(ip Addr) (matched Match, prefix Prefix, value interface{}) {
+func (m *Map) Match(ip Addr) (matched Match, prefix Prefix, value interface{}) {
 	key := ipToKey(ip)
 	return m.trie.Match(key)
 }
 
 // RemovePrefix removes the given prefix from the map with its associated value.
 // Only a prefix with an exact match will be removed.
-func (m *IPMap) RemovePrefix(prefix Prefix) {
+func (m *Map) RemovePrefix(prefix Prefix) {
 	m.trie.Delete(prefix)
 }
 
 // Remove is a convenient alternative to RemovePrefix that treats the given IP
 // address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *IPMap) Remove(ip Addr) {
+func (m *Map) Remove(ip Addr) {
 	m.trie.Delete(ipToKey(ip))
 }
 
@@ -123,7 +123,7 @@ type MapCallback trie32Callback
 
 // Iterate invokes the given callback function for each prefix/value pair in
 // the map in lexigraphical order.
-func (m *IPMap) Iterate(callback MapCallback) bool {
+func (m *Map) Iterate(callback MapCallback) bool {
 	return m.trie.Iterate(trie32Callback(callback))
 }
 
@@ -136,7 +136,7 @@ func (m *IPMap) Iterate(callback MapCallback) bool {
 //    longest prefix match against the aggregated set will always return the
 //    same value as the same match against the non-aggregated set.
 // 3. The aggregated and non-aggregated sets of prefixes may be disjoint.
-func (m *IPMap) Aggregate(callback MapCallback) bool {
+func (m *Map) Aggregate(callback MapCallback) bool {
 	return m.trie.Aggregate(trie32Callback(callback))
 }
 

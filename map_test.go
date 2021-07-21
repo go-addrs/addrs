@@ -7,7 +7,7 @@ import (
 )
 
 func TestInsertOrUpdate(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	m.Insert(unsafeParseAddr("10.224.24.1"), nil)
 	err := m.InsertOrUpdate(unsafeParseAddr("10.224.24.1"), 3)
 	assert.Nil(t, err)
@@ -19,7 +19,7 @@ func TestInsertOrUpdate(t *testing.T) {
 }
 
 func TestInsertOrUpdateDuplicate(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	err := m.InsertOrUpdate(unsafeParseAddr("10.224.24.1"), 3)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, m.Size())
@@ -36,7 +36,7 @@ func TestInsertOrUpdateDuplicate(t *testing.T) {
 }
 
 func TestGetOnlyExactMatch(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.0/24"), 3)
 	assert.Equal(t, 1, m.Size())
 
@@ -45,7 +45,7 @@ func TestGetOnlyExactMatch(t *testing.T) {
 }
 
 func TestGetNotFound(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	err := m.Insert(unsafeParseAddr("10.224.24.1"), 3)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, m.Size())
@@ -55,7 +55,7 @@ func TestGetNotFound(t *testing.T) {
 }
 
 func TestGetOrInsertOnlyExactMatch(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.0/24"), 3)
 	assert.Equal(t, 1, m.Size())
 
@@ -66,7 +66,7 @@ func TestGetOrInsertOnlyExactMatch(t *testing.T) {
 }
 
 func TestGetOrInsertNotFound(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	err := m.Insert(unsafeParseAddr("10.224.24.1"), 3)
 	assert.Nil(t, err)
 
@@ -77,7 +77,7 @@ func TestGetOrInsertNotFound(t *testing.T) {
 }
 
 func TestGetOrInsertPrefixOnlyExactMatch(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.0/24"), 3)
 	assert.Equal(t, 1, m.Size())
 
@@ -88,7 +88,7 @@ func TestGetOrInsertPrefixOnlyExactMatch(t *testing.T) {
 }
 
 func TestGetOrInsertPrefixNotFound(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	err := m.Insert(unsafeParseAddr("10.224.24.1"), 3)
 	assert.Nil(t, err)
 
@@ -99,7 +99,7 @@ func TestGetOrInsertPrefixNotFound(t *testing.T) {
 }
 
 func TestMatchLongestPrefixMatch(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.0/24"), 3)
 	assert.Equal(t, 1, m.Size())
 	m.InsertPrefix(unsafeParsePrefix("10.224.0.0/16"), 4)
@@ -112,7 +112,7 @@ func TestMatchLongestPrefixMatch(t *testing.T) {
 }
 
 func TestMatchNotFound(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	err := m.Insert(unsafeParseAddr("10.224.24.1"), 3)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, m.Size())
@@ -122,7 +122,7 @@ func TestMatchNotFound(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	err := m.Insert(unsafeParseAddr("10.224.24.1"), 3)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, m.Size())
@@ -132,7 +132,7 @@ func TestRemove(t *testing.T) {
 }
 
 func TestRemoveNotFound(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	err := m.Insert(unsafeParseAddr("10.224.24.1"), 3)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, m.Size())
@@ -142,7 +142,7 @@ func TestRemoveNotFound(t *testing.T) {
 }
 
 func TestInsertPrefix(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	err := m.InsertPrefix(unsafeParsePrefix("10.224.24.0/24"), 3)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, m.Size())
@@ -156,7 +156,7 @@ func TestInsertPrefix(t *testing.T) {
 }
 
 func TestInsertOrUpdatePrefix(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.0/24"), nil)
 	err := m.InsertOrUpdatePrefix(unsafeParsePrefix("10.224.24.0/24"), 3)
 	assert.Nil(t, err)
@@ -171,7 +171,7 @@ func TestInsertOrUpdatePrefix(t *testing.T) {
 }
 
 func TestRemovePrefix(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	err := m.InsertPrefix(unsafeParsePrefix("10.224.24.0/24"), 3)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, m.Size())
@@ -181,7 +181,7 @@ func TestRemovePrefix(t *testing.T) {
 }
 
 func TestRemovePrefixNotFound(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	err := m.InsertPrefix(unsafeParsePrefix("10.224.24.0/24"), 3)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, m.Size())
@@ -191,7 +191,7 @@ func TestRemovePrefixNotFound(t *testing.T) {
 }
 
 func TestMatchPrefixLongestPrefixMatch(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.0/24"), 3)
 	assert.Equal(t, 1, m.Size())
 	m.InsertPrefix(unsafeParsePrefix("10.224.0.0/16"), 4)
@@ -204,7 +204,7 @@ func TestMatchPrefixLongestPrefixMatch(t *testing.T) {
 }
 
 func TestMatchPrefixNotFound(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.0/24"), 3)
 	assert.Equal(t, 1, m.Size())
 
@@ -213,7 +213,7 @@ func TestMatchPrefixNotFound(t *testing.T) {
 }
 
 func TestExample1(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.2/31"), true)
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.1/32"), true)
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.0/32"), true)
@@ -253,7 +253,7 @@ type pair struct {
 }
 
 func TestExample2(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.0/30"), true)
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.0/31"), false)
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.1/32"), true)
@@ -304,7 +304,7 @@ func TestExample2(t *testing.T) {
 }
 
 func TestExample3(t *testing.T) {
-	m := IPMap{}
+	m := Map{}
 	m.InsertPrefix(unsafeParsePrefix("172.21.0.0/20"), nil)
 	m.InsertPrefix(unsafeParsePrefix("192.68.27.0/25"), nil)
 	m.InsertPrefix(unsafeParsePrefix("192.168.26.128/25"), nil)
