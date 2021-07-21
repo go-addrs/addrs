@@ -55,12 +55,8 @@ func (me *trie32) Update(key Prefix, value interface{}) error {
 // then value is inserted and returned. If the new key cannot be inserted, an
 // error is returned.
 func (me *trie32) GetOrInsert(key Prefix, value interface{}) (interface{}, error) {
-	var err error
 	var newHead, node *trieNode32
-	newHead, node, err = me.top.GetOrInsert(key, value)
-	if err != nil {
-		return nil, err
-	}
+	newHead, node = me.top.GetOrInsert(key, value)
 	me.top = newHead
 	return node.Data, nil
 }

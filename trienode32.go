@@ -105,8 +105,6 @@ func contains32(shorter, longer Prefix) (matches, exact bool, common, child uint
 }
 
 // compare32 is a helper which compares two keys to find their relationship
-//
-// This function is not generally safe. It assumes non-nil pointers.
 func compare32(a, b Prefix) (aMatch, bMatch, reversed bool, common, child uint32) {
 	// Figure out which is the longer prefix and reverse them if b is shorter
 	reversed = b.length < a.length
@@ -127,12 +125,6 @@ func (me *trieNode32) makeCopy() *trieNode32 {
 	return doppelganger
 }
 
-// Get is the public form of get(...)
-func (me *trieNode32) GetOrInsert(searchKey Prefix, data interface{}) (newHead, result *trieNode32, err error) {
-	newHead, result = me.getOrInsert(searchKey, data)
-	return
-}
-
 func (me *trieNode32) setSize() {
 	// me is not nil by design
 	me.size = uint32(me.children[0].Size() + me.children[1].Size())
@@ -142,8 +134,8 @@ func (me *trieNode32) setSize() {
 	}
 }
 
-// getOrInsert returns the existing value if an exact match is found, otherwise, inserts the given default
-func (me *trieNode32) getOrInsert(searchKey Prefix, data interface{}) (head, result *trieNode32) {
+// GetOrInsert returns the existing value if an exact match is found, otherwise, inserts the given default
+func (me *trieNode32) GetOrInsert(searchKey Prefix, data interface{}) (head, result *trieNode32) {
 	defer func() {
 		if result == nil {
 			result = &trieNode32{Prefix: searchKey, Data: data}
@@ -164,7 +156,7 @@ func (me *trieNode32) getOrInsert(searchKey Prefix, data interface{}) (head, res
 
 	if !exact {
 		var newChild *trieNode32
-		newChild, result = me.children[child].getOrInsert(searchKey, data)
+		newChild, result = me.children[child].GetOrInsert(searchKey, data)
 
 		head = me.makeCopy()
 		head.children[child] = newChild
@@ -179,12 +171,7 @@ func (me *trieNode32) getOrInsert(searchKey Prefix, data interface{}) (head, res
 	return me, me
 }
 
-// Match is the public form of match(...)
-func (me *trieNode32) Match(searchKey Prefix) *trieNode32 {
-	return me.match(searchKey)
-}
-
-// match returns the existing entry with the longest prefix that fully contains
+// Match returns the existing entry with the longest prefix that fully contains
 // the prefix given by the key argument or nil if none match.
 //
 // "contains" means that the first "length" bits in the entry's key are exactly
@@ -197,7 +184,7 @@ func (me *trieNode32) Match(searchKey Prefix) *trieNode32 {
 //
 // "longest" means that if multiple existing entries in the trie match the one
 // with the longest length will be returned. It is the most specific match.
-func (me *trieNode32) match(searchKey Prefix) *trieNode32 {
+func (me *trieNode32) Match(searchKey Prefix) *trieNode32 {
 	if me == nil {
 		return nil
 	}
@@ -213,7 +200,7 @@ func (me *trieNode32) match(searchKey Prefix) *trieNode32 {
 	}
 
 	if !exact {
-		if better := me.children[child].match(searchKey); better != nil {
+		if better := me.children[child].Match(searchKey); better != nil {
 			return better
 		}
 	}
@@ -336,14 +323,9 @@ func (me *trieNode32) insert(node *trieNode32, insert, update bool) (newHead *tr
 	}
 }
 
-// Delete is a public form of del(...) below
-func (me *trieNode32) Delete(key Prefix) (newHead *trieNode32, err error) {
-	return me.del(key)
-}
-
-// del removes a node into the trie given a key and returns the new root of
+// Delete removes a node from the trie given a key and returns the new root of
 // the trie. It is important to note that the root of the trie can change.
-func (me *trieNode32) del(key Prefix) (newHead *trieNode32, err error) {
+func (me *trieNode32) Delete(key Prefix) (newHead *trieNode32, err error) {
 	defer func() {
 		if err == nil && newHead != nil {
 			newHead.setSize()
@@ -361,7 +343,7 @@ func (me *trieNode32) del(key Prefix) (newHead *trieNode32, err error) {
 
 	if !nodeContains {
 		// Trie node's key contains the key. Delete recursively.
-		newChild, err := me.children[child].del(key)
+		newChild, err := me.children[child].Delete(key)
 		if err != nil {
 			return me, err
 		}

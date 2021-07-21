@@ -286,8 +286,7 @@ func TestGetOrInsertTrivial32(t *testing.T) {
 
 	key := Prefix{Addr{0}, 0}
 
-	trie, node, err := trie.GetOrInsert(key, true)
-	assert.Nil(t, err)
+	trie, node := trie.GetOrInsert(key, true)
 	assert.Equal(t, 1, trie.Size())
 	assert.Equal(t, trie, node)
 	assert.True(t, node.Data.(bool))
@@ -299,11 +298,11 @@ func TestGetOrInsertExists32(t *testing.T) {
 	key := Prefix{Addr{0}, 0}
 
 	trie, err := trie.Insert(key, true)
+	assert.Nil(t, err)
 	assert.Equal(t, 1, trie.Size())
 
-	trie, node, err := trie.GetOrInsert(key, false)
+	trie, node := trie.GetOrInsert(key, false)
 
-	assert.Nil(t, err)
 	assert.Equal(t, 1, trie.Size())
 	assert.Equal(t, trie, node)
 	assert.True(t, node.Data.(bool))
@@ -314,12 +313,12 @@ func TestGetOrInsertBroader32(t *testing.T) {
 
 	existingKey := Prefix{unsafeParseAddr("10.224.0.0"), 16}
 	trie, err := trie.Insert(existingKey, true)
+	assert.Nil(t, err)
 	assert.Equal(t, 1, trie.Size())
 
 	broaderKey := Prefix{unsafeParseAddr("10.0.0.0"), 8}
-	trie, node, err := trie.GetOrInsert(broaderKey, false)
+	trie, node := trie.GetOrInsert(broaderKey, false)
 
-	assert.Nil(t, err)
 	assert.Equal(t, 2, trie.Size())
 	assert.Equal(t, trie, node)
 	assert.False(t, node.Data.(bool))
@@ -333,12 +332,12 @@ func TestGetOrInsertNarrower32(t *testing.T) {
 
 	existingKey := Prefix{unsafeParseAddr("10.224.0.0"), 16}
 	trie, err := trie.Insert(existingKey, true)
+	assert.Nil(t, err)
 	assert.Equal(t, 1, trie.Size())
 
 	narrowerKey := Prefix{unsafeParseAddr("10.224.24.00"), 24}
-	trie, node, err := trie.GetOrInsert(narrowerKey, false)
+	trie, node := trie.GetOrInsert(narrowerKey, false)
 
-	assert.Nil(t, err)
 	assert.Equal(t, 2, trie.Size())
 	assert.NotEqual(t, trie, node)
 	assert.False(t, node.Data.(bool))
@@ -352,12 +351,12 @@ func TestGetOrInsertDisjoint32(t *testing.T) {
 
 	existingKey := Prefix{unsafeParseAddr("10.224.0.0"), 16}
 	trie, err := trie.Insert(existingKey, true)
+	assert.Nil(t, err)
 	assert.Equal(t, 1, trie.Size())
 
 	disjointKey := Prefix{unsafeParseAddr("10.225.0.0"), 16}
-	trie, node, err := trie.GetOrInsert(disjointKey, false)
+	trie, node := trie.GetOrInsert(disjointKey, false)
 
-	assert.Nil(t, err)
 	assert.Equal(t, 2, trie.Size())
 	assert.False(t, node.Data.(bool))
 
@@ -372,8 +371,7 @@ func TestGetOrInsertInActive32(t *testing.T) {
 	trie, _ = trie.Insert(Prefix{unsafeParseAddr("10.225.0.0"), 16}, true)
 	assert.Equal(t, 2, trie.Size())
 
-	trie, node, err := trie.GetOrInsert(Prefix{unsafeParseAddr("10.224.0.0"), 15}, false)
-	assert.Nil(t, err)
+	trie, node := trie.GetOrInsert(Prefix{unsafeParseAddr("10.224.0.0"), 15}, false)
 	assert.Equal(t, 3, trie.Size())
 	assert.Equal(t, trie, node)
 	assert.False(t, node.Data.(bool))
@@ -1316,9 +1314,7 @@ func TestIterate32(t *testing.T) {
 	t.Run("get or insert", func(t *testing.T) {
 		trie = nil
 		for _, key := range keys {
-			var err error
-			trie, _, err = trie.GetOrInsert(key, nil)
-			assert.Nil(t, err)
+			trie, _ = trie.GetOrInsert(key, nil)
 		}
 		check(t)
 	})
@@ -1445,9 +1441,7 @@ func TestAggregate32(t *testing.T) {
 			})
 			t.Run("get or insert", func(t *testing.T) {
 				for _, p := range tt.pairs {
-					var err error
-					trie, _, err = trie.GetOrInsert(p.key, p.data)
-					assert.Nil(t, err)
+					trie, _ = trie.GetOrInsert(p.key, p.data)
 				}
 				check(t)
 			})
