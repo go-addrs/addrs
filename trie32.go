@@ -65,13 +65,16 @@ func (me *trie32) GetOrInsert(key Prefix, value interface{}) (interface{}, error
 	return node.Data, nil
 }
 
-// match indicates how closely the given key matches the search result.
-type match int
+// Match indicates how closely the given key matches the search result
+type Match int
 
 const (
-	matchNone match = iota
-	matchContains
-	matchExact
+	// MatchNone indicates that no match was found
+	MatchNone Match = iota
+	// MatchContains indicates that a match was found that contains the search key but isn't exact
+	MatchContains
+	// MatchExact indicates that a match with the same prefix
+	MatchExact
 )
 
 // Match returns the existing key / value pair with the longest prefix that
@@ -87,20 +90,20 @@ const (
 //
 // "longest" means that if multiple existing entries in the trie match the one
 // with the longest length will be returned. It is the most specific match.
-func (me *trie32) Match(key Prefix) (match, Prefix, interface{}) {
+func (me *trie32) Match(key Prefix) (Match, Prefix, interface{}) {
 	var node *trieNode32
 	node = me.top.Match(key)
 	if node == nil {
-		return matchNone, Prefix{}, nil
+		return MatchNone, Prefix{}, nil
 	}
 
 	var resultKey Prefix
 	resultKey = node.Prefix
 
 	if node.Prefix.length == key.length {
-		return matchExact, resultKey, node.Data
+		return MatchExact, resultKey, node.Data
 	}
-	return matchContains, resultKey, node.Data
+	return MatchContains, resultKey, node.Data
 }
 
 // Delete removes a key from the trie with its associated value.

@@ -105,8 +105,8 @@ func TestMatchLongestPrefixMatch(t *testing.T) {
 	m.InsertPrefix(unsafeParsePrefix("10.224.0.0/16"), 4)
 	assert.Equal(t, 2, m.Size())
 
-	ok, n, data := m.Match(unsafeParseAddr("10.224.24.1"))
-	assert.True(t, ok)
+	matched, n, data := m.Match(unsafeParseAddr("10.224.24.1"))
+	assert.Equal(t, MatchContains, matched)
 	assert.Equal(t, unsafeParsePrefix("10.224.24.0/24"), n)
 	assert.Equal(t, 3, data)
 }
@@ -117,8 +117,8 @@ func TestMatchNotFound(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, m.Size())
 
-	ok, _, _ := m.Match(unsafeParseAddr("10.225.24.1"))
-	assert.False(t, ok)
+	matched, _, _ := m.Match(unsafeParseAddr("10.225.24.1"))
+	assert.Equal(t, MatchNone, matched)
 }
 
 func TestRemove(t *testing.T) {
@@ -197,8 +197,8 @@ func TestMatchPrefixLongestPrefixMatch(t *testing.T) {
 	m.InsertPrefix(unsafeParsePrefix("10.224.0.0/16"), 4)
 	assert.Equal(t, 2, m.Size())
 
-	ok, n, data := m.MatchPrefix(unsafeParsePrefix("10.224.24.0/27"))
-	assert.True(t, ok)
+	matched, n, data := m.MatchPrefix(unsafeParsePrefix("10.224.24.0/27"))
+	assert.Equal(t, MatchContains, matched)
 	assert.Equal(t, 3, data)
 	assert.Equal(t, unsafeParsePrefix("10.224.24.0/24"), n)
 }
@@ -208,8 +208,8 @@ func TestMatchPrefixNotFound(t *testing.T) {
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.0/24"), 3)
 	assert.Equal(t, 1, m.Size())
 
-	ok, _, _ := m.MatchPrefix(unsafeParsePrefix("10.225.24.0/24"))
-	assert.False(t, ok)
+	matched, _, _ := m.MatchPrefix(unsafeParsePrefix("10.225.24.0/24"))
+	assert.Equal(t, MatchNone, matched)
 }
 
 func TestExample1(t *testing.T) {

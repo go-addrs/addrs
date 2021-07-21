@@ -56,7 +56,7 @@ func (m *IPMap) InsertOrUpdate(ip Addr, value interface{}) error {
 func (m *IPMap) GetPrefix(prefix Prefix) (interface{}, bool) {
 	match, _, value := m.trie.Match(prefix)
 
-	if match == matchExact {
+	if match == MatchExact {
 		return value, true
 	}
 
@@ -69,7 +69,7 @@ func (m *IPMap) Get(ip Addr) (interface{}, bool) {
 	key := ipToKey(ip)
 	match, _, value := m.trie.Match(key)
 
-	if match == matchExact {
+	if match == MatchExact {
 		return value, true
 	}
 
@@ -93,28 +93,16 @@ func (m *IPMap) GetOrInsert(ip Addr, value interface{}) (interface{}, error) {
 // MatchPrefix returns the value in the map associated with the given network
 // prefix using a longest prefix match. If a match is found, it returns a
 // Prefix representing the longest prefix matched. If a match is *not*
-// found, ok is false and the other fields should be ignored
-func (m *IPMap) MatchPrefix(searchPrefix Prefix) (ok bool, prefix Prefix, value interface{}) {
-	match, matchKey, value := m.trie.Match(searchPrefix)
-
-	if match == matchNone {
-		return false, Prefix{}, nil
-	}
-
-	return true, matchKey, value
+// found, matched is MatchNone and the other fields should be ignored
+func (m *IPMap) MatchPrefix(searchPrefix Prefix) (matched Match, prefix Prefix, value interface{}) {
+	return m.trie.Match(searchPrefix)
 }
 
 // Match is a convenient alternative to MatchPrefix that treats the given IP
 // address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *IPMap) Match(ip Addr) (ok bool, prefix Prefix, value interface{}) {
+func (m *IPMap) Match(ip Addr) (matched Match, prefix Prefix, value interface{}) {
 	key := ipToKey(ip)
-	match, matchKey, value := m.trie.Match(key)
-
-	if match == matchNone {
-		return false, Prefix{}, nil
-	}
-
-	return true, matchKey, value
+	return m.trie.Match(key)
 }
 
 // RemovePrefix removes the given prefix from the map with its associated value.

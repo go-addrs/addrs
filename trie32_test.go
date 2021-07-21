@@ -25,7 +25,7 @@ func TestTrieInsertOrUpdate(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, trie.Size())
 	match, matchedKey, value := trie.Match(key)
-	assert.Equal(t, matchExact, match)
+	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
 	assert.True(t, value.(bool))
 
@@ -33,7 +33,7 @@ func TestTrieInsertOrUpdate(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, trie.Size())
 	match, matchedKey, value = trie.Match(key)
-	assert.Equal(t, matchExact, match)
+	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
 	assert.False(t, value.(bool))
 }
@@ -49,7 +49,7 @@ func TestTrieUpdate(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, trie.Size())
 	match, matchedKey, value := trie.Match(key)
-	assert.Equal(t, matchExact, match)
+	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
 	assert.True(t, value.(bool))
 
@@ -57,7 +57,7 @@ func TestTrieUpdate(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, trie.Size())
 	match, matchedKey, value = trie.Match(key)
-	assert.Equal(t, matchExact, match)
+	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
 	assert.False(t, value.(bool))
 }
@@ -81,19 +81,19 @@ func TestTrieMatch(t *testing.T) {
 
 	t.Run("None", func(t *testing.T) {
 		level, _, _ := trie.Match(Prefix{Addr{0x0ae01000}, 24})
-		assert.Equal(t, matchNone, level)
+		assert.Equal(t, MatchNone, level)
 	})
 
 	t.Run("Exact", func(t *testing.T) {
 		level, key, value := trie.Match(Prefix{Addr{0x0ae01800}, 24})
-		assert.Equal(t, matchExact, level)
+		assert.Equal(t, MatchExact, level)
 		assert.Equal(t, insertKey, key)
 		assert.True(t, value.(bool))
 	})
 
 	t.Run("Contains", func(t *testing.T) {
 		level, key, value := trie.Match(Prefix{Addr{0x0ae01817}, 32})
-		assert.Equal(t, matchContains, level)
+		assert.Equal(t, MatchContains, level)
 		assert.Equal(t, insertKey, key)
 		assert.True(t, value.(bool))
 	})
