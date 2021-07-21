@@ -465,15 +465,18 @@ func (me *trieNode32) aggregable(data dataContainer) (bool, dataContainer) {
 	return false, dataContainer{}
 }
 
-// Callback32 should return true to indicate that iteration should continue or
-// false to stop it immediately.
-type Callback32 func(Prefix, interface{}) bool
+// trienode32Callback defines the signature of a function you can pass to Iterate or
+// Aggregate to handle each key / value pair found while iterating. Each
+// invocation of your callback should return true if iteration should continue
+// (as long as another key / value pair exists) or false to stop iterating and
+// return immediately (meaning your callback will not be called again).
+type trie32Callback func(Prefix, interface{}) bool
 
 // Iterate walks the entire tree and calls the given function for each active
 // node. The order of visiting nodes is essentially lexigraphical:
 // - disjoint prefixes are visited in lexigraphical order
 // - shorter prefixes are visited immediately before longer prefixes that they contain
-func (me *trieNode32) Iterate(callback Callback32) bool {
+func (me *trieNode32) Iterate(callback trie32Callback) bool {
 	if me == nil {
 		return true
 	}
@@ -497,7 +500,7 @@ func (me *trieNode32) Iterate(callback Callback32) bool {
 //             this value then its key is not aggregable with containing
 //             prefixes.
 // `callback`: function to call with each key/data pair found.
-func (me *trieNode32) aggregate(data dataContainer, callback Callback32) bool {
+func (me *trieNode32) aggregate(data dataContainer, callback trie32Callback) bool {
 	if me == nil {
 		return true
 	}
@@ -543,6 +546,6 @@ func (me *trieNode32) aggregate(data dataContainer, callback Callback32) bool {
 // Prefixes are only considered aggregable if their data compare equal. This is
 // useful for aggregating prefixes where the next hop is the same but not where
 // they're different.
-func (me *trieNode32) Aggregate(callback Callback32) bool {
+func (me *trieNode32) Aggregate(callback trie32Callback) bool {
 	return me.aggregate(dataContainer{}, callback)
 }

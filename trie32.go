@@ -110,13 +110,6 @@ func (me *trie32) Delete(key Prefix) error {
 	return err
 }
 
-// trie32Callback defines the signature of a function you can pass to Iterate or
-// Aggregate to handle each key / value pair found while iterating. Each
-// invocation of your callback should return true if iteration should continue
-// (as long as another key / value pair exists) or false to stop iterating and
-// return immediately (meaning your callback will not be called again).
-type trie32Callback func(Prefix, interface{}) bool
-
 // Iterate walks the entire trie and calls the given function for each key /
 // value pair. The order of visiting nodes is essentially lexigraphical:
 // - disjoint prefixes are visited in lexigraphical order
