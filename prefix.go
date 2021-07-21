@@ -66,7 +66,7 @@ func PrefixFromAddrMask(address Addr, mask Mask) Prefix {
 	}
 }
 
-// ParseCIDRToNet returns a single *net.IPNet that unifies the IP address and
+// parseNet returns a single *net.IPNet that unifies the IP address and
 // the mask. It leaves out the network address which net.ParseCIDR returns.
 // This may be considered an abuse of the IPNet construct as it is documented
 // that IP is supposed to be the "network number". However, the public IPNet

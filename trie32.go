@@ -1,5 +1,17 @@
 package ipv4
 
+// Match indicates how closely the given key matches the search result
+type Match int
+
+const (
+	// MatchNone indicates that no match was found
+	MatchNone Match = iota
+	// MatchContains indicates that a match was found that contains the search key but isn't exact
+	MatchContains
+	// MatchExact indicates that a match with the same prefix
+	MatchExact
+)
+
 type trie32 struct {
 	top *trieNode32
 }
@@ -60,18 +72,6 @@ func (me *trie32) GetOrInsert(key Prefix, value interface{}) (interface{}, error
 	me.top = newHead
 	return node.Data, nil
 }
-
-// Match indicates how closely the given key matches the search result
-type Match int
-
-const (
-	// MatchNone indicates that no match was found
-	MatchNone Match = iota
-	// MatchContains indicates that a match was found that contains the search key but isn't exact
-	MatchContains
-	// MatchExact indicates that a match with the same prefix
-	MatchExact
-)
 
 // Match returns the existing key / value pair with the longest prefix that
 // fully contains the given key or nil if none match.
