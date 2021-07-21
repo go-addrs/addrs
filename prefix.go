@@ -213,5 +213,7 @@ func (me Prefix) Uint32() (address, mask uint32) {
 // Range returns the range that includes the same addresses as the prefix
 // It ignores any bits set in the host part of the address.
 func (me Prefix) Range() Range {
-	return NewRange(me.Network().IP(), me.Broadcast().IP())
+	// Note: this error can be ignored by design
+	r, _ := NewRange(me.Network().IP(), me.Broadcast().IP())
+	return r
 }
