@@ -2,7 +2,6 @@ package ipv4
 
 import (
 	"fmt"
-	"math/bits"
 	"net"
 )
 
@@ -16,10 +15,6 @@ type Addr struct {
 	ui uint32
 }
 
-// Mask represents an IPv4 prefix mask. It has 0-32 leading 1s and then all
-// remaining bits are 0s
-type Mask Addr
-
 // AddrFromUint32 returns the IPv4 address from its 32 bit unsigned representation
 func AddrFromUint32(ui uint32) Addr {
 	return Addr{ui}
@@ -30,18 +25,6 @@ func AddrFromBytes(a, b, c, d byte) Addr {
 	return Addr{
 		ui: uint32(a)<<24 | uint32(b)<<16 | uint32(c)<<8 | uint32(d),
 	}
-}
-
-// fromSlice returns the IPv4 address from a slice with four bytes or an error
-// if the slice is the wrong size.
-func fromSlice(s []byte) (Addr, error) {
-	if s == nil {
-		return Addr{}, fmt.Errorf("failed to parse nil ip")
-	}
-	if len(s) != 4 {
-		return Addr{}, fmt.Errorf("failed to parse ip because slice size is not equal to 4")
-	}
-	return AddrFromBytes(s[0], s[1], s[2], s[3]), nil
 }
 
 // AddrFromStdIP converts
@@ -80,29 +63,6 @@ func Max(a, b Addr) Addr {
 		return b
 	}
 	return a
-}
-
-func lengthToMask(length int) Mask {
-	return Mask{
-		ui: ^uint32(0) << (SIZE - length),
-	}
-}
-
-// CreateMask converts the given length (0-32) into a mask with that number of leading 1s
-func CreateMask(length int) (Mask, error) {
-	if length < 0 || SIZE < length {
-		return Mask{}, fmt.Errorf("failed to create Mask where length %d isn't between 0 and 32", length)
-	}
-
-	return lengthToMask(length), nil
-}
-
-func (me Addr) toBytes() (a, b, c, d byte) {
-	a = byte(me.ui & 0xff000000 >> 24)
-	b = byte(me.ui & 0xff0000 >> 16)
-	c = byte(me.ui & 0xff00 >> 8)
-	d = byte(me.ui & 0xff)
-	return
 }
 
 // ToStdIP returns a net.IP representation of the address which always has 4 bytes
@@ -174,41 +134,22 @@ func (me Addr) IsUnspecified() bool {
 	return me.ToStdIP().IsUnspecified()
 }
 
-// MaskFromBytes returns the IPv4 address of the `a.b.c.d`.
-func MaskFromBytes(a, b, c, d byte) Mask {
-	return Mask(AddrFromBytes(a, b, c, d))
+func (me Addr) toBytes() (a, b, c, d byte) {
+	a = byte(me.ui & 0xff000000 >> 24)
+	b = byte(me.ui & 0xff0000 >> 16)
+	c = byte(me.ui & 0xff00 >> 8)
+	d = byte(me.ui & 0xff)
+	return
 }
 
-// MaskFromUint32 returns the IPv4 address from its 32 bit unsigned representation
-func MaskFromUint32(ui uint32) Mask {
-	return Mask{ui}
-}
-
-// MaskFromStdIPMask converts a net.IPMask to a Mask
-func MaskFromStdIPMask(mask net.IPMask) (Mask, error) {
-	ones, bits := mask.Size()
-	if bits != SIZE {
-		return Mask{}, fmt.Errorf("failed to convert IPMask with size != 32")
+// fromSlice returns the IPv4 address from a slice with four bytes or an error
+// if the slice is the wrong size.
+func fromSlice(s []byte) (Addr, error) {
+	if s == nil {
+		return Addr{}, fmt.Errorf("failed to parse nil ip")
 	}
-	return CreateMask(ones)
-}
-
-// Length returns the number of leading 1s in the mask
-func (me Mask) Length() int {
-	return bits.LeadingZeros32(^me.ui)
-}
-
-// ToStdIPMask returns the net.IPMask representation of this Mask
-func (me Mask) ToStdIPMask() net.IPMask {
-	return net.CIDRMask(me.Length(), SIZE)
-}
-
-// String returns the net.IPMask representation of this Mask
-func (me Mask) String() string {
-	return Addr(me).String()
-}
-
-// Uint32 returns the mask as a uint32
-func (me Mask) Uint32() uint32 {
-	return me.ui
+	if len(s) != 4 {
+		return Addr{}, fmt.Errorf("failed to parse ip because slice size is not equal to 4")
+	}
+	return AddrFromBytes(s[0], s[1], s[2], s[3]), nil
 }
