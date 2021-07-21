@@ -54,7 +54,7 @@ func intMax(a, b int) int {
 // | true    | false | 0     | `longer` belongs in `shorter`'s `children[0]`
 // | true    | false | 1     | `longer` belongs in `shorter`'s `children[1]`
 // | true    | true  | NA    | `shorter` and `longer` are the same key
-func contains32(shorter, longer *Prefix) (matches, exact bool, common, child uint32) {
+func contains32(shorter, longer Prefix) (matches, exact bool, common, child uint32) {
 	pivotMask := uint32(0x80000000)
 
 	// calculate `exact`, `common`, and `child` at the end with defer
@@ -91,7 +91,6 @@ func contains32(shorter, longer *Prefix) (matches, exact bool, common, child uin
 		return
 	}
 
-	// TODO Should the key just store a mask?
 	mask := uint32(0xffffffff) << (32 - shorter.length)
 
 	if shorter.ui&mask != longer.ui&mask {
@@ -108,7 +107,7 @@ func contains32(shorter, longer *Prefix) (matches, exact bool, common, child uin
 // compare32 is a helper which compares two keys to find their relationship
 //
 // This function is not generally safe. It assumes non-nil pointers.
-func compare32(a, b *Prefix) (aMatch, bMatch, reversed bool, common, child uint32) {
+func compare32(a, b Prefix) (aMatch, bMatch, reversed bool, common, child uint32) {
 	// Figure out which is the longer prefix and reverse them if b is shorter
 	reversed = b.length < a.length
 	if reversed {
@@ -129,11 +128,7 @@ func (me *trieNode32) makeCopy() *trieNode32 {
 }
 
 // Get is the public form of get(...)
-func (me *trieNode32) GetOrInsert(searchKey *Prefix, data interface{}) (newHead, result *trieNode32, err error) {
-	if searchKey == nil {
-		return nil, nil, fmt.Errorf("cannot insert nil key")
-	}
-
+func (me *trieNode32) GetOrInsert(searchKey Prefix, data interface{}) (newHead, result *trieNode32, err error) {
 	newHead, result = me.getOrInsert(searchKey, data)
 	return
 }
@@ -148,10 +143,10 @@ func (me *trieNode32) setSize() {
 }
 
 // getOrInsert returns the existing value if an exact match is found, otherwise, inserts the given default
-func (me *trieNode32) getOrInsert(searchKey *Prefix, data interface{}) (head, result *trieNode32) {
+func (me *trieNode32) getOrInsert(searchKey Prefix, data interface{}) (head, result *trieNode32) {
 	defer func() {
 		if result == nil {
-			result = &trieNode32{Prefix: *searchKey, Data: data}
+			result = &trieNode32{Prefix: searchKey, Data: data}
 
 			// The only error from insert is that the key already exists. But, that cannot happen by design.
 			head, _ = me.insert(result, true, false)
@@ -162,7 +157,7 @@ func (me *trieNode32) getOrInsert(searchKey *Prefix, data interface{}) (head, re
 		return
 	}
 
-	matches, exact, _, child := contains32(&me.Prefix, searchKey)
+	matches, exact, _, child := contains32(me.Prefix, searchKey)
 	if !matches {
 		return
 	}
@@ -185,11 +180,7 @@ func (me *trieNode32) getOrInsert(searchKey *Prefix, data interface{}) (head, re
 }
 
 // Match is the public form of match(...)
-func (me *trieNode32) Match(searchKey *Prefix) *trieNode32 {
-	if searchKey == nil {
-		return nil
-	}
-
+func (me *trieNode32) Match(searchKey Prefix) *trieNode32 {
 	return me.match(searchKey)
 }
 
@@ -206,12 +197,12 @@ func (me *trieNode32) Match(searchKey *Prefix) *trieNode32 {
 //
 // "longest" means that if multiple existing entries in the trie match the one
 // with the longest length will be returned. It is the most specific match.
-func (me *trieNode32) match(searchKey *Prefix) *trieNode32 {
+func (me *trieNode32) match(searchKey Prefix) *trieNode32 {
 	if me == nil {
 		return nil
 	}
 
-	nodeKey := &me.Prefix
+	nodeKey := me.Prefix
 	if searchKey.length < nodeKey.length {
 		return nil
 	}
@@ -251,28 +242,19 @@ func (me *trieNode32) height() int {
 }
 
 // Update updates the key / value only if the key already exists
-func (me *trieNode32) Update(key *Prefix, data interface{}) (newHead *trieNode32, err error) {
-	if key == nil {
-		return nil, fmt.Errorf("cannot insert nil key")
-	}
-	return me.insert(&trieNode32{Prefix: *key, Data: data}, false, true)
+func (me *trieNode32) Update(key Prefix, data interface{}) (newHead *trieNode32, err error) {
+	return me.insert(&trieNode32{Prefix: key, Data: data}, false, true)
 }
 
 // InsertOrUpdate inserts the key / value if the key didn't previously exist.
 // Otherwise, it updates the data.
-func (me *trieNode32) InsertOrUpdate(key *Prefix, data interface{}) (newHead *trieNode32, err error) {
-	if key == nil {
-		return nil, fmt.Errorf("cannot insert nil key")
-	}
-	return me.insert(&trieNode32{Prefix: *key, Data: data}, true, true)
+func (me *trieNode32) InsertOrUpdate(key Prefix, data interface{}) (newHead *trieNode32, err error) {
+	return me.insert(&trieNode32{Prefix: key, Data: data}, true, true)
 }
 
 // Insert is the public form of insert(...)
-func (me *trieNode32) Insert(key *Prefix, data interface{}) (newHead *trieNode32, err error) {
-	if key == nil {
-		return nil, fmt.Errorf("cannot insert nil key")
-	}
-	return me.insert(&trieNode32{Prefix: *key, Data: data}, true, false)
+func (me *trieNode32) Insert(key Prefix, data interface{}) (newHead *trieNode32, err error) {
+	return me.insert(&trieNode32{Prefix: key, Data: data}, true, false)
 }
 
 // insert adds a node into the trie and return the new root of the trie. It is
@@ -296,7 +278,7 @@ func (me *trieNode32) insert(node *trieNode32, insert, update bool) (newHead *tr
 	}
 
 	// Test containership both ways
-	trieContains, nodeContains, reversed, common, child := compare32(&me.Prefix, &node.Prefix)
+	trieContains, nodeContains, reversed, common, child := compare32(me.Prefix, node.Prefix)
 	switch {
 	case trieContains && nodeContains:
 		// They have the same key
@@ -355,13 +337,13 @@ func (me *trieNode32) insert(node *trieNode32, insert, update bool) (newHead *tr
 }
 
 // Delete is a public form of del(...) below
-func (me *trieNode32) Delete(key *Prefix) (newHead *trieNode32, err error) {
+func (me *trieNode32) Delete(key Prefix) (newHead *trieNode32, err error) {
 	return me.del(key)
 }
 
 // del removes a node into the trie given a key and returns the new root of
 // the trie. It is important to note that the root of the trie can change.
-func (me *trieNode32) del(key *Prefix) (newHead *trieNode32, err error) {
+func (me *trieNode32) del(key Prefix) (newHead *trieNode32, err error) {
 	defer func() {
 		if err == nil && newHead != nil {
 			newHead.setSize()
@@ -372,11 +354,7 @@ func (me *trieNode32) del(key *Prefix) (newHead *trieNode32, err error) {
 		return me, fmt.Errorf("cannot delete from a nil")
 	}
 
-	if key == nil {
-		return me, fmt.Errorf("cannot delete nil key")
-	}
-
-	trieContains, nodeContains, _, _, child := compare32(&me.Prefix, key)
+	trieContains, nodeContains, _, _, child := compare32(me.Prefix, key)
 	if !trieContains {
 		return me, fmt.Errorf("key not found")
 	}
@@ -489,7 +467,7 @@ func (me *trieNode32) aggregable(data dataContainer) (bool, dataContainer) {
 
 // Callback32 should return true to indicate that iteration should continue or
 // false to stop it immediately.
-type Callback32 func(*Prefix, interface{}) bool
+type Callback32 func(Prefix, interface{}) bool
 
 // Iterate walks the entire tree and calls the given function for each active
 // node. The order of visiting nodes is essentially lexigraphical:
@@ -501,7 +479,7 @@ func (me *trieNode32) Iterate(callback Callback32) bool {
 	}
 
 	if me.isActive && callback != nil {
-		if !callback(&me.Prefix, me.Data) {
+		if !callback(me.Prefix, me.Data) {
 			return false
 		}
 	}
@@ -527,7 +505,7 @@ func (me *trieNode32) aggregate(data dataContainer, callback Callback32) bool {
 	aggregable, d := me.aggregable(data)
 	if aggregable && !dataEqual(data, d) {
 		if callback != nil {
-			if !callback(&me.Prefix, d.data) {
+			if !callback(me.Prefix, d.data) {
 				return false
 			}
 		}
