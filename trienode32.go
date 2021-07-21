@@ -119,6 +119,15 @@ func compare32(a, b *Prefix) (aMatch, bMatch, reversed bool, common, child uint3
 	return
 }
 
+func (me *trieNode32) makeCopy() *trieNode32 {
+	if me == nil {
+		return nil
+	}
+	doppelganger := &trieNode32{}
+	*doppelganger = *me
+	return doppelganger
+}
+
 // Get is the public form of get(...)
 func (me *trieNode32) GetOrInsert(searchKey *Prefix, data interface{}) (newHead, result *trieNode32, err error) {
 	if searchKey == nil {
@@ -159,11 +168,12 @@ func (me *trieNode32) getOrInsert(searchKey *Prefix, data interface{}) (head, re
 	}
 
 	if !exact {
-		head = me
 		var newChild *trieNode32
 		newChild, result = me.children[child].getOrInsert(searchKey, data)
-		me.children[child] = newChild
-		me.setSize()
+
+		head = me.makeCopy()
+		head.children[child] = newChild
+		head.setSize()
 		return
 	}
 
@@ -300,12 +310,13 @@ func (me *trieNode32) insert(node *trieNode32, insert, update bool) (newHead *tr
 		return node, nil
 
 	case trieContains && !nodeContains:
-		// Trie node's key contains the new node's key. Insert it.
+		// Trie node's key contains the new node's key. Insert it recursively.
 		newChild, err := me.children[child].insert(node, insert, update)
+		newNode := me.makeCopy()
 		if err == nil {
-			me.children[child] = newChild
+			newNode.children[child] = newChild
 		}
-		return me, err
+		return newNode, err
 
 	case !trieContains && nodeContains:
 		if !insert {
@@ -373,26 +384,28 @@ func (me *trieNode32) del(key *Prefix) (newHead *trieNode32, err error) {
 	if !nodeContains {
 		// Trie node's key contains the key. Delete recursively.
 		newChild, err := me.children[child].del(key)
-		if err == nil {
-			me.children[child] = newChild
+		if err != nil {
+			return me, err
 		}
-		return me, err
+
+		newNode := me.makeCopy()
+		newNode.children[child] = newChild
+		return newNode, nil
 	}
 
 	// The key matches this node exactly, delete this node
-	me.isActive = false
-
-	if me.children[0] != nil {
-		if me.children[1] != nil {
-			// The two children are disjoint so keep this inactive node.
-			return me, nil
-		}
-
+	if me.children[0] == nil {
+		// At this point, it doesn't matter if it is nil or not
+		return me.children[1], nil
+	}
+	if me.children[1] == nil {
 		return me.children[0], nil
 	}
 
-	// At this point, it doesn't matter if it is nil or not
-	return me.children[1], nil
+	// The two children are disjoint so keep this inactive node.
+	newNode := me.makeCopy()
+	newNode.isActive = false
+	return newNode, nil
 }
 
 // active returns whether a node represents an active prefix in the tree (true)
