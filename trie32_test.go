@@ -8,22 +8,22 @@ import (
 
 func TestTrieInsert(t *testing.T) {
 	var trie trie32
-	assert.Equal(t, 0, trie.Size())
+	assert.Equal(t, 0, trie.NumNodes())
 
 	key := Prefix{Addr{0x0ae01800}, 24}
 	err := trie.Insert(key, true)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, trie.Size())
+	assert.Equal(t, 1, trie.NumNodes())
 }
 
 func TestTrieInsertOrUpdate(t *testing.T) {
 	var trie trie32
-	assert.Equal(t, 0, trie.Size())
+	assert.Equal(t, 0, trie.NumNodes())
 
 	key := Prefix{Addr{0x0ae01800}, 24}
 	err := trie.InsertOrUpdate(key, true)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, trie.Size())
+	assert.Equal(t, 1, trie.NumNodes())
 	match, matchedKey, value := trie.Match(key)
 	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
@@ -31,7 +31,7 @@ func TestTrieInsertOrUpdate(t *testing.T) {
 
 	err = trie.InsertOrUpdate(key, false)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, trie.Size())
+	assert.Equal(t, 1, trie.NumNodes())
 	match, matchedKey, value = trie.Match(key)
 	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
@@ -40,14 +40,14 @@ func TestTrieInsertOrUpdate(t *testing.T) {
 
 func TestTrieUpdate(t *testing.T) {
 	var trie trie32
-	assert.Equal(t, 0, trie.Size())
+	assert.Equal(t, 0, trie.NumNodes())
 
 	key := Prefix{Addr{0x0ae01800}, 24}
 	trie.Insert(key, false)
 
 	err := trie.Update(key, true)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, trie.Size())
+	assert.Equal(t, 1, trie.NumNodes())
 	match, matchedKey, value := trie.Match(key)
 	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
@@ -55,7 +55,7 @@ func TestTrieUpdate(t *testing.T) {
 
 	err = trie.Update(key, false)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, trie.Size())
+	assert.Equal(t, 1, trie.NumNodes())
 	match, matchedKey, value = trie.Match(key)
 	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
@@ -64,13 +64,13 @@ func TestTrieUpdate(t *testing.T) {
 
 func TestTrieGetOrInsert(t *testing.T) {
 	var trie trie32
-	assert.Equal(t, 0, trie.Size())
+	assert.Equal(t, 0, trie.NumNodes())
 
 	key := Prefix{Addr{0x0ae01800}, 24}
 	value, err := trie.GetOrInsert(key, true)
 	assert.Nil(t, err)
 	assert.True(t, value.(bool))
-	assert.Equal(t, 1, trie.Size())
+	assert.Equal(t, 1, trie.NumNodes())
 }
 
 func TestTrieMatch(t *testing.T) {
@@ -109,7 +109,7 @@ func TestTrieDelete(t *testing.T) {
 		key := Prefix{Addr{0x0ae01800}, 24}
 		err := trie.Delete(key)
 		assert.Nil(t, err)
-		assert.Equal(t, 0, trie.Size())
+		assert.Equal(t, 0, trie.NumNodes())
 	})
 
 	t.Run("Not Found", func(t *testing.T) {
@@ -121,7 +121,7 @@ func TestTrieDelete(t *testing.T) {
 		key := Prefix{Addr{0x0ae01000}, 24}
 		err := trie.Delete(key)
 		assert.NotNil(t, err)
-		assert.Equal(t, 1, trie.Size())
+		assert.Equal(t, 1, trie.NumNodes())
 	})
 
 	t.Run("Not Exact", func(t *testing.T) {
@@ -133,7 +133,7 @@ func TestTrieDelete(t *testing.T) {
 		key := Prefix{Addr{0x0ae01817}, 32}
 		err := trie.Delete(key)
 		assert.NotNil(t, err)
-		assert.Equal(t, 1, trie.Size())
+		assert.Equal(t, 1, trie.NumNodes())
 	})
 }
 

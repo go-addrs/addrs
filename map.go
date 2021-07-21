@@ -17,7 +17,7 @@ type Map struct {
 
 // Size returns the number of exact prefixes stored in the map
 func (m *Map) Size() int {
-	return m.trie.Size()
+	return m.trie.NumNodes()
 }
 
 // InsertPrefix inserts the given prefix with the given value into the map

@@ -127,7 +127,7 @@ func (me *trieNode32) makeCopy() *trieNode32 {
 
 func (me *trieNode32) setSize() {
 	// me is not nil by design
-	me.size = uint32(me.children[0].Size() + me.children[1].Size())
+	me.size = uint32(me.children[0].NumNodes() + me.children[1].NumNodes())
 	me.h = 1 + uint16(uint16(intMax(me.children[0].height(), me.children[1].height())))
 	if me.isActive {
 		me.size++
@@ -212,8 +212,8 @@ func (me *trieNode32) Match(searchKey Prefix) *trieNode32 {
 	return me
 }
 
-// Size returns the number of entries in the trie
-func (me *trieNode32) Size() int {
+// NumNodes returns the number of entries in the trie
+func (me *trieNode32) NumNodes() int {
 	if me == nil {
 		return 0
 	}

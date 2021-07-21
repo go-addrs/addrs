@@ -16,9 +16,9 @@ type trie32 struct {
 	top *trieNode32
 }
 
-// Size returns the number of entries
-func (me *trie32) Size() int {
-	return me.top.Size()
+// NumNodes returns the number of entries
+func (me *trie32) NumNodes() int {
+	return me.top.NumNodes()
 }
 
 // Insert adds the given key / value pair. If the new key cannot be inserted or
