@@ -141,7 +141,7 @@ func (me *trieNode32) GetOrInsert(searchKey Prefix, data interface{}) (head, res
 			result = &trieNode32{Prefix: searchKey, Data: data}
 
 			// The only error from insert is that the key already exists. But, that cannot happen by design.
-			head, _ = me.insert(result, true, false)
+			head, _ = me.insert(result, insertOpts{insert: true})
 		}
 	}()
 
@@ -230,24 +230,28 @@ func (me *trieNode32) height() int {
 
 // Update updates the key / value only if the key already exists
 func (me *trieNode32) Update(key Prefix, data interface{}) (newHead *trieNode32, err error) {
-	return me.insert(&trieNode32{Prefix: key, Data: data}, false, true)
+	return me.insert(&trieNode32{Prefix: key, Data: data}, insertOpts{update: true})
 }
 
 // InsertOrUpdate inserts the key / value if the key didn't previously exist.
 // Otherwise, it updates the data.
 func (me *trieNode32) InsertOrUpdate(key Prefix, data interface{}) (newHead *trieNode32, err error) {
-	return me.insert(&trieNode32{Prefix: key, Data: data}, true, true)
+	return me.insert(&trieNode32{Prefix: key, Data: data}, insertOpts{insert: true, update: true})
 }
 
 // Insert is the public form of insert(...)
 func (me *trieNode32) Insert(key Prefix, data interface{}) (newHead *trieNode32, err error) {
-	return me.insert(&trieNode32{Prefix: key, Data: data}, true, false)
+	return me.insert(&trieNode32{Prefix: key, Data: data}, insertOpts{insert:true})
+}
+
+type insertOpts struct {
+	insert, update bool
 }
 
 // insert adds a node into the trie and return the new root of the trie. It is
 // important to note that the root of the trie can change. If the new node
 // cannot be inserted, nil is returned.
-func (me *trieNode32) insert(node *trieNode32, insert, update bool) (newHead *trieNode32, err error) {
+func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNode32, err error) {
 	defer func() {
 		if err == nil && newHead != nil {
 			node.size = 1
@@ -258,7 +262,7 @@ func (me *trieNode32) insert(node *trieNode32, insert, update bool) (newHead *tr
 	}()
 
 	if me == nil {
-		if !insert {
+		if !opts.insert {
 			return me, fmt.Errorf("the key doesn't exist to update")
 		}
 		return node, nil
@@ -269,10 +273,10 @@ func (me *trieNode32) insert(node *trieNode32, insert, update bool) (newHead *tr
 	switch {
 	case trieContains && nodeContains:
 		// They have the same key
-		if me.isActive && !update {
+		if me.isActive && !opts.update {
 			return me, fmt.Errorf("a node with that key already exists")
 		}
-		if !me.isActive && !insert {
+		if !me.isActive && !opts.insert {
 			return me, fmt.Errorf("the key doesn't exist to update")
 		}
 		node.children = me.children
@@ -280,7 +284,7 @@ func (me *trieNode32) insert(node *trieNode32, insert, update bool) (newHead *tr
 
 	case trieContains && !nodeContains:
 		// Trie node's key contains the new node's key. Insert it recursively.
-		newChild, err := me.children[child].insert(node, insert, update)
+		newChild, err := me.children[child].insert(node, opts)
 		newNode := me.makeCopy()
 		if err == nil {
 			newNode.children[child] = newChild
@@ -288,7 +292,7 @@ func (me *trieNode32) insert(node *trieNode32, insert, update bool) (newHead *tr
 		return newNode, err
 
 	case !trieContains && nodeContains:
-		if !insert {
+		if !opts.insert {
 			return me, fmt.Errorf("the key doesn't exist to update")
 		}
 		// New node's key contains the trie node's key. Insert new node as the parent of the trie.
@@ -296,7 +300,7 @@ func (me *trieNode32) insert(node *trieNode32, insert, update bool) (newHead *tr
 		return node, nil
 
 	default:
-		if !insert {
+		if !opts.insert {
 			return me, fmt.Errorf("the key doesn't exist to update")
 		}
 		// Keys are disjoint. Create a new (inactive) parent node to join them side-by-side.
