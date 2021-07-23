@@ -410,7 +410,7 @@ type EqualComparable interface {
 // aggregable returns if descendants can be aggregated into the current prefix,
 // it considers the `isActive` attributes of all nodes under consideration and
 // only aggregates where active nodes can be joined together in aggregation. It
-// also only aggregates nodes whose data compares equal.
+// also only aggregates nodes whose data compare equal.
 //
 // returns true and the data used to compare with if they are aggregable, false
 // otherwise (and data must be ignored).

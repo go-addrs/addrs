@@ -214,7 +214,7 @@ func TestNetworkHostBroadcast(t *testing.T) {
 	}
 }
 
-func TestContainsPrefix(t *testing.T) {
+func TestPrefixContainsPrefix(t *testing.T) {
 	tests := []struct {
 		description          string
 		container, containee Prefix
@@ -263,7 +263,7 @@ func TestContainsPrefix(t *testing.T) {
 	}
 }
 
-func TestContainsAddr(t *testing.T) {
+func TestPrefixContainsAddr(t *testing.T) {
 	tests := []struct {
 		description     string
 		container       Prefix
@@ -328,7 +328,7 @@ func TestContainsAddr(t *testing.T) {
 	}
 }
 
-func TestSize(t *testing.T) {
+func TestPrefixSize(t *testing.T) {
 	tests := []struct {
 		description string
 		prefix      Prefix
@@ -358,7 +358,7 @@ func TestSize(t *testing.T) {
 	}
 }
 
-func TestToStdIPNet(t *testing.T) {
+func TestPrefixToStdIPNet(t *testing.T) {
 	assert.Equal(t, "10.224.24.1/24", unsafeParsePrefix("10.224.24.1/24").ToStdIPNet().String())
 }
 
@@ -376,7 +376,7 @@ func TestPrefixString(t *testing.T) {
 	}
 }
 
-func TestUint32(t *testing.T) {
+func TestPrefixUint32(t *testing.T) {
 	address, mask := unsafeParsePrefix("10.224.24.1/24").Uint32()
 	assert.Equal(t, uint32(0x0ae01801), address)
 	assert.Equal(t, uint32(0xffffff00), mask)
