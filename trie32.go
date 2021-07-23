@@ -16,6 +16,10 @@ type trie32 struct {
 	top *trieNode32
 }
 
+func (me *trie32) isValid() bool {
+	return me.top.isValid()
+}
+
 // NumNodes returns the number of entries
 func (me *trie32) NumNodes() int {
 	return me.top.NumNodes()

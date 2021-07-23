@@ -228,6 +228,31 @@ func (me *trieNode32) height() int {
 	return int(me.h)
 }
 
+// isValid returns true if the tree is valid
+// this method is only for unit tests to check the integrity of the structure
+func (me *trieNode32) isValid() bool {
+	if me == nil {
+		return true
+	}
+	left, right := me.children[0], me.children[1]
+	size := me.size
+	if me.isActive {
+		size--
+	} else {
+		if left == nil || right == nil {
+			// Any child node should have been pulled up since this node isn't active
+			return false
+		}
+	}
+	if size != uint32(left.NumNodes()+right.NumNodes()) {
+		return false
+	}
+	if me.h != 1+uint16(uint16(intMax(left.height(), right.height()))) {
+		return false
+	}
+	return true
+}
+
 // Update updates the key / value only if the key already exists
 func (me *trieNode32) Update(key Prefix, data interface{}) (newHead *trieNode32, err error) {
 	return me.insert(&trieNode32{Prefix: key, Data: data}, insertOpts{update: true})
@@ -241,7 +266,7 @@ func (me *trieNode32) InsertOrUpdate(key Prefix, data interface{}) (newHead *tri
 
 // Insert is the public form of insert(...)
 func (me *trieNode32) Insert(key Prefix, data interface{}) (newHead *trieNode32, err error) {
-	return me.insert(&trieNode32{Prefix: key, Data: data}, insertOpts{insert:true})
+	return me.insert(&trieNode32{Prefix: key, Data: data}, insertOpts{insert: true})
 }
 
 type insertOpts struct {
@@ -253,10 +278,7 @@ type insertOpts struct {
 // cannot be inserted, nil is returned.
 func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNode32, err error) {
 	defer func() {
-		if err == nil && newHead != nil {
-			node.size = 1
-			node.h = 1
-			node.isActive = true
+		if err == nil {
 			newHead.setSize()
 		}
 	}()
@@ -265,6 +287,7 @@ func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNo
 		if !opts.insert {
 			return me, fmt.Errorf("the key doesn't exist to update")
 		}
+		node.isActive = true
 		return node, nil
 	}
 
@@ -280,45 +303,48 @@ func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNo
 			return me, fmt.Errorf("the key doesn't exist to update")
 		}
 		node.children = me.children
+		node.isActive = true
 		return node, nil
 
 	case trieContains && !nodeContains:
 		// Trie node's key contains the new node's key. Insert it recursively.
 		newChild, err := me.children[child].insert(node, opts)
-		newNode := me.makeCopy()
-		if err == nil {
-			newNode.children[child] = newChild
+		if err != nil {
+			return me, err
 		}
-		return newNode, err
+		newNode := me.makeCopy()
+		newNode.children[child] = newChild
+		return newNode, nil
 
 	case !trieContains && nodeContains:
+		// New node's key contains the trie node's key. Insert new node as the parent of the trie.
 		if !opts.insert {
 			return me, fmt.Errorf("the key doesn't exist to update")
 		}
-		// New node's key contains the trie node's key. Insert new node as the parent of the trie.
 		node.children[child] = me
+		node.isActive = true
 		return node, nil
 
 	default:
-		if !opts.insert {
-			return me, fmt.Errorf("the key doesn't exist to update")
-		}
 		// Keys are disjoint. Create a new (inactive) parent node to join them side-by-side.
+		var newChild *trieNode32
+		newChild, err := newChild.insert(node, opts)
+		if err != nil {
+			return me, err
+		}
+
 		var children [2]*trieNode32
 
 		if (child == 1) != reversed { // (child == 1) XOR reversed
-			children[0], children[1] = me, node
+			children[0], children[1] = me, newChild
 		} else {
-			children[0], children[1] = node, me
+			children[0], children[1] = newChild, me
 		}
-
-		// zero out the bits that are not in common
-		bits := me.ui & ^(uint32(0xffffffff) >> common)
 
 		return &trieNode32{
 			Prefix: Prefix{
 				Addr: Addr{
-					ui: bits,
+					ui: me.ui & ^(uint32(0xffffffff) >> common), // zero out bits not in common
 				},
 				length: common,
 			},

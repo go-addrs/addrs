@@ -69,12 +69,12 @@ func TestInsertOrUpdateChangeValue32(t *testing.T) {
 	key := Prefix{}
 
 	trie, err := trie.InsertOrUpdate(key, true)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	trie, err = trie.InsertOrUpdate(key, false)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.False(t, trie.Match(key).Data.(bool))
 }
@@ -85,13 +85,13 @@ func TestInsertOrUpdateNewKey32(t *testing.T) {
 	key := Prefix{}
 
 	trie, err := trie.InsertOrUpdate(key, true)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{Addr{0}, 1}
 	trie, err = trie.InsertOrUpdate(newKey, false)
-	assert.Equal(t, 2, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
@@ -103,13 +103,13 @@ func TestInsertOrUpdateNarrowerKey32(t *testing.T) {
 	key := Prefix{Addr{0}, 1}
 
 	trie, err := trie.InsertOrUpdate(key, true)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{}
 	trie, err = trie.InsertOrUpdate(newKey, false)
-	assert.Equal(t, 2, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
@@ -121,13 +121,13 @@ func TestInsertOrUpdateDisjointKeys32(t *testing.T) {
 	key := Prefix{Addr{0}, 1}
 
 	trie, err := trie.InsertOrUpdate(key, true)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{Addr{0x80000000}, 1}
 	trie, err = trie.InsertOrUpdate(newKey, false)
-	assert.Equal(t, 2, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
@@ -139,20 +139,20 @@ func TestInsertOrUpdateInactive32(t *testing.T) {
 	key := Prefix{Addr{0}, 1}
 
 	trie, err := trie.InsertOrUpdate(key, true)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{Addr{0x80000000}, 1}
 	trie, err = trie.InsertOrUpdate(newKey, false)
-	assert.Equal(t, 2, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
 
 	inactiveKey := Prefix{}
 	trie, err = trie.InsertOrUpdate(inactiveKey, "value")
-	assert.Equal(t, 3, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
@@ -165,12 +165,12 @@ func TestUpdateChangeValue32(t *testing.T) {
 	key := Prefix{}
 
 	trie, err := trie.Insert(key, true)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	trie, err = trie.Update(key, false)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.False(t, trie.Match(key).Data.(bool))
 }
@@ -181,13 +181,13 @@ func TestUpdateNewKey32(t *testing.T) {
 	key := Prefix{}
 
 	trie, err := trie.Insert(key, true)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{Addr{0}, 1}
 	trie, err = trie.Update(newKey, false)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.NotNil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.True(t, trie.Match(newKey).Data.(bool))
@@ -199,13 +199,13 @@ func TestUpdateNarrowerKey32(t *testing.T) {
 	key := Prefix{Addr{0}, 1}
 
 	trie, err := trie.Insert(key, true)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{}
 	trie, err = trie.Update(newKey, false)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.NotNil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.Nil(t, trie.Match(newKey))
@@ -217,13 +217,13 @@ func TestUpdateDisjointKeys32(t *testing.T) {
 	key := Prefix{Addr{0}, 1}
 
 	trie, err := trie.Insert(key, true)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{Addr{0x80000000}, 1}
 	trie, err = trie.Update(newKey, false)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.NotNil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.Nil(t, trie.Match(newKey))
@@ -235,20 +235,20 @@ func TestUpdateInactive32(t *testing.T) {
 	key := Prefix{Addr{0}, 1}
 
 	trie, err := trie.Insert(key, true)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{Addr{0x80000000}, 1}
 	trie, err = trie.Insert(newKey, false)
-	assert.Equal(t, 2, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
 
 	inactiveKey := Prefix{}
 	trie, err = trie.Update(inactiveKey, "value")
-	assert.Equal(t, 2, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.NotNil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
@@ -271,7 +271,7 @@ func TestMatchZeroLength32(t *testing.T) {
 	}, nil)
 	assert.Nil(t, err)
 	assert.True(t, trie.active())
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Equal(t, 1, trie.height())
 
 	assert.Equal(t, trie, trie.Match(Prefix{
@@ -283,11 +283,12 @@ func TestMatchZeroLength32(t *testing.T) {
 func TestGetOrInsertTrivial32(t *testing.T) {
 	var trie *trieNode32
 	assert.Equal(t, 0, trie.NumNodes())
+	assert.True(t, trie.isValid())
 
 	key := Prefix{Addr{0}, 0}
 
 	trie, node := trie.GetOrInsert(key, true)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Equal(t, trie, node)
 	assert.True(t, node.Data.(bool))
 }
@@ -299,11 +300,11 @@ func TestGetOrInsertExists32(t *testing.T) {
 
 	trie, err := trie.Insert(key, true)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 
 	trie, node := trie.GetOrInsert(key, false)
 
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Equal(t, trie, node)
 	assert.True(t, node.Data.(bool))
 }
@@ -314,12 +315,12 @@ func TestGetOrInsertBroader32(t *testing.T) {
 	existingKey := Prefix{unsafeParseAddr("10.224.0.0"), 16}
 	trie, err := trie.Insert(existingKey, true)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 
 	broaderKey := Prefix{unsafeParseAddr("10.0.0.0"), 8}
 	trie, node := trie.GetOrInsert(broaderKey, false)
 
-	assert.Equal(t, 2, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Equal(t, trie, node)
 	assert.False(t, node.Data.(bool))
 
@@ -333,12 +334,12 @@ func TestGetOrInsertNarrower32(t *testing.T) {
 	existingKey := Prefix{unsafeParseAddr("10.224.0.0"), 16}
 	trie, err := trie.Insert(existingKey, true)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 
 	narrowerKey := Prefix{unsafeParseAddr("10.224.24.00"), 24}
 	trie, node := trie.GetOrInsert(narrowerKey, false)
 
-	assert.Equal(t, 2, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.NotEqual(t, trie, node)
 	assert.False(t, node.Data.(bool))
 
@@ -352,12 +353,12 @@ func TestGetOrInsertDisjoint32(t *testing.T) {
 	existingKey := Prefix{unsafeParseAddr("10.224.0.0"), 16}
 	trie, err := trie.Insert(existingKey, true)
 	assert.Nil(t, err)
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 
 	disjointKey := Prefix{unsafeParseAddr("10.225.0.0"), 16}
 	trie, node := trie.GetOrInsert(disjointKey, false)
 
-	assert.Equal(t, 2, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.False(t, node.Data.(bool))
 
 	assert.True(t, trie.Match(existingKey).Data.(bool))
@@ -369,10 +370,10 @@ func TestGetOrInsertInActive32(t *testing.T) {
 
 	trie, _ = trie.Insert(Prefix{unsafeParseAddr("10.224.0.0"), 16}, true)
 	trie, _ = trie.Insert(Prefix{unsafeParseAddr("10.225.0.0"), 16}, true)
-	assert.Equal(t, 2, trie.NumNodes())
+	assert.True(t, trie.isValid())
 
 	trie, node := trie.GetOrInsert(Prefix{unsafeParseAddr("10.224.0.0"), 15}, false)
-	assert.Equal(t, 3, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Equal(t, trie, node)
 	assert.False(t, node.Data.(bool))
 }
@@ -386,7 +387,7 @@ func TestNoMatchTooBroad32(t *testing.T) {
 	}, nil)
 	assert.Nil(t, err)
 	assert.True(t, trie.active())
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 	assert.Equal(t, 1, trie.height())
 
 	assert.Nil(t, trie.Match(Prefix{
@@ -457,7 +458,7 @@ func TestNoMatchPrefixMisMatch32(t *testing.T) {
 			}, nil)
 			assert.Nil(t, err)
 			assert.True(t, trie.active())
-			assert.Equal(t, 1, trie.NumNodes())
+			assert.True(t, trie.isValid())
 			assert.Equal(t, 1, trie.height())
 
 			assert.Nil(t, trie.Match(Prefix{
@@ -516,7 +517,7 @@ func TestMatchSimplePrefixMatch32(t *testing.T) {
 			}
 			trie, err := trie.Insert(key, nil)
 			assert.Nil(t, err)
-			assert.Equal(t, 1, trie.NumNodes())
+			assert.True(t, trie.isValid())
 			assert.Equal(t, 1, trie.height())
 
 			assert := assert.New(t)
@@ -575,7 +576,7 @@ func TestMatchPartialByteMatches32(t *testing.T) {
 			trie, err := trie.Insert(key, nil)
 			assert.Nil(t, err)
 			assert.True(t, trie.active())
-			assert.Equal(t, 1, trie.NumNodes())
+			assert.True(t, trie.isValid())
 			assert.Equal(t, 1, trie.height())
 
 			assert := assert.New(t)
@@ -634,19 +635,19 @@ func TestInsertOverlapping32(t *testing.T) {
 					trie, err := trie.Insert(first, nil)
 					assert.Nil(t, err)
 					assert.NotNil(t, trie.Match(first))
-					assert.Equal(t, 1, trie.NumNodes())
+					assert.True(t, trie.isValid())
 					assert.Equal(t, 1, trie.height())
 
 					trie, err = trie.Insert(second, nil)
 					assert.Nil(t, err)
 					assert.NotNil(t, trie.Match(second))
-					assert.Equal(t, 2, trie.NumNodes())
+					assert.True(t, trie.isValid())
 					assert.Equal(t, 2, trie.height())
 
 					trie, err = trie.Insert(third, nil)
 					assert.Nil(t, err)
 					assert.NotNil(t, trie.Match(third))
-					assert.Equal(t, 3, trie.NumNodes())
+					assert.True(t, trie.isValid())
 					assert.Equal(t, 3, trie.height())
 				}
 			}
@@ -662,14 +663,14 @@ func TestInsertOverlapping32(t *testing.T) {
 					assert.Nil(t, err)
 					assert.True(t, trie.active())
 					assert.NotNil(t, trie)
-					assert.Equal(t, 1, trie.NumNodes())
+					assert.True(t, trie.isValid())
 					assert.Equal(t, 1, trie.height())
 
 					dup := key
 					newTrie, err := trie.Insert(dup, nil)
 					assert.NotNil(t, err)
 					assert.Equal(t, trie, newTrie)
-					assert.Equal(t, 1, trie.NumNodes())
+					assert.True(t, trie.isValid())
 					assert.Equal(t, 1, trie.height())
 				}
 			}
@@ -715,13 +716,13 @@ func TestInsertDisjoint32(t *testing.T) {
 					trie, err := trie.Insert(first, nil)
 					assert.Nil(t, err)
 					assert.Equal(t, trie.Prefix, first)
-					assert.Equal(t, 1, trie.NumNodes())
+					assert.True(t, trie.isValid())
 					assert.Equal(t, 1, trie.height())
 
 					trie, err = trie.Insert(second, nil)
 					assert.Nil(t, err)
 					assert.NotNil(t, trie.Match(second))
-					assert.Equal(t, 2, trie.NumNodes())
+					assert.True(t, trie.isValid())
 					assert.Equal(t, 2, trie.height())
 
 					assert.Nil(t, trie.Match(tt.super))
@@ -735,7 +736,7 @@ func TestInsertDisjoint32(t *testing.T) {
 					trie, err = trie.Insert(tt.super, nil)
 					assert.Nil(t, err)
 					assert.NotNil(t, trie.Match(tt.super))
-					assert.Equal(t, 3, trie.NumNodes())
+					assert.True(t, trie.isValid())
 					assert.Equal(t, 2, trie.height())
 				}
 			}
@@ -1214,6 +1215,7 @@ func TestSuccessivelyBetter32(t *testing.T) {
 		trie, err = trie.Insert(key, nil)
 		assert.Nil(t, err)
 		assert.Equal(t, index+1, trie.NumNodes())
+		assert.True(t, trie.isValid())
 		assert.Equal(t, index+1, trie.height())
 
 		for i, searchKey := range keys {
@@ -1234,6 +1236,7 @@ func TestSuccessivelyBetter32(t *testing.T) {
 		trie, err = trie.Delete(key)
 		assert.Nil(t, err)
 		assert.Equal(t, len(keys)-index-1, trie.NumNodes())
+		assert.True(t, trie.isValid())
 		assert.Equal(t, len(keys)-index-1, trie.height())
 
 		for i, searchKey := range keys {

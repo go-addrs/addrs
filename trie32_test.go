@@ -14,6 +14,7 @@ func TestTrieInsert(t *testing.T) {
 	err := trie.Insert(key, true)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 }
 
 func TestTrieInsertOrUpdate(t *testing.T) {
@@ -36,6 +37,7 @@ func TestTrieInsertOrUpdate(t *testing.T) {
 	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
 	assert.False(t, value.(bool))
+	assert.True(t, trie.isValid())
 }
 
 func TestTrieUpdate(t *testing.T) {
@@ -60,6 +62,7 @@ func TestTrieUpdate(t *testing.T) {
 	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
 	assert.False(t, value.(bool))
+	assert.True(t, trie.isValid())
 }
 
 func TestTrieGetOrInsert(t *testing.T) {
@@ -71,6 +74,7 @@ func TestTrieGetOrInsert(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, value.(bool))
 	assert.Equal(t, 1, trie.NumNodes())
+	assert.True(t, trie.isValid())
 }
 
 func TestTrieMatch(t *testing.T) {
@@ -82,6 +86,7 @@ func TestTrieMatch(t *testing.T) {
 	t.Run("None", func(t *testing.T) {
 		level, _, _ := trie.Match(Prefix{Addr{0x0ae01000}, 24})
 		assert.Equal(t, MatchNone, level)
+		assert.True(t, trie.isValid())
 	})
 
 	t.Run("Exact", func(t *testing.T) {
@@ -89,6 +94,7 @@ func TestTrieMatch(t *testing.T) {
 		assert.Equal(t, MatchExact, level)
 		assert.Equal(t, insertKey, key)
 		assert.True(t, value.(bool))
+		assert.True(t, trie.isValid())
 	})
 
 	t.Run("Contains", func(t *testing.T) {
@@ -96,6 +102,7 @@ func TestTrieMatch(t *testing.T) {
 		assert.Equal(t, MatchContains, level)
 		assert.Equal(t, insertKey, key)
 		assert.True(t, value.(bool))
+		assert.True(t, trie.isValid())
 	})
 }
 
@@ -110,6 +117,7 @@ func TestTrieDelete(t *testing.T) {
 		err := trie.Delete(key)
 		assert.Nil(t, err)
 		assert.Equal(t, 0, trie.NumNodes())
+		assert.True(t, trie.isValid())
 	})
 
 	t.Run("Not Found", func(t *testing.T) {
@@ -122,6 +130,7 @@ func TestTrieDelete(t *testing.T) {
 		err := trie.Delete(key)
 		assert.NotNil(t, err)
 		assert.Equal(t, 1, trie.NumNodes())
+		assert.True(t, trie.isValid())
 	})
 
 	t.Run("Not Exact", func(t *testing.T) {
@@ -134,6 +143,7 @@ func TestTrieDelete(t *testing.T) {
 		err := trie.Delete(key)
 		assert.NotNil(t, err)
 		assert.Equal(t, 1, trie.NumNodes())
+		assert.True(t, trie.isValid())
 	})
 }
 
@@ -151,6 +161,7 @@ func TestTrieIterate(t *testing.T) {
 		return true
 	})
 	assert.True(t, found)
+	assert.True(t, trie.isValid())
 }
 
 func TestTrieAggregate(t *testing.T) {
@@ -170,4 +181,5 @@ func TestTrieAggregate(t *testing.T) {
 		return true
 	})
 	assert.True(t, found)
+	assert.True(t, trie.isValid())
 }
