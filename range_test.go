@@ -87,3 +87,108 @@ func TestRangeContains(t *testing.T) {
 		})
 	}
 }
+
+func TestRangeMinus(t *testing.T) {
+	tests := []struct {
+		description string
+		a, b        Range
+		result      []Range
+	}{
+		{
+			description: "disjoint left",
+			a:           unsafeParsePrefix("10.224.24.0/22").Range(),
+			b:           unsafeParsePrefix("10.224.0.0/22").Range(),
+			result: []Range{
+				unsafeParsePrefix("10.224.24.0/22").Range(),
+			},
+		},
+		{
+			description: "overlap right",
+			a:           Range{Addr{100}, Addr{200}},
+			b:           Range{Addr{50}, Addr{150}},
+			result: []Range{
+				Range{Addr{151}, Addr{200}},
+			},
+		},
+		{
+			description: "larger same last",
+			a:           unsafeParsePrefix("10.224.27.0/24").Range(),
+			b:           unsafeParsePrefix("10.224.24.0/22").Range(),
+			result:      []Range{},
+		},
+		{
+			description: "overlap all",
+			a:           Range{Addr{100}, Addr{200}},
+			b:           Range{Addr{50}, Addr{250}},
+			result:      []Range{},
+		},
+
+		{
+			description: "contained same first",
+			a:           unsafeParsePrefix("10.224.24.0/22").Range(),
+			b:           unsafeParsePrefix("10.224.24.0/24").Range(),
+			result: []Range{
+				validRange(t, unsafeParseAddr("10.224.25.0"), unsafeParseAddr("10.224.27.255")),
+			},
+		},
+		{
+			description: "same range",
+			a:           unsafeParsePrefix("10.224.24.0/22").Range(),
+			b:           unsafeParsePrefix("10.224.24.0/22").Range(),
+			result:      []Range{},
+		},
+		{
+			description: "larger same first",
+			a:           unsafeParsePrefix("10.224.24.0/24").Range(),
+			b:           unsafeParsePrefix("10.224.24.0/22").Range(),
+			result:      []Range{},
+		},
+
+		{
+			description: "wholly contained",
+			a:           Range{Addr{100}, Addr{200}},
+			b:           Range{Addr{110}, Addr{190}},
+			result: []Range{
+				Range{Addr{100}, Addr{109}},
+				Range{Addr{191}, Addr{200}},
+			},
+		},
+		{
+			description: "contained same last",
+			a:           unsafeParsePrefix("10.224.24.0/22").Range(),
+			b:           unsafeParsePrefix("10.224.27.0/24").Range(),
+			result: []Range{
+				validRange(t, unsafeParseAddr("10.224.24.0"), unsafeParseAddr("10.224.26.255")),
+			},
+		},
+		{
+			description: "overlap left",
+			a:           Range{Addr{100}, Addr{200}},
+			b:           Range{Addr{150}, Addr{250}},
+			result: []Range{
+				Range{Addr{100}, Addr{149}},
+			},
+		},
+
+		{
+			description: "disjoint right",
+			a:           unsafeParsePrefix("10.224.24.0/22").Range(),
+			b:           unsafeParsePrefix("10.224.200.0/22").Range(),
+			result: []Range{
+				unsafeParsePrefix("10.224.24.0/22").Range(),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			result := tt.a.Minus(tt.b)
+
+			// A trick to compare the results as arrays
+			var expected, actual [2]Range
+			copy(expected[:], tt.result)
+			copy(actual[:], result)
+			assert.Equal(t, len(tt.result), len(result))
+			assert.Equal(t, expected, actual)
+		})
+	}
+}

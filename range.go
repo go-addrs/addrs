@@ -49,3 +49,34 @@ func (me Range) Contains(other Range) bool {
 
 	return me.first.ui <= other.first.ui && other.last.ui <= me.last.ui
 }
+
+// Minus returns a slice of ranges resulting from subtracting the given range
+// The slice will contain from 0 to 2 new ranges depending on how they overlap
+func (me Range) Minus(other Range) []Range {
+	result := []Range{}
+	if me.first.LessThan(other.first) {
+		result = append(result, Range{
+			me.first,
+			Min(other.prev(), me.last),
+		})
+	}
+	if other.last.LessThan(me.last) {
+		result = append(result, Range{
+			Max(me.first, other.next()),
+			me.last,
+		})
+	}
+	return result
+}
+
+// prev returns the address just before the range (or maxint) if the range
+// starts at the beginning of the IP space due to overflow)
+func (me Range) prev() Addr {
+	return Addr{me.first.ui - 1}
+}
+
+// next returns the next address after the range (or 0 if the range goes to the
+// end of the IP space due to overflow)
+func (me Range) next() Addr {
+	return Addr{me.last.ui + 1}
+}
