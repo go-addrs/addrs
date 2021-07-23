@@ -104,14 +104,34 @@ func contains32(shorter, longer Prefix) (matches, exact bool, common, child uint
 	return
 }
 
+type compare int
+
+const (
+	compareSame        compare = iota
+	compareContains            // Second key is a subset of the first
+	compareIsContained         // Second key is a superset of the first
+	compareDisjoint
+)
+
 // compare32 is a helper which compares two keys to find their relationship
-func compare32(a, b Prefix) (aMatch, bMatch, reversed bool, common, child uint32) {
+func compare32(a, b Prefix) (result compare, reversed bool, common, child uint32) {
+	var aMatch, bMatch bool
 	// Figure out which is the longer prefix and reverse them if b is shorter
 	reversed = b.length < a.length
 	if reversed {
 		bMatch, aMatch, common, child = contains32(b, a)
 	} else {
 		aMatch, bMatch, common, child = contains32(a, b)
+	}
+	switch {
+	case aMatch && bMatch:
+		result = compareSame
+	case aMatch && !bMatch:
+		result = compareContains
+	case !aMatch && bMatch:
+		result = compareIsContained
+	case !aMatch && !bMatch:
+		result = compareDisjoint
 	}
 	return
 }
@@ -292,9 +312,9 @@ func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNo
 	}
 
 	// Test containership both ways
-	trieContains, nodeContains, reversed, common, child := compare32(me.Prefix, node.Prefix)
-	switch {
-	case trieContains && nodeContains:
+	result, reversed, common, child := compare32(me.Prefix, node.Prefix)
+	switch result {
+	case compareSame:
 		// They have the same key
 		if me.isActive && !opts.update {
 			return me, fmt.Errorf("a node with that key already exists")
@@ -306,7 +326,7 @@ func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNo
 		node.isActive = true
 		return node, nil
 
-	case trieContains && !nodeContains:
+	case compareContains:
 		// Trie node's key contains the new node's key. Insert it recursively.
 		newChild, err := me.children[child].insert(node, opts)
 		if err != nil {
@@ -316,7 +336,7 @@ func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNo
 		newNode.children[child] = newChild
 		return newNode, nil
 
-	case !trieContains && nodeContains:
+	case compareIsContained:
 		// New node's key contains the trie node's key. Insert new node as the parent of the trie.
 		if !opts.insert {
 			return me, fmt.Errorf("the key doesn't exist to update")
@@ -325,7 +345,7 @@ func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNo
 		node.isActive = true
 		return node, nil
 
-	default:
+	case compareDisjoint:
 		// Keys are disjoint. Create a new (inactive) parent node to join them side-by-side.
 		var newChild *trieNode32
 		newChild, err := newChild.insert(node, opts)
@@ -351,6 +371,7 @@ func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNo
 			children: children,
 		}, nil
 	}
+	panic("unreachable code")
 }
 
 // Delete removes a node from the trie given a key and returns the new root of
@@ -366,13 +387,25 @@ func (me *trieNode32) Delete(key Prefix) (newHead *trieNode32, err error) {
 		return me, fmt.Errorf("cannot delete from a nil")
 	}
 
-	trieContains, nodeContains, _, _, child := compare32(me.Prefix, key)
-	if !trieContains {
-		return me, fmt.Errorf("key not found")
-	}
+	result, _, _, child := compare32(me.Prefix, key)
+	switch result {
+	case compareSame:
+		// Delete this node
+		if me.children[0] == nil {
+			// At this point, it doesn't matter if it is nil or not
+			return me.children[1], nil
+		}
+		if me.children[1] == nil {
+			return me.children[0], nil
+		}
 
-	if !nodeContains {
-		// Trie node's key contains the key. Delete recursively.
+		// The two children are disjoint so keep this inactive node.
+		newNode := me.makeCopy()
+		newNode.isActive = false
+		return newNode, nil
+
+	case compareContains:
+		// Delete recursively.
 		newChild, err := me.children[child].Delete(key)
 		if err != nil {
 			return me, err
@@ -381,21 +414,10 @@ func (me *trieNode32) Delete(key Prefix) (newHead *trieNode32, err error) {
 		newNode := me.makeCopy()
 		newNode.children[child] = newChild
 		return newNode, nil
-	}
 
-	// The key matches this node exactly, delete this node
-	if me.children[0] == nil {
-		// At this point, it doesn't matter if it is nil or not
-		return me.children[1], nil
+	default:
+		return me, fmt.Errorf("key not found")
 	}
-	if me.children[1] == nil {
-		return me.children[0], nil
-	}
-
-	// The two children are disjoint so keep this inactive node.
-	newNode := me.makeCopy()
-	newNode.isActive = false
-	return newNode, nil
 }
 
 // active returns whether a node represents an active prefix in the tree (true)

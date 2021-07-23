@@ -958,11 +958,11 @@ func TestContains32(t *testing.T) {
 
 			// Opportunistically test the compare function
 			t.Run("compare forward", func(t *testing.T) {
-				_, _, reversed, _, _ := compare32(tt.a, tt.b)
+				_, reversed, _, _ := compare32(tt.a, tt.b)
 				assert.False(t, reversed)
 			})
 			t.Run("compare reversed", func(t *testing.T) {
-				_, _, reversed, _, _ := compare32(tt.b, tt.a)
+				_, reversed, _, _ := compare32(tt.b, tt.a)
 				assert.Equal(t, tt.a.length != tt.b.length, reversed)
 			})
 		})
