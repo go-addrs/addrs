@@ -154,6 +154,32 @@ func (me *trieNode32) setSize() {
 	}
 }
 
+// Equal returns true if all of the entries are the same in the two data structures
+func (me *trieNode32) Equal(other *trieNode32) bool {
+	switch {
+	case me == other:
+		return true
+
+	case me == nil:
+		return false
+	case other == nil:
+		return false
+	case me.isActive != other.isActive:
+		return false
+	case !me.Prefix.Equal(other.Prefix):
+		return false
+	case me.isActive && !dataEqual(me.Data, other.Data):
+		return false
+	case !me.children[0].Equal(other.children[0]):
+		return false
+	case !me.children[1].Equal(other.children[1]):
+		return false
+
+	default:
+		return true
+	}
+}
+
 // GetOrInsert returns the existing value if an exact match is found, otherwise, inserts the given default
 func (me *trieNode32) GetOrInsert(searchKey Prefix, data interface{}) (head, result *trieNode32) {
 	defer func() {
@@ -434,19 +460,23 @@ type dataContainer struct {
 	data  interface{}
 }
 
-func dataEqual(a, b dataContainer) bool {
-	if !(a.valid && b.valid) {
-		return false
-	}
+func dataEqual(a, b interface{}) bool {
 	// If the data stored are EqualComparable, compare it using its method.
 	// This is useful to allow mapping to a more complex type (e.g.
 	// netaddr.IPSet)  that is not comparable by normal means.
-	switch t := a.data.(type) {
+	switch t := a.(type) {
 	case EqualComparable:
-		return t.EqualInterface(b.data)
+		return t.EqualInterface(b)
 	default:
-		return a.data == b.data
+		return a == b
 	}
+}
+
+func dataContainerEqual(a, b dataContainer) bool {
+	if !(a.valid && b.valid) {
+		return false
+	}
+	return dataEqual(a.data, b.data)
 }
 
 // EqualComparable is an interface used to compare data. If the datatype you
@@ -493,7 +523,7 @@ func (me *trieNode32) aggregable(data dataContainer) (bool, dataContainer) {
 	rightAggegable, rightData := right.aggregable(data)
 
 	arePeers := (me.length+1) == left.length && left.length == right.length
-	if arePeers && leftAggegable && rightAggegable && dataEqual(leftData, rightData) {
+	if arePeers && leftAggegable && rightAggegable && dataContainerEqual(leftData, rightData) {
 		return true, leftData
 	}
 	return false, dataContainer{}
@@ -540,7 +570,7 @@ func (me *trieNode32) aggregate(data dataContainer, callback trie32Callback) boo
 	}
 
 	aggregable, d := me.aggregable(data)
-	if aggregable && !dataEqual(data, d) {
+	if aggregable && !dataContainerEqual(data, d) {
 		if callback != nil {
 			if !callback(me.Prefix, d.data) {
 				return false

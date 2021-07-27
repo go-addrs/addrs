@@ -183,3 +183,18 @@ func TestTrieAggregate(t *testing.T) {
 	assert.True(t, found)
 	assert.True(t, trie.isValid())
 }
+
+func TestTrieEqual(t *testing.T) {
+	var a, b trie32
+
+	assert.True(t, a.Equal(&b))
+	assert.True(t, b.Equal(&a))
+
+	a.Insert(Prefix{Addr{0x0ae01801}, 24}, true)
+	assert.False(t, a.Equal(&b))
+	assert.False(t, b.Equal(&a))
+
+	b.Insert(Prefix{Addr{0x0ae01800}, 24}, true)
+	assert.False(t, a.Equal(&b))
+	assert.False(t, b.Equal(&a))
+}

@@ -1505,3 +1505,85 @@ func TestAggregateEqualComparable32(t *testing.T) {
 		})
 	}
 }
+
+// Like the TestAggregate above but using a type that is comparable through the
+// EqualComparable interface.
+func TestTrieNodeEqual(t *testing.T) {
+	node := &trieNode32{}
+	tests := []struct {
+		desc  string
+		a, b  *trieNode32
+		equal bool
+	}{
+		{
+			desc:  "nil",
+			equal: true,
+		},
+		{
+			desc:  "one nil",
+			a:     &trieNode32{},
+			equal: false,
+		},
+		{
+			desc:  "two simple ones",
+			a:     &trieNode32{},
+			b:     &trieNode32{},
+			equal: true,
+		},
+		{
+			desc:  "one active",
+			a:     &trieNode32{},
+			b:     &trieNode32{isActive: true},
+			equal: false,
+		},
+		{
+			desc:  "two active",
+			a:     &trieNode32{isActive: true},
+			b:     &trieNode32{isActive: true},
+			equal: true,
+		},
+		{
+			desc:  "different data",
+			a:     &trieNode32{isActive: true, Data: true},
+			b:     &trieNode32{isActive: true, Data: false},
+			equal: false,
+		},
+		{
+			desc:  "same node",
+			a:     node,
+			b:     node,
+			equal: true,
+		},
+		{
+			desc:  "inactive different prefixes",
+			a:     &trieNode32{isActive: false, Prefix: Prefix{Addr{0}, 32}},
+			b:     &trieNode32{isActive: false, Prefix: Prefix{Addr{1}, 32}},
+			equal: false,
+		},
+		{
+			desc:  "inactive different prefix lengths",
+			a:     &trieNode32{isActive: false, Prefix: Prefix{length: 32}},
+			b:     &trieNode32{isActive: false, Prefix: Prefix{length: 31}},
+			equal: false,
+		},
+		{
+			desc:  "child 1 different",
+			a:     &trieNode32{},
+			b:     &trieNode32{children: [2]*trieNode32{&trieNode32{}, nil}},
+			equal: false,
+		},
+		{
+			desc:  "child 2 different",
+			a:     &trieNode32{},
+			b:     &trieNode32{children: [2]*trieNode32{nil, &trieNode32{}}},
+			equal: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			assert.Equal(t, tt.equal, tt.a.Equal(tt.b))
+			assert.Equal(t, tt.equal, tt.b.Equal(tt.a))
+		})
+	}
+}

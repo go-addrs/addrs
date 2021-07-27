@@ -25,6 +25,14 @@ func (me *trie32) NumNodes() int {
 	return me.top.NumNodes()
 }
 
+// Equal returns true if the other structure contains the same
+func (me *trie32) Equal(other *trie32) bool {
+	if me == nil || other == nil {
+		return me == other
+	}
+	return me.top.Equal(other.top)
+}
+
 // Insert adds the given key / value pair. If the new key cannot be inserted or
 // already exists, an error is returned.
 func (me *trie32) Insert(key Prefix, value interface{}) error {
