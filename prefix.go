@@ -217,3 +217,20 @@ func (me Prefix) Range() Range {
 	r, _ := NewRange(me.Network().IP(), me.Broadcast().IP())
 	return r
 }
+
+// Halves returns two prefixes that add up to the current one
+// if the prefix is a /32, the return value is undefined
+func (me Prefix) Halves() (a, b Prefix) {
+	if me.length < 32 {
+		base := me.Network().Addr
+		a = Prefix{
+			Addr{base.ui},
+			me.length + 1,
+		}
+		b = Prefix{
+			Addr{base.ui | (0x80000000 >> me.length)},
+			me.length + 1,
+		}
+	}
+	return
+}

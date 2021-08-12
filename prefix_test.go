@@ -387,3 +387,39 @@ func TestPrefixFromAddrMask(t *testing.T) {
 	mask, _ := CreateMask(24)
 	assert.Equal(t, Prefix{Addr: address, length: 24}, PrefixFromAddrMask(address, mask))
 }
+
+func TestPrefixHalves(t *testing.T) {
+	tests := []struct {
+		prefix Prefix
+		a, b   Prefix
+	}{
+		{
+			prefix: unsafeParsePrefix("0.0.0.0/0"),
+			a:      unsafeParsePrefix("0.0.0.0/1"),
+			b:      unsafeParsePrefix("128.0.0.0/1"),
+		},
+		{
+			prefix: unsafeParsePrefix("10.224.0.0/16"),
+			a:      unsafeParsePrefix("10.224.0.0/17"),
+			b:      unsafeParsePrefix("10.224.128.0/17"),
+		},
+		{
+			prefix: unsafeParsePrefix("10.224.24.1/24"),
+			a:      unsafeParsePrefix("10.224.24.0/25"),
+			b:      unsafeParsePrefix("10.224.24.128/25"),
+		},
+		{
+			prefix: unsafeParsePrefix("10.224.24.117/31"),
+			a:      unsafeParsePrefix("10.224.24.116/32"),
+			b:      unsafeParsePrefix("10.224.24.117/32"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.prefix.String(), func(t *testing.T) {
+			a, b := tt.prefix.Halves()
+			assert.Equal(t, tt.a, a)
+			assert.Equal(t, tt.b, b)
+		})
+	}
+}
