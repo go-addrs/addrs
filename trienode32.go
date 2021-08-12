@@ -69,52 +69,22 @@ func intMax(a, b int) int {
 // | true    | false | 1     | `longer` belongs in `shorter`'s `children[1]`
 // | true    | true  | NA    | `shorter` and `longer` are the same key
 func contains32(shorter, longer Prefix) (matches, exact bool, common, child uint32) {
-	pivotMask := uint32(0x80000000)
-
-	// calculate `exact`, `common`, and `child` at the end with defer
-	defer func() {
-		if !matches {
-			s, l := shorter.ui, longer.ui
-
-			common = uint32(bits.LeadingZeros32(s ^ l))
-
-			// Whether `longer` goes on the left (0) or right (1)
-			if longer.ui < shorter.ui {
-				child = 0
-			} else {
-				child = 1
-			}
-			return
-		}
-
-		common = shorter.length
-		exact = shorter.length == longer.length
-		if !exact {
-			// Whether `longer` goes on the left (0) or right (1)
-			if longer.ui&pivotMask == 0 {
-				child = 0
-			} else {
-				child = 1
-			}
-		}
-	}()
-
-	// Prefix length of 0 matches everything!
-	if shorter.length == 0 {
-		matches = true
-		return
-	}
-
 	mask := uint32(0xffffffff) << (32 - shorter.length)
 
-	if shorter.ui&mask != longer.ui&mask {
-		matches = false
-		return
+	matches = shorter.ui&mask == longer.ui&mask
+	if matches {
+		exact = shorter.length == longer.length
+		common = shorter.length
+	} else {
+		common = uint32(bits.LeadingZeros32(shorter.ui ^ longer.ui))
 	}
-
-	pivotMask >>= shorter.length
-
-	matches = true
+	if !exact {
+		// Whether `longer` goes on the left (0) or right (1)
+		pivotMask := uint32(0x80000000) >> common
+		if longer.ui&pivotMask != 0 {
+			child = 1
+		}
+	}
 	return
 }
 
