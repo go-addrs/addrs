@@ -376,3 +376,196 @@ func TestExample3(t *testing.T) {
 	})
 	assert.Equal(t, 1, iterations)
 }
+
+func TestMapInsert(t *testing.T) {
+	var trie Map
+	assert.Equal(t, 0, trie.trie.NumNodes())
+
+	key := Prefix{Addr{0x0ae01800}, 24}
+	err := trie.InsertPrefix(key, true)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, trie.trie.NumNodes())
+	assert.True(t, trie.trie.isValid())
+}
+
+func TestMapInsertOrUpdate(t *testing.T) {
+	var trie Map
+	assert.Equal(t, 0, trie.trie.NumNodes())
+
+	key := Prefix{Addr{0x0ae01800}, 24}
+	err := trie.InsertOrUpdatePrefix(key, true)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, trie.trie.NumNodes())
+	match, matchedKey, value := trie.MatchPrefix(key)
+	assert.Equal(t, MatchExact, match)
+	assert.Equal(t, key, matchedKey)
+	assert.True(t, value.(bool))
+
+	err = trie.InsertOrUpdatePrefix(key, false)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, trie.trie.NumNodes())
+	match, matchedKey, value = trie.MatchPrefix(key)
+	assert.Equal(t, MatchExact, match)
+	assert.Equal(t, key, matchedKey)
+	assert.False(t, value.(bool))
+	assert.True(t, trie.trie.isValid())
+}
+
+func TestMapUpdate(t *testing.T) {
+	var trie Map
+	assert.Equal(t, 0, trie.trie.NumNodes())
+
+	key := Prefix{Addr{0x0ae01800}, 24}
+	trie.InsertPrefix(key, false)
+
+	err := trie.UpdatePrefix(key, true)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, trie.trie.NumNodes())
+	match, matchedKey, value := trie.MatchPrefix(key)
+	assert.Equal(t, MatchExact, match)
+	assert.Equal(t, key, matchedKey)
+	assert.True(t, value.(bool))
+
+	err = trie.UpdatePrefix(key, false)
+	assert.Nil(t, err)
+	assert.Equal(t, 1, trie.trie.NumNodes())
+	match, matchedKey, value = trie.MatchPrefix(key)
+	assert.Equal(t, MatchExact, match)
+	assert.Equal(t, key, matchedKey)
+	assert.False(t, value.(bool))
+	assert.True(t, trie.trie.isValid())
+}
+
+func TestMapGetOrInsert(t *testing.T) {
+	var trie Map
+	assert.Equal(t, 0, trie.trie.NumNodes())
+
+	key := Prefix{Addr{0x0ae01800}, 24}
+	value, err := trie.GetOrInsertPrefix(key, true)
+	assert.Nil(t, err)
+	assert.True(t, value.(bool))
+	assert.Equal(t, 1, trie.trie.NumNodes())
+	assert.True(t, trie.trie.isValid())
+}
+
+func TestMapMatch(t *testing.T) {
+	var trie Map
+
+	insertKey := Prefix{Addr{0x0ae01800}, 24}
+	trie.InsertPrefix(insertKey, true)
+
+	t.Run("None", func(t *testing.T) {
+		level, _, _ := trie.MatchPrefix(Prefix{Addr{0x0ae01000}, 24})
+		assert.Equal(t, MatchNone, level)
+		assert.True(t, trie.trie.isValid())
+	})
+
+	t.Run("Exact", func(t *testing.T) {
+		level, key, value := trie.MatchPrefix(Prefix{Addr{0x0ae01800}, 24})
+		assert.Equal(t, MatchExact, level)
+		assert.Equal(t, insertKey, key)
+		assert.True(t, value.(bool))
+		assert.True(t, trie.trie.isValid())
+	})
+
+	t.Run("Contains", func(t *testing.T) {
+		level, key, value := trie.MatchPrefix(Prefix{Addr{0x0ae01817}, 32})
+		assert.Equal(t, MatchContains, level)
+		assert.Equal(t, insertKey, key)
+		assert.True(t, value.(bool))
+		assert.True(t, trie.trie.isValid())
+	})
+}
+
+func TestMapRemovePrefix(t *testing.T) {
+	t.Run("Success", func(t *testing.T) {
+		var trie Map
+
+		insertKey := Prefix{Addr{0x0ae01800}, 24}
+		trie.InsertPrefix(insertKey, true)
+
+		key := Prefix{Addr{0x0ae01800}, 24}
+		err := trie.RemovePrefix(key)
+		assert.Nil(t, err)
+		assert.Equal(t, 0, trie.trie.NumNodes())
+		assert.True(t, trie.trie.isValid())
+	})
+
+	t.Run("Not Found", func(t *testing.T) {
+		var trie Map
+
+		insertKey := Prefix{Addr{0x0ae01800}, 24}
+		trie.InsertPrefix(insertKey, true)
+
+		key := Prefix{Addr{0x0ae01000}, 24}
+		err := trie.RemovePrefix(key)
+		assert.NotNil(t, err)
+		assert.Equal(t, 1, trie.trie.NumNodes())
+		assert.True(t, trie.trie.isValid())
+	})
+
+	t.Run("Not Exact", func(t *testing.T) {
+		var trie Map
+
+		insertKey := Prefix{Addr{0x0ae01800}, 24}
+		trie.InsertPrefix(insertKey, true)
+
+		key := Prefix{Addr{0x0ae01817}, 32}
+		err := trie.RemovePrefix(key)
+		assert.NotNil(t, err)
+		assert.Equal(t, 1, trie.trie.NumNodes())
+		assert.True(t, trie.trie.isValid())
+	})
+}
+
+func TestMapIterate(t *testing.T) {
+	var trie Map
+
+	insertKey := Prefix{Addr{0x0ae01800}, 24}
+	trie.InsertPrefix(insertKey, true)
+
+	found := false
+	trie.Iterate(func(key Prefix, value interface{}) bool {
+		assert.Equal(t, insertKey, key)
+		assert.True(t, value.(bool))
+		found = true
+		return true
+	})
+	assert.True(t, found)
+	assert.True(t, trie.trie.isValid())
+}
+
+func TestMapAggregate(t *testing.T) {
+	var trie Map
+
+	insertKey := Prefix{Addr{0x0ae01800}, 24}
+	trie.InsertPrefix(insertKey, true)
+
+	secondKey := Prefix{Addr{0x0ae01817}, 32}
+	trie.InsertPrefix(secondKey, true)
+
+	found := false
+	trie.Aggregate(func(key Prefix, value interface{}) bool {
+		assert.Equal(t, insertKey, key)
+		assert.True(t, value.(bool))
+		found = true
+		return true
+	})
+	assert.True(t, found)
+	assert.True(t, trie.trie.isValid())
+}
+
+func TestMapEqual(t *testing.T) {
+	var a, b Map
+
+	assert.True(t, a.trie.Equal(b.trie))
+	assert.True(t, b.trie.Equal(a.trie))
+
+	a.InsertPrefix(Prefix{Addr{0x0ae01801}, 24}, true)
+	assert.False(t, a.trie.Equal(b.trie))
+	assert.False(t, b.trie.Equal(a.trie))
+
+	b.InsertPrefix(Prefix{Addr{0x0ae01800}, 24}, true)
+	assert.False(t, a.trie.Equal(b.trie))
+	assert.False(t, b.trie.Equal(a.trie))
+}

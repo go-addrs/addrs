@@ -12,8 +12,20 @@ package ipv4
 // supports efficient aggregation of prefix/value pairs based on equality of
 // values. See the README.md file for a more detailed discussion..
 type Map struct {
-	trie trie32
+	trie *trieNode32
 }
+
+// Match indicates how closely the given key matches the search result
+type Match int
+
+const (
+	// MatchNone indicates that no match was found
+	MatchNone Match = iota
+	// MatchContains indicates that a match was found that contains the search key but isn't exact
+	MatchContains
+	// MatchExact indicates that a match with the same prefix
+	MatchExact
+)
 
 // Size returns the number of exact prefixes stored in the map
 func (m *Map) Size() int {
@@ -22,31 +34,61 @@ func (m *Map) Size() int {
 
 // InsertPrefix inserts the given prefix with the given value into the map
 func (m *Map) InsertPrefix(prefix Prefix, value interface{}) error {
-	return m.trie.Insert(prefix, value)
+	var err error
+	var newHead *trieNode32
+	newHead, err = m.trie.Insert(prefix, value)
+	if err != nil {
+		return err
+	}
+
+	m.trie = newHead
+	return nil
 }
 
 // Insert is a convenient alternative to InsertPrefix that treats the given IP
 // address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
 func (m *Map) Insert(ip Addr, value interface{}) error {
-	return m.trie.Insert(
-		ipToKey(ip),
-		value,
-	)
+	return m.InsertPrefix(ipToKey(ip), value)
+}
+
+// UpdatePrefix inserts the given prefix with the given value into the map.
+// If the prefix already existed, it updates the associated value in place.
+func (m *Map) UpdatePrefix(prefix Prefix, value interface{}) error {
+	var err error
+	var newHead *trieNode32
+	newHead, err = m.trie.Update(prefix, value)
+	if err != nil {
+		return err
+	}
+
+	m.trie = newHead
+	return nil
+}
+
+// Update is a convenient alternative to UpdatePrefix that treats
+// the given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
+func (m *Map) Update(ip Addr, value interface{}) error {
+	return m.UpdatePrefix(ipToKey(ip), value)
 }
 
 // InsertOrUpdatePrefix inserts the given prefix with the given value into the map.
 // If the prefix already existed, it updates the associated value in place.
 func (m *Map) InsertOrUpdatePrefix(prefix Prefix, value interface{}) error {
-	return m.trie.InsertOrUpdate(prefix, value)
+	var err error
+	var newHead *trieNode32
+	newHead, err = m.trie.InsertOrUpdate(prefix, value)
+	if err != nil {
+		return err
+	}
+
+	m.trie = newHead
+	return nil
 }
 
 // InsertOrUpdate is a convenient alternative to InsertOrUpdatePrefix that treats
 // the given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
 func (m *Map) InsertOrUpdate(ip Addr, value interface{}) error {
-	return m.trie.InsertOrUpdate(
-		ipToKey(ip),
-		value,
-	)
+	return m.InsertOrUpdatePrefix(ipToKey(ip), value)
 }
 
 // GetPrefix returns the value in the map associated with the given network prefix
@@ -54,7 +96,7 @@ func (m *Map) InsertOrUpdate(ip Addr, value interface{}) error {
 // exact match is not found, found is false and value is nil and should be
 // ignored.
 func (m *Map) GetPrefix(prefix Prefix) (interface{}, bool) {
-	match, _, value := m.trie.Match(prefix)
+	match, _, value := m.MatchPrefix(prefix)
 
 	if match == MatchExact {
 		return value, true
@@ -66,28 +108,23 @@ func (m *Map) GetPrefix(prefix Prefix) (interface{}, bool) {
 // Get is a convenient alternative to GetPrefix that treats the given IP address
 // as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
 func (m *Map) Get(ip Addr) (interface{}, bool) {
-	key := ipToKey(ip)
-	match, _, value := m.trie.Match(key)
-
-	if match == MatchExact {
-		return value, true
-	}
-
-	return nil, false
+	return m.GetPrefix(ipToKey(ip))
 }
 
 // GetOrInsertPrefix returns the value associated with the given prefix if it
 // already exists. If it does not exist, it inserts it with the given value and
 // returns that.
 func (m *Map) GetOrInsertPrefix(prefix Prefix, value interface{}) (interface{}, error) {
-	return m.trie.GetOrInsert(prefix, value)
+	var newHead, node *trieNode32
+	newHead, node = m.trie.GetOrInsert(prefix, value)
+	m.trie = newHead
+	return node.Data, nil
 }
 
 // GetOrInsert is a convenient alternative to GetOrInsertPrefix that treats the
 // given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
 func (m *Map) GetOrInsert(ip Addr, value interface{}) (interface{}, error) {
-	key := ipToKey(ip)
-	return m.trie.GetOrInsert(key, value)
+	return m.GetOrInsertPrefix(ipToKey(ip), value)
 }
 
 // MatchPrefix returns the value in the map associated with the given network
@@ -95,26 +132,38 @@ func (m *Map) GetOrInsert(ip Addr, value interface{}) (interface{}, error) {
 // Prefix representing the longest prefix matched. If a match is *not*
 // found, matched is MatchNone and the other fields should be ignored
 func (m *Map) MatchPrefix(searchPrefix Prefix) (matched Match, prefix Prefix, value interface{}) {
-	return m.trie.Match(searchPrefix)
+	var node *trieNode32
+	node = m.trie.Match(searchPrefix)
+	if node == nil {
+		return MatchNone, Prefix{}, nil
+	}
+
+	var resultKey Prefix
+	resultKey = node.Prefix
+
+	if node.Prefix.length == searchPrefix.length {
+		return MatchExact, resultKey, node.Data
+	}
+	return MatchContains, resultKey, node.Data
 }
 
 // Match is a convenient alternative to MatchPrefix that treats the given IP
 // address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
 func (m *Map) Match(ip Addr) (matched Match, prefix Prefix, value interface{}) {
-	key := ipToKey(ip)
-	return m.trie.Match(key)
+	return m.MatchPrefix(ipToKey(ip))
 }
 
 // RemovePrefix removes the given prefix from the map with its associated value.
 // Only a prefix with an exact match will be removed.
-func (m *Map) RemovePrefix(prefix Prefix) {
-	m.trie.Delete(prefix)
+func (m *Map) RemovePrefix(prefix Prefix) (err error) {
+	m.trie, err = m.trie.Delete(prefix)
+	return
 }
 
 // Remove is a convenient alternative to RemovePrefix that treats the given IP
 // address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) Remove(ip Addr) {
-	m.trie.Delete(ipToKey(ip))
+func (m *Map) Remove(ip Addr) error {
+	return m.RemovePrefix(ipToKey(ip))
 }
 
 // MapCallback is the signature of the callback functions that can be passed to
