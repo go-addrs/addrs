@@ -57,12 +57,12 @@ func (me Range) Minus(other Range) []Range {
 	if me.first.LessThan(other.first) {
 		result = append(result, Range{
 			me.first,
-			Min(other.prev(), me.last),
+			MinAddr(other.prev(), me.last),
 		})
 	}
 	if other.last.LessThan(me.last) {
 		result = append(result, Range{
-			Max(me.first, other.next()),
+			MaxAddr(me.first, other.next()),
 			me.last,
 		})
 	}

@@ -49,16 +49,16 @@ func ParseAddr(address string) (Addr, error) {
 	return AddrFromStdIP(netIPv4)
 }
 
-// Min returns the address, a or b, which comes first in lexigraphical order
-func Min(a, b Addr) Addr {
+// MinAddr returns the address, a or b, which comes first in lexigraphical order
+func MinAddr(a, b Addr) Addr {
 	if a.LessThan(b) {
 		return a
 	}
 	return b
 }
 
-// Max returns the address, a or b, which comes last in lexigraphical order
-func Max(a, b Addr) Addr {
+// MaxAddr returns the address, a or b, which comes last in lexigraphical order
+func MaxAddr(a, b Addr) Addr {
 	if a.LessThan(b) {
 		return b
 	}

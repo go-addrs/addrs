@@ -85,16 +85,16 @@ func TestAddrLessThan(t *testing.T) {
 	assert.False(t, third.LessThan(third))
 }
 
-func TestAddrMin(t *testing.T) {
+func TestAddrMinAddr(t *testing.T) {
 	first, second := AddrFromUint32(0x0ae01701), AddrFromUint32(0x0ae01801)
 
-	assert.Equal(t, Min(first, second), first)
-	assert.Equal(t, Min(second, first), first)
+	assert.Equal(t, MinAddr(first, second), first)
+	assert.Equal(t, MinAddr(second, first), first)
 }
 
-func TestAddrMax(t *testing.T) {
+func TestAddrMaxAddr(t *testing.T) {
 	first, second := AddrFromUint32(0x0ae01701), AddrFromUint32(0x0ae01801)
 
-	assert.Equal(t, Max(first, second), second)
-	assert.Equal(t, Max(second, first), second)
+	assert.Equal(t, MaxAddr(first, second), second)
+	assert.Equal(t, MaxAddr(second, first), second)
 }
