@@ -10,6 +10,9 @@ import (
 // remaining bits are 0s
 type Mask Addr
 
+// MaxUint32 is the maximum integer that can be stored in a uint32, "all ones"
+const MaxUint32 = ^uint32(0)
+
 // CreateMask converts the given length (0-32) into a mask with that number of leading 1s
 func CreateMask(length int) (Mask, error) {
 	if length < 0 || SIZE < length {
@@ -79,6 +82,6 @@ func (me Mask) valid() bool {
 
 func lengthToMask(length int) Mask {
 	return Mask{
-		ui: ^uint32(0) << (SIZE - length),
+		ui: MaxUint32 << (SIZE - length),
 	}
 }
