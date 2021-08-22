@@ -88,6 +88,11 @@ func (me Addr) DefaultMask() Mask {
 	return lengthToMask(ones)
 }
 
+// Prefix returns a host prefix (/32) with the address
+func (me Addr) Prefix() Prefix {
+	return Prefix{me, uint32(SIZE)}
+}
+
 // String returns a string representing the address in dotted-quad notation
 func (me Addr) String() string {
 	a, b, c, d := me.toBytes()
