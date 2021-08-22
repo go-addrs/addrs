@@ -14,20 +14,6 @@ type trieNode32 struct {
 	children [2]*trieNode32
 }
 
-func trieNodeFromPrefix(p Prefix) *trieNode32 {
-	return &trieNode32{
-		isActive: true,
-		Prefix:   p,
-		size:     1,
-		h:        1,
-	}
-}
-
-func (me *trieNode32) Halves() (a, b *trieNode32) {
-	aPrefix, bPrefix := me.Prefix.Halves()
-	return trieNodeFromPrefix(aPrefix), trieNodeFromPrefix(bPrefix)
-}
-
 // bitsToBytes calculates the number of bytes (including possible
 // least-significant partial) to hold the given number of bits.
 func bitsToBytes(bits uint32) uint32 {
