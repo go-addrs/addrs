@@ -11,7 +11,7 @@ import (
 // first `length` bits or not. This allows storing an IP address in CIDR
 // notation with both the network and host parts of the address.
 type Prefix struct {
-	Addr
+	Addr   Addr
 	length uint32
 }
 

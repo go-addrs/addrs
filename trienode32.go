@@ -6,7 +6,7 @@ import (
 )
 
 type trieNode32 struct {
-	Prefix
+	Prefix   Prefix
 	Data     interface{}
 	size     uint32
 	h        uint16
@@ -71,17 +71,17 @@ func intMax(a, b int) int {
 func contains32(shorter, longer Prefix) (matches, exact bool, common, child uint32) {
 	mask := uint32(0xffffffff) << (32 - shorter.length)
 
-	matches = shorter.ui&mask == longer.ui&mask
+	matches = shorter.Addr.ui&mask == longer.Addr.ui&mask
 	if matches {
 		exact = shorter.length == longer.length
 		common = shorter.length
 	} else {
-		common = uint32(bits.LeadingZeros32(shorter.ui ^ longer.ui))
+		common = uint32(bits.LeadingZeros32(shorter.Addr.ui ^ longer.Addr.ui))
 	}
 	if !exact {
 		// Whether `longer` goes on the left (0) or right (1)
 		pivotMask := uint32(0x80000000) >> common
-		if longer.ui&pivotMask != 0 {
+		if longer.Addr.ui&pivotMask != 0 {
 			child = 1
 		}
 	}
@@ -374,7 +374,7 @@ func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNo
 		return &trieNode32{
 			Prefix: Prefix{
 				Addr: Addr{
-					ui: me.ui & ^(uint32(0xffffffff) >> common), // zero out bits not in common
+					ui: me.Prefix.Addr.ui & ^(uint32(0xffffffff) >> common), // zero out bits not in common
 				},
 				length: common,
 			},
@@ -506,7 +506,7 @@ func (me *trieNode32) aggregable(data dataContainer) (bool, dataContainer) {
 	leftAggegable, leftData := left.aggregable(data)
 	rightAggegable, rightData := right.aggregable(data)
 
-	arePeers := (me.length+1) == left.length && left.length == right.length
+	arePeers := (me.Prefix.length+1) == left.Prefix.length && left.Prefix.length == right.Prefix.length
 	if arePeers && leftAggegable && rightAggegable && dataContainerEqual(leftData, rightData) {
 		return true, leftData
 	}
