@@ -210,6 +210,19 @@ func (me Prefix) Uint32() (address, mask uint32) {
 	return
 }
 
+// AddrCallback is the type of function passed to Iterate over individual addresses
+type AddrCallback func(Addr) bool
+
+// Iterate visits all of the addresses in the prefix in lexigraphical order
+func (me Prefix) Iterate(callback AddrCallback) bool {
+	for a := me.Network().Addr.Uint32(); a <= me.Broadcast().Addr.Uint32(); a++ {
+		if !callback(Addr{a}) {
+			return false
+		}
+	}
+	return true
+}
+
 // Range returns the range that includes the same addresses as the prefix
 // It ignores any bits set in the host part of the address.
 func (me Prefix) Range() Range {

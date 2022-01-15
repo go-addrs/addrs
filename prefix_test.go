@@ -423,3 +423,43 @@ func TestPrefixHalves(t *testing.T) {
 		})
 	}
 }
+
+func TestIterate(t *testing.T) {
+	tests := []struct {
+		prefix      Prefix
+		first, last Addr
+	}{
+		{
+			prefix: unsafeParsePrefix("10.224.0.0/24"),
+			first:  unsafeParseAddr("10.224.0.0"),
+			last:   unsafeParseAddr("10.224.0.99"),
+		},
+		{
+			prefix: unsafeParsePrefix("203.0.113.116/31"),
+			first:  unsafeParseAddr("203.0.113.116"),
+			last:   unsafeParseAddr("203.0.113.117"),
+		},
+		{
+			prefix: unsafeParsePrefix("100.64.0.1/32"),
+			first:  unsafeParseAddr("100.64.0.1"),
+			last:   unsafeParseAddr("100.64.0.1"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.prefix.String(), func(t *testing.T) {
+			count := 0
+			ips := []Addr{}
+			tt.prefix.Iterate(func(ip Addr) bool {
+				count++
+				ips = append(ips, ip)
+				if count == 100 {
+					return false
+				}
+				return true
+			})
+			assert.Equal(t, tt.first, ips[0])
+			assert.Equal(t, tt.last, ips[len(ips)-1])
+		})
+	}
+}
