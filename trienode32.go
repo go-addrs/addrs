@@ -289,6 +289,38 @@ type insertOpts struct {
 	insert, update bool
 }
 
+func (me *trieNode32) flatten() {
+	defer me.setSize()
+
+	if me.isActive {
+		// If the current node is active, then anything referenced by the
+		// children is redundant, they can be removed.
+		me.children = [2]*trieNode32{}
+		return
+	}
+	left, right := me.children[0], me.children[1]
+	if left == nil || right == nil {
+		panic("this should never happen; it means that the structure is not optimized")
+	}
+	if left.Prefix.length != right.Prefix.length {
+		// If the childen have different size prefixes, then we cannot combine
+		// them. Do nothing.
+		return
+	}
+	if left.Prefix.length != me.Prefix.length+1 {
+		// If the children aren't exactly half the current node's prefix then
+		// we cannot combine them. Do nothing.
+		return
+	}
+	if !left.isActive || !right.isActive {
+		// If the children aren't both active, it means they are sparse and
+		// cannot be combined. Do nothing.
+		return
+	}
+	me.children = [2]*trieNode32{}
+	me.isActive = true
+}
+
 // insert adds a node into the trie and return the new root of the trie. It is
 // important to note that the root of the trie can change. If the new node
 // cannot be inserted, nil is returned.

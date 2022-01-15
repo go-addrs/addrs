@@ -1587,3 +1587,129 @@ func TestTrieNodeEqual(t *testing.T) {
 		})
 	}
 }
+
+func TestFlatten(t *testing.T) {
+	t.Run("active node needs no children", func(t *testing.T) {
+		prefix := unsafeParsePrefix("1.2.3.0/24")
+		n := trieNode32{
+			Prefix:   prefix,
+			isActive: true,
+			children: [2]*trieNode32{
+				&trieNode32{},
+				&trieNode32{},
+			},
+		}
+		n.flatten()
+		assert.Equal(t, prefix, n.Prefix)
+		assert.Equal(t, uint32(1), n.size)
+		assert.Equal(t, uint16(1), n.h)
+		assert.True(t, n.isActive)
+		assert.Nil(t, n.children[0])
+		assert.Nil(t, n.children[1])
+	})
+	t.Run("children of unequal size", func(t *testing.T) {
+		prefix := unsafeParsePrefix("1.2.3.0/24")
+		left := unsafeParsePrefix("1.2.3.0/26")
+		right := unsafeParsePrefix("1.2.3.128/25")
+		n := trieNode32{
+			Prefix: prefix,
+			children: [2]*trieNode32{
+				&trieNode32{Prefix: left},
+				&trieNode32{Prefix: right},
+			},
+		}
+		n.flatten()
+		assert.Equal(t, prefix, n.Prefix)
+		assert.False(t, n.isActive)
+		assert.Equal(t, left, n.children[0].Prefix)
+		assert.Equal(t, right, n.children[1].Prefix)
+	})
+	t.Run("children smaller than half", func(t *testing.T) {
+		prefix := unsafeParsePrefix("1.2.3.0/24")
+		left := unsafeParsePrefix("1.2.3.0/26")
+		right := unsafeParsePrefix("1.2.3.128/26")
+		n := trieNode32{
+			Prefix: prefix,
+			children: [2]*trieNode32{
+				&trieNode32{Prefix: left},
+				&trieNode32{Prefix: right},
+			},
+		}
+		n.flatten()
+		assert.Equal(t, prefix, n.Prefix)
+		assert.False(t, n.isActive)
+		assert.Equal(t, left, n.children[0].Prefix)
+		assert.Equal(t, right, n.children[1].Prefix)
+	})
+
+	t.Run("children not both active (left)", func(t *testing.T) {
+		prefix := unsafeParsePrefix("1.2.3.0/24")
+		left := unsafeParsePrefix("1.2.3.0/25")
+		right := unsafeParsePrefix("1.2.3.128/25")
+		n := trieNode32{
+			Prefix: prefix,
+			children: [2]*trieNode32{
+				&trieNode32{
+					Prefix:   left,
+					isActive: true,
+				},
+				&trieNode32{
+					Prefix: right,
+				},
+			},
+		}
+		n.flatten()
+		assert.Equal(t, prefix, n.Prefix)
+		assert.False(t, n.isActive)
+		assert.Equal(t, left, n.children[0].Prefix)
+		assert.Equal(t, right, n.children[1].Prefix)
+	})
+
+	t.Run("children not both active (right)", func(t *testing.T) {
+		prefix := unsafeParsePrefix("1.2.3.0/24")
+		left := unsafeParsePrefix("1.2.3.0/25")
+		right := unsafeParsePrefix("1.2.3.128/25")
+		n := trieNode32{
+			Prefix: prefix,
+			children: [2]*trieNode32{
+				&trieNode32{
+					Prefix: left,
+				},
+				&trieNode32{
+					Prefix:   right,
+					isActive: true,
+				},
+			},
+		}
+		n.flatten()
+		assert.Equal(t, prefix, n.Prefix)
+		assert.False(t, n.isActive)
+		assert.Equal(t, left, n.children[0].Prefix)
+		assert.Equal(t, right, n.children[1].Prefix)
+	})
+	t.Run("children both active", func(t *testing.T) {
+		prefix := unsafeParsePrefix("1.2.3.0/24")
+		left := unsafeParsePrefix("1.2.3.0/25")
+		right := unsafeParsePrefix("1.2.3.128/25")
+		n := trieNode32{
+			Prefix: prefix,
+			children: [2]*trieNode32{
+				&trieNode32{
+					Prefix:   left,
+					isActive: true,
+				},
+				&trieNode32{
+					Prefix:   right,
+					isActive: true,
+				},
+			},
+		}
+		n.flatten()
+		assert.Equal(t, prefix, n.Prefix)
+		assert.True(t, n.isActive)
+		assert.Equal(t, uint32(1), n.size)
+		assert.Equal(t, uint16(1), n.h)
+		assert.Nil(t, n.children[0])
+		assert.Nil(t, n.children[1])
+	})
+}
