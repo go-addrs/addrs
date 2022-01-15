@@ -336,7 +336,7 @@ func TestGetOrInsertNarrower32(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, trie.isValid())
 
-	narrowerKey := Prefix{unsafeParseAddr("10.224.24.00"), 24}
+	narrowerKey := Prefix{unsafeParseAddr("10.224.24.0"), 24}
 	trie, node := trie.GetOrInsert(narrowerKey, false)
 
 	assert.True(t, trie.isValid())

@@ -10,17 +10,26 @@ import (
 )
 
 func unsafeParsePrefix(cidr string) Prefix {
-	prefix, _ := ParsePrefix(cidr)
+	prefix, err := ParsePrefix(cidr)
+	if err != nil {
+		panic("only use this is happy cases")
+	}
 	return prefix
 }
 
 func unsafePrefixFromUint32(ip uint32, length int) Prefix {
-	prefix, _ := PrefixFromUint32(ip, length)
+	prefix, err := PrefixFromUint32(ip, length)
+	if err != nil {
+		panic("only use this is happy cases")
+	}
 	return prefix
 }
 
 func unsafeParseNet(prefix string) *net.IPNet {
-	ipNet, _ := parseNet(prefix)
+	ipNet, err := parseNet(prefix)
+	if err != nil {
+		panic("only use this is happy cases")
+	}
 	return ipNet
 }
 
@@ -110,8 +119,11 @@ func TestPrefixFromBytes(t *testing.T) {
 	assert.Equal(t, unsafePrefixFromUint32(0x0ae01801, 22), prefix)
 	assert.Nil(t, err)
 
+	prefix, err = PrefixFromBytes(10, 224, 24, 1, 32)
+	assert.Equal(t, unsafePrefixFromUint32(0x0ae01801, 32), prefix)
+	assert.Nil(t, err)
+
 	prefix, err = PrefixFromBytes(10, 224, 24, 1, 33)
-	assert.Equal(t, unsafePrefixFromUint32(0x0ae01801, 33), prefix)
 	assert.NotNil(t, err)
 }
 

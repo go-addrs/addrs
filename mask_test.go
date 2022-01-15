@@ -20,7 +20,10 @@ func TestMaskLength(t *testing.T) {
 }
 
 func unsafeMaskFromBytes(a, b, c, d byte) Mask {
-	m, _ := MaskFromBytes(a, b, c, d)
+	m, err := MaskFromBytes(a, b, c, d)
+	if err != nil {
+		panic("only use this is happy cases")
+	}
 	return m
 }
 

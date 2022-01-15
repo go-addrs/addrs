@@ -9,7 +9,10 @@ import (
 )
 
 func unsafeParseAddr(str string) Addr {
-	addr, _ := ParseAddr(str)
+	addr, err := ParseAddr(str)
+	if err != nil {
+		panic("only use this is happy cases")
+	}
 	return addr
 }
 
