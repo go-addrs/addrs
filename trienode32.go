@@ -464,6 +464,10 @@ func (me *trieNode32) Delete(key Prefix) (newHead *trieNode32, err error) {
 			return me, err
 		}
 
+		if newChild == nil && !me.isActive {
+			// Promote the other child up
+			return me.children[(child+1)%2], nil
+		}
 		newNode := me.makeCopy()
 		newNode.children[child] = newChild
 		return newNode, nil

@@ -1118,7 +1118,6 @@ func TestDeleteRecursiveNil32(t *testing.T) {
 	assert.NotNil(t, trie.Match(key))
 	match := trie.Match(childKey)
 	assert.NotEqual(t, childKey, match.Prefix)
-	// assert.Nil(t, trie.Get(childKey))
 }
 
 func TestDeleteRecursiveLeftChild32(t *testing.T) {
@@ -1143,7 +1142,32 @@ func TestDeleteRecursiveLeftChild32(t *testing.T) {
 	assert.NotNil(t, trie.Match(key))
 	match := trie.Match(childKey)
 	assert.NotEqual(t, childKey, match.Prefix)
-	// assert.Nil(t, trie.Get(childKey))
+}
+
+func TestDeleteRecursiveLeftChild32Promote(t *testing.T) {
+	// NOTE: There's no specific test for other child combinations because I
+	// didn't feel it added much. It uses already well-tested code paths.
+	var trie *trieNode32
+
+	key := Prefix{
+		unsafeParseAddr("172.16.200.128"),
+		25,
+	}
+	trie, err := trie.Insert(key, nil)
+	childKey := Prefix{
+		unsafeParseAddr("172.16.200.0"),
+		25,
+	}
+	trie, err = trie.Insert(childKey, nil)
+	trie, err = trie.Delete(childKey)
+	assert.Nil(t, err)
+	assert.NotNil(t, trie)
+
+	assert.NotNil(t, trie.Match(key))
+	match := trie.Match(childKey)
+	assert.Nil(t, match)
+	assert.Equal(t, 1, trie.height())
+	assert.Equal(t, 1, trie.NumNodes())
 }
 
 func TestDeleteKeyTooBroad32(t *testing.T) {
