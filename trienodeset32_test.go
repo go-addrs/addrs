@@ -208,6 +208,70 @@ func TestTrieNodeSet32Union(t *testing.T) {
 	}
 }
 
+func TestInsertOverlappingSet32(t *testing.T) {
+	tests := []struct {
+		desc    string
+		a, b, c Prefix
+	}{
+		{
+			desc: "16 and 24",
+			a:    Prefix{unsafeParseAddr("10.200.0.0"), 16},
+			b:    Prefix{unsafeParseAddr("10.200.20.0"), 24},
+			c:    Prefix{unsafeParseAddr("10.200.20.0"), 32},
+		},
+		{
+			desc: "17 and 27",
+			a:    Prefix{unsafeParseAddr("10.200.0.0"), 17},
+			b:    Prefix{Addr{0x0ac800e0}, 27},
+			c:    Prefix{Addr{0x0ac800f8}, 31},
+		},
+		{
+			desc: "0 and 8",
+			a:    Prefix{Addr{0}, 0},
+			b:    Prefix{unsafeParseAddr("10.0.0.0"), 8},
+			c:    Prefix{unsafeParseAddr("10.10.0.0"), 16},
+		},
+		{
+			desc: "0 and 8",
+			a:    Prefix{Addr{0}, 0},
+			b:    Prefix{unsafeParseAddr("10.0.0.0"), 8},
+			c:    Prefix{unsafeParseAddr("10.0.0.0"), 8},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			// This test inserts the three given nodes in the order given and
+			// checks that they are found in the resulting trie
+			subTest := func(first, second, third Prefix) func(t *testing.T) {
+				return func(t *testing.T) {
+					var trie *trieNodeSet32
+
+					trie = trie.Insert(first)
+					assert.NotNil(t, trie.Match(first))
+					assert.True(t, trie.isValid())
+					assert.Equal(t, 1, trie.height())
+					assert.Equal(t, 1, trie.NumNodes())
+
+					trie = trie.Insert(second)
+					assert.NotNil(t, trie.Match(second))
+					assert.True(t, trie.isValid())
+					assert.Equal(t, 1, trie.height())
+					assert.Equal(t, 1, trie.NumNodes())
+
+					trie = trie.Insert(third)
+					assert.NotNil(t, trie.Match(third))
+					assert.True(t, trie.isValid())
+					assert.Equal(t, 1, trie.height())
+					assert.Equal(t, 1, trie.NumNodes())
+				}
+			}
+			t.Run("forward", subTest(tt.a, tt.b, tt.c))
+			t.Run("backward", subTest(tt.c, tt.b, tt.a))
+		})
+	}
+}
+
 // https://stackoverflow.com/a/61218109
 func reverse(s []*trieNodeSet32) []*trieNodeSet32 {
 	a := make([]*trieNodeSet32, len(s))

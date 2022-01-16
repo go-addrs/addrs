@@ -475,3 +475,39 @@ func TestIterate(t *testing.T) {
 		})
 	}
 }
+
+func TestPrefixSet(t *testing.T) {
+	tests := []struct {
+		prefix  Prefix
+		in, out Addr
+	}{
+		{
+			prefix: unsafeParsePrefix("0.0.0.0/1"),
+			in:     unsafeParseAddr("127.0.0.1"),
+			out:    unsafeParseAddr("192.168.0.3"),
+		},
+		{
+			prefix: unsafeParsePrefix("10.224.0.0/16"),
+			in:     unsafeParseAddr("10.224.0.123"),
+			out:    unsafeParseAddr("10.225.128.123"),
+		},
+		{
+			prefix: unsafeParsePrefix("10.224.24.1/24"),
+			in:     unsafeParseAddr("10.224.24.0"),
+			out:    unsafeParseAddr("10.224.25.128"),
+		},
+		{
+			prefix: unsafeParsePrefix("10.224.24.117/31"),
+			in:     unsafeParseAddr("10.224.24.116"),
+			out:    unsafeParseAddr("10.224.24.118"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.prefix.String(), func(t *testing.T) {
+			set := tt.prefix.Set()
+			assert.True(t, set.Contains(tt.in))
+			assert.False(t, set.Contains(tt.out))
+		})
+	}
+}

@@ -228,6 +228,20 @@ func (me *trieNode32) Match(searchKey Prefix) *trieNode32 {
 	return me
 }
 
+// Size returns the number of addresses that could match this node
+// Note that this may have to search all nodes recursively to find the answer.
+// The implementation can be changed to store the size in each node at the cost
+// of adding about 8 more bits to the size of each node.
+func (me *trieNode32) Size() int64 {
+	if me == nil {
+		return 0
+	}
+	if me.isActive {
+		return int64(^me.Prefix.Mask().Uint32()) + 1
+	}
+	return me.children[0].Size() + me.children[1].Size()
+}
+
 // NumNodes returns the number of entries in the trie
 func (me *trieNode32) NumNodes() int {
 	if me == nil {
@@ -286,7 +300,7 @@ func (me *trieNode32) Insert(key Prefix, data interface{}) (newHead *trieNode32,
 }
 
 type insertOpts struct {
-	insert, update bool
+	insert, update, flatten bool
 }
 
 func (me *trieNode32) flatten() {
@@ -326,7 +340,10 @@ func (me *trieNode32) flatten() {
 // cannot be inserted, nil is returned.
 func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNode32, err error) {
 	defer func() {
-		if err == nil {
+		if me != newHead {
+			if opts.flatten {
+				newHead.flatten()
+			}
 			newHead.setSize()
 		}
 	}()
@@ -350,12 +367,20 @@ func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNo
 		if !me.isActive && !opts.insert {
 			return me, fmt.Errorf("the key doesn't exist to update")
 		}
+		if opts.flatten {
+			// avoid copy-on-write when it will be flattened resulting in no effective change
+			return me, nil
+		}
 		node.children = me.children
 		node.isActive = true
 		return node, nil
 
 	case compareContains:
 		// Trie node's key contains the new node's key. Insert it recursively.
+		if opts.flatten && me.isActive {
+			// avoid copy-on-write when it will be flattened resulting in no effective change
+			return me, nil
+		}
 		newChild, err := me.children[child].insert(node, opts)
 		if err != nil {
 			return me, err

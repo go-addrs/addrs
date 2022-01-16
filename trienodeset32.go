@@ -24,6 +24,14 @@ func (me *trieNodeSet32) halves() (a, b *trieNodeSet32) {
 	return trieNodeSet32FromPrefix(aPrefix), trieNodeSet32FromPrefix(bPrefix)
 }
 
+// Insert inserts the key / value if the key didn't previously exist and then
+// flattens the structure (without regard to any values) to remove nested
+// prefixes resulting in a flat list of disjoint prefixes.
+func (me *trieNodeSet32) Insert(key Prefix) *trieNodeSet32 {
+	newHead, _ := (*trieNode32)(me).insert(&trieNode32{Prefix: key, Data: nil}, insertOpts{insert: true, update: true, flatten: true})
+	return (*trieNodeSet32)(newHead)
+}
+
 func (me *trieNodeSet32) Left() *trieNodeSet32 {
 	return (*trieNodeSet32)(me.children[0])
 }
@@ -140,4 +148,18 @@ func (me *trieNodeSet32) isValid() bool {
 
 func (me *trieNodeSet32) setSize() {
 	(*trieNode32)(me).setSize()
+}
+
+// Size calls trieNode32 Size
+func (me *trieNodeSet32) Size() int64 {
+	return (*trieNode32)(me).Size()
+}
+
+// NumNodes returns the number of entries in the trie
+func (me *trieNodeSet32) NumNodes() int {
+	return (*trieNode32)(me).NumNodes()
+}
+
+func (me *trieNodeSet32) height() int {
+	return (*trieNode32)(me).height()
 }
