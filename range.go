@@ -69,6 +69,11 @@ func (me Range) Minus(other Range) []Range {
 	return result
 }
 
+// Set returns a Set containing the same ips as this range
+func (me Range) Set() Set {
+	return Set{trieNodeSet32FromRange(me)}
+}
+
 // prev returns the address just before the range (or maxint) if the range
 // starts at the beginning of the IP space due to overflow)
 func (me Range) prev() Addr {

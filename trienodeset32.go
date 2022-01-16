@@ -1,5 +1,9 @@
 package ipv4
 
+import (
+	"math/bits"
+)
+
 // trieNodeSet32 is currently the same data structure as trieNode32. However,
 // its purpose is to implement a set of keys. Hence, values in the underlying
 // data structure are completely ignored. Aliasing it in this way allows me to
@@ -22,6 +26,31 @@ func (me *trieNodeSet32) halves() (a, b *trieNodeSet32) {
 	}
 	aPrefix, bPrefix := me.Prefix.Halves()
 	return trieNodeSet32FromPrefix(aPrefix), trieNodeSet32FromPrefix(bPrefix)
+}
+
+func trieNodeSet32FromRange(r Range) *trieNodeSet32 {
+	// xor shows the bits that are different between first and last
+	xor := r.first.ui ^ r.last.ui
+	// The number of leading zeroes in the xor is the number of bits the two addresses have in common
+	numCommonBits := bits.LeadingZeros32(xor)
+
+	if numCommonBits == bits.OnesCount32(^xor) {
+		// This range is exactly one prefix, return a node with it.
+		prefix := Prefix{r.first, uint32(numCommonBits)}
+		return trieNodeSet32FromPrefix(prefix)
+	}
+
+	// "pivot" is the address within the range with the most trailing zeroes.
+	// Dividing and conquering on it recursively teases out all of the largest
+	// prefixes in the range. The result is the smallest set of prefixes that
+	// covers it. It takes Log(p) time where p is the number of prefixes in the
+	// result -- bounded by 32 x 2 in the worst case
+	pivot := r.first.ui & (uint32(0xffffffff) << (32 - numCommonBits))
+	pivot |= uint32(0x80000000) >> numCommonBits
+
+	a := trieNodeSet32FromRange(Range{r.first, Addr{pivot - 1}})
+	b := trieNodeSet32FromRange(Range{Addr{pivot}, r.last})
+	return a.Union(b)
 }
 
 // Insert inserts the key / value if the key didn't previously exist and then
@@ -148,6 +177,10 @@ func (me *trieNodeSet32) isValid() bool {
 
 func (me *trieNodeSet32) setSize() {
 	(*trieNode32)(me).setSize()
+}
+
+func (me *trieNodeSet32) Equal(other *trieNodeSet32) bool {
+	return (*trieNode32)(me).Equal((*trieNode32)(other))
 }
 
 // Size calls trieNode32 Size

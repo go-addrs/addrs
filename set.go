@@ -14,6 +14,11 @@ func (me Set) Size() int64 {
 	return me.trie.Size()
 }
 
+// Equal returns true if this set is equal to other
+func (me Set) Equal(other Set) bool {
+	return me.trie.Equal(other.trie)
+}
+
 // Contains tests if the given address is in the set
 func (me Set) Contains(addr Addr) bool {
 	return me.ContainsPrefix(ipToKey(addr))
