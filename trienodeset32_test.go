@@ -335,3 +335,56 @@ func TestSetRemove(t *testing.T) {
 		assert.Equal(t, int64(0), trie.Size())
 	})
 }
+
+func TestSetIntersect(t *testing.T) {
+	t.Run("with nil", func(t *testing.T) {
+		var one, two, three *trieNodeSet32
+
+		three = three.Insert(unsafeParsePrefix("203.0.113.0/24"))
+
+		assert.Equal(t, int64(0), one.Size())
+		assert.Equal(t, int64(0), two.Size())
+		assert.Equal(t, int64(256), three.Size())
+
+		assert.Equal(t, int64(0), one.Intersect(two).Size())
+		assert.Equal(t, int64(0), one.Intersect(three).Size())
+		assert.Equal(t, int64(0), three.Intersect(one).Size())
+	})
+	t.Run("disjoint", func(t *testing.T) {
+		var one, two *trieNodeSet32
+
+		one = one.Insert(unsafeParsePrefix("203.0.113.0/27"))
+		two = two.Insert(unsafeParsePrefix("203.0.113.128/25"))
+		assert.Equal(t, int64(0), one.Intersect(two).Size())
+		assert.Equal(t, int64(0), two.Intersect(one).Size())
+	})
+	t.Run("subset", func(t *testing.T) {
+		var one, two *trieNodeSet32
+
+		one = one.Insert(unsafeParsePrefix("203.0.113.0/24"))
+		two = two.Insert(unsafeParsePrefix("203.0.113.128/25"))
+		result := one.Intersect(two)
+		assert.Equal(t, int64(128), result.Size())
+		assert.Equal(t, int64(128), two.Intersect(one).Size())
+		assert.Nil(t, result.Match(unsafeParsePrefix("203.0.113.117/32")))
+		assert.NotNil(t, result.Match(unsafeParsePrefix("203.0.113.217/32")))
+	})
+	t.Run("recursive", func(t *testing.T) {
+		var one, two *trieNodeSet32
+		one = one.Insert(unsafeParsePrefix("198.51.100.0/24"))
+		one = one.Insert(unsafeParsePrefix("203.0.113.0/24"))
+		two = two.Insert(unsafeParsePrefix("203.0.113.128/25"))
+
+		result := one.Intersect(two)
+		assert.Equal(t, int64(128), result.Size())
+		assert.Nil(t, result.Match(unsafeParsePrefix("198.51.100.0/24")))
+		assert.Nil(t, result.Match(unsafeParsePrefix("203.0.113.0/25")))
+		assert.NotNil(t, result.Match(unsafeParsePrefix("203.0.113.128/25")))
+
+		result = two.Intersect(one)
+		assert.Equal(t, int64(128), result.Size())
+		assert.Nil(t, result.Match(unsafeParsePrefix("198.51.100.0/24")))
+		assert.Nil(t, result.Match(unsafeParsePrefix("203.0.113.0/25")))
+		assert.NotNil(t, result.Match(unsafeParsePrefix("203.0.113.128/25")))
+	})
+}

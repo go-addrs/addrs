@@ -189,6 +189,33 @@ func (me *trieNodeSet32) setSize() {
 	(*trieNode32)(me).setSize()
 }
 
+// Intersect returns the flattened intersection of prefixes
+func (me *trieNodeSet32) Intersect(other *trieNodeSet32) *trieNodeSet32 {
+	if me == nil || other == nil {
+		return nil
+	}
+
+	result, reversed, _, _ := compare32(me.Prefix, other.Prefix)
+	if result == compareDisjoint {
+		return nil
+	}
+	if !me.isActive {
+		return other.Intersect(me.Left()).Union(
+			other.Intersect(me.Right()),
+		)
+	}
+	if !other.isActive {
+		return me.Intersect(other.Left()).Union(
+			me.Intersect(other.Right()),
+		)
+	}
+	// Return the smaller prefix
+	if reversed {
+		return me
+	}
+	return other
+}
+
 func (me *trieNodeSet32) Equal(other *trieNodeSet32) bool {
 	return (*trieNode32)(me).Equal((*trieNode32)(other))
 }
