@@ -61,6 +61,16 @@ func (me *trieNodeSet32) Insert(key Prefix) *trieNodeSet32 {
 	return (*trieNodeSet32)(newHead)
 }
 
+// Delete removes a prefix from the trie and returns the new root of the trie.
+// It is important to note that the root of the trie can change. Like Insert,
+// this is designed for using trie as a set of keys, completely ignoring
+// values. All stored prefixes that match the given prefix with LPM will be
+// removed, not just exact matches.
+func (me *trieNodeSet32) Remove(key Prefix) *trieNodeSet32 {
+	newHead, _ := (*trieNode32)(me).del(key, deleteOpts{flatten: true})
+	return (*trieNodeSet32)(newHead)
+}
+
 func (me *trieNodeSet32) Left() *trieNodeSet32 {
 	return (*trieNodeSet32)(me.children[0])
 }

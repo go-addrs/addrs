@@ -284,3 +284,54 @@ func reverse(s []*trieNodeSet32) []*trieNodeSet32 {
 
 	return a
 }
+
+func TestSetRemove(t *testing.T) {
+	t.Run("test remove from nil", func(t *testing.T) {
+		var trie *trieNodeSet32
+
+		assert.Equal(t, int64(0), trie.Size())
+
+		trie = trie.Remove(unsafeParsePrefix("203.0.113.0/24"))
+		assert.Equal(t, int64(0), trie.Size())
+	})
+	t.Run("test remove all", func(t *testing.T) {
+		var trie *trieNodeSet32
+
+		prefix := unsafeParsePrefix("203.0.113.0/24")
+		trie = trie.Insert(prefix)
+		assert.Equal(t, int64(256), trie.Size())
+
+		trie = trie.Remove(prefix)
+		assert.Equal(t, int64(0), trie.Size())
+	})
+	t.Run("test remove one address", func(t *testing.T) {
+		var trie *trieNodeSet32
+
+		prefix := unsafeParsePrefix("203.0.113.0/24")
+		trie = trie.Insert(prefix)
+		assert.Equal(t, int64(256), trie.Size())
+
+		trie = trie.Remove(unsafeParsePrefix("203.0.113.233/32"))
+		assert.Equal(t, int64(255), trie.Size())
+	})
+	t.Run("test remove half", func(t *testing.T) {
+		var trie *trieNodeSet32
+
+		prefix := unsafeParsePrefix("203.0.113.0/24")
+		trie = trie.Insert(prefix)
+		assert.Equal(t, int64(256), trie.Size())
+
+		trie = trie.Remove(unsafeParsePrefix("203.0.113.128/25"))
+		assert.Equal(t, int64(128), trie.Size())
+	})
+	t.Run("test remove more", func(t *testing.T) {
+		var trie *trieNodeSet32
+
+		prefix := unsafeParsePrefix("203.0.113.0/24")
+		trie = trie.Insert(prefix)
+		assert.Equal(t, int64(256), trie.Size())
+
+		trie = trie.Remove(unsafeParsePrefix("203.0.112.0/23"))
+		assert.Equal(t, int64(0), trie.Size())
+	})
+}

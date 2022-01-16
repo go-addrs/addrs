@@ -427,9 +427,17 @@ func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNo
 	panic("unreachable code")
 }
 
+type deleteOpts struct {
+	flatten bool
+}
+
 // Delete removes a node from the trie given a key and returns the new root of
 // the trie. It is important to note that the root of the trie can change.
 func (me *trieNode32) Delete(key Prefix) (newHead *trieNode32, err error) {
+	return me.del(key, deleteOpts{})
+}
+
+func (me *trieNode32) del(key Prefix, opts deleteOpts) (newHead *trieNode32, err error) {
 	defer func() {
 		if err == nil && newHead != nil {
 			newHead.setSize()
@@ -437,12 +445,18 @@ func (me *trieNode32) Delete(key Prefix) (newHead *trieNode32, err error) {
 	}()
 
 	if me == nil {
+		if opts.flatten {
+			return nil, nil
+		}
 		return me, fmt.Errorf("cannot delete from a nil")
 	}
 
 	result, _, _, child := compare32(me.Prefix, key)
 	switch result {
 	case compareSame:
+		if opts.flatten {
+			return nil, nil
+		}
 		// Delete this node
 		if me.children[0] == nil {
 			// At this point, it doesn't matter if it is nil or not
@@ -458,8 +472,23 @@ func (me *trieNode32) Delete(key Prefix) (newHead *trieNode32, err error) {
 		return newNode, nil
 
 	case compareContains:
+		if me.isActive && opts.flatten {
+			// TODO This is for sets. Break it out of here.
+			// split this prefix into ranges and insert them
+			super, sub := me.Prefix.Range(), key.Range()
+			remainingRanges := super.Minus(sub)
+			var s *trieNodeSet32
+			if len(remainingRanges) == 1 {
+				s = trieNodeSet32FromRange(remainingRanges[0])
+			} else {
+				a := trieNodeSet32FromRange(remainingRanges[0])
+				b := trieNodeSet32FromRange(remainingRanges[1])
+				s = a.Union(b)
+			}
+			return (*trieNode32)(s), nil
+		}
 		// Delete recursively.
-		newChild, err := me.children[child].Delete(key)
+		newChild, err := me.children[child].del(key, opts)
 		if err != nil {
 			return me, err
 		}
@@ -472,9 +501,16 @@ func (me *trieNode32) Delete(key Prefix) (newHead *trieNode32, err error) {
 		newNode.children[child] = newChild
 		return newNode, nil
 
-	default:
+	case compareIsContained:
+		if opts.flatten {
+			return nil, nil
+		}
+		return me, fmt.Errorf("key not found")
+
+	case compareDisjoint:
 		return me, fmt.Errorf("key not found")
 	}
+	panic("unreachable code")
 }
 
 // active returns whether a node represents an active prefix in the tree (true)
