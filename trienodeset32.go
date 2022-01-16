@@ -189,6 +189,50 @@ func (me *trieNodeSet32) setSize() {
 	(*trieNode32)(me).setSize()
 }
 
+// Difference returns the flattened difference of prefixes.
+func (me *trieNodeSet32) Difference(other *trieNodeSet32) (rc *trieNodeSet32) {
+	if me == nil || other == nil {
+		return me
+	}
+
+	result, _, _, child := compare32(me.Prefix, other.Prefix)
+	switch result {
+	case compareIsContained:
+		return me.Difference((*trieNodeSet32)(other.children[child]))
+	case compareDisjoint:
+		return me
+	}
+
+	if !me.isActive {
+		left := me.Left().Difference(other)
+		right := me.Right().Difference(other)
+		if left == me.Left() && right == me.Right() {
+			return me
+		}
+
+		return left.Union(right)
+	}
+
+	switch result {
+	case compareSame:
+		if other.isActive {
+			return nil
+		}
+		a, b := me.halves()
+		return a.Difference(other.Left()).Union(
+			b.Difference(other.Right()),
+		)
+
+	case compareContains:
+		a, b := me.halves()
+		halves := [2]*trieNodeSet32{a, b}
+		whole := halves[(child+1)%2]
+		partial := halves[child].Difference(other)
+		return whole.Union(partial)
+	}
+	panic("unreachable")
+}
+
 // Intersect returns the flattened intersection of prefixes
 func (me *trieNodeSet32) Intersect(other *trieNodeSet32) *trieNodeSet32 {
 	if me == nil || other == nil {

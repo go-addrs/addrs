@@ -388,3 +388,94 @@ func TestSetIntersect(t *testing.T) {
 		assert.NotNil(t, result.Match(unsafeParsePrefix("203.0.113.128/25")))
 	})
 }
+
+func TestSetDifference(t *testing.T) {
+	t.Run("with nil", func(t *testing.T) {
+		var one, two, three *trieNodeSet32
+
+		three = three.Insert(unsafeParsePrefix("203.0.113.0/24"))
+
+		assert.Equal(t, int64(0), one.Size())
+		assert.Equal(t, int64(0), two.Size())
+		assert.Equal(t, int64(256), three.Size())
+
+		assert.Equal(t, int64(0), one.Difference(two).Size())
+		assert.Equal(t, int64(0), one.Difference(three).Size())
+		assert.Equal(t, int64(256), three.Difference(one).Size())
+	})
+	t.Run("disjoint", func(t *testing.T) {
+		var one, two *trieNodeSet32
+
+		one = one.Insert(unsafeParsePrefix("203.0.113.0/27"))
+		two = two.Insert(unsafeParsePrefix("203.0.113.128/25"))
+
+		result := one.Difference(two)
+		assert.Equal(t, int64(32), result.Size())
+		assert.NotNil(t, result.Match(unsafeParsePrefix("203.0.113.0/27")))
+		assert.Nil(t, result.Match(unsafeParsePrefix("203.0.113.128/25")))
+
+		result = two.Difference(one)
+		assert.Equal(t, int64(128), result.Size())
+		assert.Nil(t, result.Match(unsafeParsePrefix("203.0.113.0/27")))
+		assert.NotNil(t, result.Match(unsafeParsePrefix("203.0.113.128/25")))
+	})
+	t.Run("subset", func(t *testing.T) {
+		var one, two *trieNodeSet32
+
+		one = one.Insert(unsafeParsePrefix("203.0.113.0/24"))
+		two = two.Insert(unsafeParsePrefix("203.0.113.128/25"))
+
+		result := one.Difference(two)
+		assert.Equal(t, int64(128), result.Size())
+		assert.NotNil(t, result.Match(unsafeParsePrefix("203.0.113.117/32")))
+		assert.Nil(t, result.Match(unsafeParsePrefix("203.0.113.217/32")))
+
+		assert.Equal(t, int64(128), two.Difference(one).Size())
+	})
+	t.Run("recursive", func(t *testing.T) {
+		var one, two *trieNodeSet32
+		one = one.Insert(unsafeParsePrefix("198.51.100.0/24"))
+		one = one.Insert(unsafeParsePrefix("203.0.113.0/24"))
+		two = two.Insert(unsafeParsePrefix("203.0.113.128/25"))
+
+		result := one.Difference(two)
+		assert.Equal(t, int64(384), result.Size())
+		assert.NotNil(t, result.Match(unsafeParsePrefix("198.51.100.0/24")))
+		assert.NotNil(t, result.Match(unsafeParsePrefix("203.0.113.0/25")))
+		assert.Nil(t, result.Match(unsafeParsePrefix("203.0.113.128/25")))
+
+		result = two.Difference(one)
+		assert.Equal(t, int64(128), result.Size())
+		assert.Nil(t, result.Match(unsafeParsePrefix("198.51.100.0/24")))
+		assert.Nil(t, result.Match(unsafeParsePrefix("203.0.113.0/25")))
+		assert.NotNil(t, result.Match(unsafeParsePrefix("203.0.113.128/25")))
+	})
+	t.Run("no difference", func(t *testing.T) {
+		var one, two *trieNodeSet32
+		one = one.Insert(unsafeParsePrefix("198.51.100.0/24"))
+		one = one.Insert(unsafeParsePrefix("203.0.113.0/24"))
+
+		two = two.Insert(unsafeParsePrefix("192.0.2.0/24"))
+
+		result := one.Difference(two)
+		assert.Equal(t, int64(512), result.Size())
+		assert.NotNil(t, result.Match(unsafeParsePrefix("198.51.100.0/24")))
+		assert.NotNil(t, result.Match(unsafeParsePrefix("203.0.113.0/24")))
+		assert.Nil(t, result.Match(unsafeParsePrefix("192.0.2.0/24")))
+	})
+	t.Run("not active", func(t *testing.T) {
+		var one, two *trieNodeSet32
+		one = one.Insert(unsafeParsePrefix("192.0.0.0/4"))
+
+		two = two.Insert(unsafeParsePrefix("198.51.100.0/24"))
+		two = two.Insert(unsafeParsePrefix("203.0.113.0/24"))
+		printTrie32((*trieNode32)(two))
+
+		result := one.Difference(two)
+		assert.Equal(t, int64(268434944), result.Size())
+		assert.Nil(t, result.Match(unsafeParsePrefix("198.51.100.0/24")))
+		assert.Nil(t, result.Match(unsafeParsePrefix("203.0.113.0/24")))
+		assert.NotNil(t, result.Match(unsafeParsePrefix("197.51.100.128/25")))
+		assert.NotNil(t, result.Match(unsafeParsePrefix("204.0.113.128/25")))
+	})
+}
