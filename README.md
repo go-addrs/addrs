@@ -1,4 +1,4 @@
-An alternative representation for IPv4 addresses than the one in the [go net
+An alternative representation for IP addresses than the one in the [go net
 library]. After authoring [go-netaddr] -- aimed at addressing some frustrations
 with the net package -- and seeing other similar packages, such as
 [inet.af/netaddr] started to address other frustrations, I realized that it
