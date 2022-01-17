@@ -1360,9 +1360,9 @@ func printTrie32(trie *trieNode32) {
 			return
 		}
 		for i := 0; i < level; i++ {
-			fmt.Printf("    ")
+			fmt.Printf(" ")
 		}
-		fmt.Printf("%+v\n", trie)
+		fmt.Printf("%+v, %v, %d\n", trie, trie.isActive, trie.size)
 		recurse(trie.children[0], level+1)
 		recurse(trie.children[1], level+1)
 	}
