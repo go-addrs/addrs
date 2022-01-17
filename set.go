@@ -81,3 +81,7 @@ func (me Set) Difference(other Set) Set {
 		trie: me.trie.Difference(other.trie),
 	}
 }
+
+func (me Set) isValid() bool {
+	return me.trie.isValid()
+}

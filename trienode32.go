@@ -261,6 +261,10 @@ func (me *trieNode32) height() int {
 // isValid returns true if the tree is valid
 // this method is only for unit tests to check the integrity of the structure
 func (me *trieNode32) isValid() bool {
+	return me.isValidLen(0)
+}
+
+func (me *trieNode32) isValidLen(minLen uint32) bool {
 	if me == nil {
 		return true
 	}
@@ -280,7 +284,10 @@ func (me *trieNode32) isValid() bool {
 	if me.h != 1+uint16(uint16(intMax(left.height(), right.height()))) {
 		return false
 	}
-	return true
+	if me.Prefix.length < minLen {
+		return false
+	}
+	return left.isValidLen(me.Prefix.length+1) && right.isValidLen(me.Prefix.length+1)
 }
 
 // Update updates the key / value only if the key already exists
