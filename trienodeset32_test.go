@@ -206,6 +206,23 @@ func TestTrieNodeSet32Union(t *testing.T) {
 			t.Run("backward", test(([]*trieNodeSet32)(reverse(tt.sets))))
 		})
 	}
+	t.Run("not active", func(t *testing.T) {
+		var one, two *trieNodeSet32
+		one = one.Insert(unsafeParsePrefix("198.51.100.0/25"))
+		one = one.Insert(unsafeParsePrefix("203.0.113.0/25"))
+		printTrieSet32(one)
+
+		two = two.Insert(unsafeParsePrefix("198.51.100.128/25"))
+		two = two.Insert(unsafeParsePrefix("203.0.113.128/25"))
+		printTrieSet32(two)
+
+		result := one.Union(two)
+		assert.Equal(t, int64(512), result.Size())
+		assert.NotNil(t, result.Match(unsafeParsePrefix("198.51.100.0/24")))
+		assert.NotNil(t, result.Match(unsafeParsePrefix("203.0.113.0/24")))
+		printTrieSet32(result)
+		assert.Nil(t, result.Match(unsafeParsePrefix("192.0.0.0/4")))
+	})
 }
 
 func TestInsertOverlappingSet32(t *testing.T) {
@@ -469,7 +486,6 @@ func TestSetDifference(t *testing.T) {
 
 		two = two.Insert(unsafeParsePrefix("198.51.100.0/24"))
 		two = two.Insert(unsafeParsePrefix("203.0.113.0/24"))
-		printTrie32((*trieNode32)(two))
 
 		result := one.Difference(two)
 		assert.Equal(t, int64(268434944), result.Size())

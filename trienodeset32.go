@@ -81,6 +81,12 @@ func (me *trieNodeSet32) Right() *trieNodeSet32 {
 
 // Union returns the flattened union of prefixes.
 func (me *trieNodeSet32) Union(other *trieNodeSet32) (rc *trieNodeSet32) {
+	defer func() {
+		if rc != nil {
+			rc.setSize()
+		}
+	}()
+
 	if me == other {
 		return me
 	}
@@ -117,7 +123,6 @@ func (me *trieNodeSet32) Union(other *trieNodeSet32) (rc *trieNodeSet32) {
 				(*trieNode32)(right),
 			},
 		}
-		newHead.setSize()
 		return newHead
 
 	case compareContains, compareIsContained:
@@ -148,7 +153,6 @@ func (me *trieNodeSet32) Union(other *trieNodeSet32) (rc *trieNodeSet32) {
 				(*trieNode32)(right),
 			},
 		}
-		newHead.setSize()
 		return newHead
 
 	default:
@@ -172,7 +176,6 @@ func (me *trieNodeSet32) Union(other *trieNodeSet32) (rc *trieNodeSet32) {
 				(*trieNode32)(right),
 			},
 		}
-		newHead.setSize()
 		return newHead
 	}
 }
@@ -186,6 +189,13 @@ func (me *trieNodeSet32) isValid() bool {
 }
 
 func (me *trieNodeSet32) setSize() {
+	if me.Left().active() &&
+		me.Right().active() &&
+		me.Prefix.length+1 == me.Left().Prefix.length &&
+		me.Left().Prefix.length == me.Right().Prefix.length {
+		me.isActive = true
+		me.children = [2]*trieNode32{}
+	}
 	(*trieNode32)(me).setSize()
 }
 
@@ -276,4 +286,8 @@ func (me *trieNodeSet32) NumNodes() int {
 
 func (me *trieNodeSet32) height() int {
 	return (*trieNode32)(me).height()
+}
+
+func (me *trieNodeSet32) active() bool {
+	return (*trieNode32)(me).active()
 }
