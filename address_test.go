@@ -8,25 +8,25 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func unsafeParseAddr(str string) Addr {
-	addr, err := ParseAddr(str)
+func unsafeParseAddress(str string) Address {
+	addr, err := ParseAddress(str)
 	if err != nil {
 		panic("only use this is happy cases")
 	}
 	return addr
 }
 
-func TestParseAddr(t *testing.T) {
-	ip, err := ParseAddr("10.224.24.1")
+func TestParseAddress(t *testing.T) {
+	ip, err := ParseAddress("10.224.24.1")
 	assert.Nil(t, err)
-	assert.Equal(t, AddrFromUint32(0x0ae01801), ip)
+	assert.Equal(t, AddressFromUint32(0x0ae01801), ip)
 }
 
-func TestAddrFromStdIP(t *testing.T) {
+func TestAddressFromStdIP(t *testing.T) {
 	tests := []struct {
 		description string
 		ip          net.IP
-		expected    Addr
+		expected    Address
 		isErr       bool
 	}{
 		{
@@ -37,7 +37,7 @@ func TestAddrFromStdIP(t *testing.T) {
 		{
 			description: "ipv4",
 			ip:          net.ParseIP("10.224.24.1"),
-			expected:    AddrFromUint32(0x0ae01801),
+			expected:    AddressFromUint32(0x0ae01801),
 		},
 		{
 			description: "ipv6",
@@ -48,7 +48,7 @@ func TestAddrFromStdIP(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
-			ip, err := AddrFromStdIP(tt.ip)
+			ip, err := AddressFromStdIP(tt.ip)
 			if tt.isErr {
 				assert.NotNil(t, err)
 			} else {
@@ -59,22 +59,22 @@ func TestAddrFromStdIP(t *testing.T) {
 	}
 }
 
-func TestAddrEquality(t *testing.T) {
-	first, second := AddrFromUint32(0x0ae01801), AddrFromUint32(0x0ae01801)
+func TestAddressEquality(t *testing.T) {
+	first, second := AddressFromUint32(0x0ae01801), AddressFromUint32(0x0ae01801)
 	assert.Equal(t, first, second)
 	assert.True(t, first.Equal(second))
 	assert.True(t, first == second)
 	assert.True(t, reflect.DeepEqual(first, second))
 
-	third := AddrFromUint32(0x0ae01701)
+	third := AddressFromUint32(0x0ae01701)
 	assert.NotEqual(t, third, second)
 	assert.False(t, third.Equal(first))
 	assert.False(t, third == first)
 	assert.False(t, reflect.DeepEqual(third, first))
 }
 
-func TestAddrLessThan(t *testing.T) {
-	first, second, third := AddrFromUint32(0x0ae01701), AddrFromUint32(0x0ae01801), AddrFromUint32(0x0ae01901)
+func TestAddressLessThan(t *testing.T) {
+	first, second, third := AddressFromUint32(0x0ae01701), AddressFromUint32(0x0ae01801), AddressFromUint32(0x0ae01901)
 	assert.True(t, first.LessThan(second))
 	assert.True(t, second.LessThan(third))
 	assert.True(t, first.LessThan(third))
@@ -88,16 +88,16 @@ func TestAddrLessThan(t *testing.T) {
 	assert.False(t, third.LessThan(third))
 }
 
-func TestAddrMinAddr(t *testing.T) {
-	first, second := AddrFromUint32(0x0ae01701), AddrFromUint32(0x0ae01801)
+func TestAddressMinAddress(t *testing.T) {
+	first, second := AddressFromUint32(0x0ae01701), AddressFromUint32(0x0ae01801)
 
-	assert.Equal(t, MinAddr(first, second), first)
-	assert.Equal(t, MinAddr(second, first), first)
+	assert.Equal(t, MinAddress(first, second), first)
+	assert.Equal(t, MinAddress(second, first), first)
 }
 
-func TestAddrMaxAddr(t *testing.T) {
-	first, second := AddrFromUint32(0x0ae01701), AddrFromUint32(0x0ae01801)
+func TestAddressMaxAddress(t *testing.T) {
+	first, second := AddressFromUint32(0x0ae01701), AddressFromUint32(0x0ae01801)
 
-	assert.Equal(t, MaxAddr(first, second), second)
-	assert.Equal(t, MaxAddr(second, first), second)
+	assert.Equal(t, MaxAddress(first, second), second)
+	assert.Equal(t, MaxAddress(second, first), second)
 }

@@ -7,12 +7,12 @@ import (
 // Range represents a range of addresses that don't have to be aligned to
 // powers of 2 like prefixes
 type Range struct {
-	first, last Addr
+	first, last Address
 }
 
 // NewRange returns a new range from the given first and last addresses. If
 // first > last, then an empty range is returned
-func NewRange(first, last Addr) (Range, error) {
+func NewRange(first, last Address) (Range, error) {
 	if last.LessThan(first) {
 		return Range{}, fmt.Errorf("failed to create invalid range: [%s,%s]", first, last)
 	}
@@ -28,12 +28,12 @@ func (me Range) Size() int {
 }
 
 // First returns the first address in the range
-func (me Range) First() Addr {
+func (me Range) First() Address {
 	return me.first
 }
 
 // Last returns the last address in the range
-func (me Range) Last() Addr {
+func (me Range) Last() Address {
 	return me.last
 }
 
@@ -57,12 +57,12 @@ func (me Range) Minus(other Range) []Range {
 	if me.first.LessThan(other.first) {
 		result = append(result, Range{
 			me.first,
-			MinAddr(other.prev(), me.last),
+			MinAddress(other.prev(), me.last),
 		})
 	}
 	if other.last.LessThan(me.last) {
 		result = append(result, Range{
-			MaxAddr(me.first, other.next()),
+			MaxAddress(me.first, other.next()),
 			me.last,
 		})
 	}
@@ -71,17 +71,17 @@ func (me Range) Minus(other Range) []Range {
 
 // Set returns a Set containing the same ips as this range
 func (me Range) Set() Set {
-	return Set{trieNodeSet32FromRange(me)}
+	return Set{setNodeFromRange(me)}
 }
 
 // prev returns the address just before the range (or maxint) if the range
 // starts at the beginning of the IP space due to overflow)
-func (me Range) prev() Addr {
-	return Addr{me.first.ui - 1}
+func (me Range) prev() Address {
+	return Address{me.first.ui - 1}
 }
 
 // next returns the next address after the range (or 0 if the range goes to the
 // end of the IP space due to overflow)
-func (me Range) next() Addr {
-	return Addr{me.last.ui + 1}
+func (me Range) next() Address {
+	return Address{me.last.ui + 1}
 }

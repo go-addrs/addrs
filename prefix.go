@@ -11,13 +11,13 @@ import (
 // first `length` bits or not. This allows storing an IP address in CIDR
 // notation with both the network and host parts of the address.
 type Prefix struct {
-	Addr   Addr
-	length uint32
+	Address Address
+	length  uint32
 }
 
 // IP returns the address part of the prefix alone
-func (me Prefix) IP() Addr {
-	return me.Addr
+func (me Prefix) IP() Address {
+	return me.Address
 }
 
 // PrefixFromUint32 returns the IPv4 address from its 32 bit unsigned representation
@@ -25,7 +25,7 @@ func PrefixFromUint32(ui uint32, length int) (Prefix, error) {
 	if length < 0 || SIZE < length {
 		return Prefix{}, fmt.Errorf("failed to convert prefix, length %d isn't between 0 and 32", length)
 	}
-	return Prefix{Addr{ui}, uint32(length)}, nil
+	return Prefix{Address{ui}, uint32(length)}, nil
 }
 
 // PrefixFromBytes returns the IPv4 address of the `a.b.c.d`.
@@ -34,8 +34,8 @@ func PrefixFromBytes(a, b, c, d byte, length int) (Prefix, error) {
 		return Prefix{}, fmt.Errorf("failed to convert prefix, length %d isn't between 0 and 32", length)
 	}
 	return Prefix{
-		Addr:   AddrFromBytes(a, b, c, d),
-		length: uint32(length),
+		Address: AddressFromBytes(a, b, c, d),
+		length:  uint32(length),
 	}, nil
 }
 
@@ -48,21 +48,21 @@ func PrefixFromStdIPNet(net *net.IPNet) (Prefix, error) {
 	if bits != SIZE {
 		return Prefix{}, fmt.Errorf("failed to convert IPNet with size != 32")
 	}
-	addr, err := AddrFromStdIP(net.IP)
+	addr, err := AddressFromStdIP(net.IP)
 	if err != nil {
 		return Prefix{}, err
 	}
 	return Prefix{
-		Addr:   addr,
-		length: uint32(ones),
+		Address: addr,
+		length:  uint32(ones),
 	}, nil
 }
 
-// PrefixFromAddrMask combines the address and mask into a prefix
-func PrefixFromAddrMask(address Addr, mask Mask) Prefix {
+// PrefixFromAddressMask combines the address and mask into a prefix
+func PrefixFromAddressMask(address Address, mask Mask) Prefix {
 	return Prefix{
-		Addr:   address,
-		length: uint32(mask.Length()),
+		Address: address,
+		length:  uint32(mask.Length()),
 	}
 }
 
@@ -93,7 +93,7 @@ func ParsePrefix(prefix string) (Prefix, error) {
 // ToStdIPNet returns a *net.IPNet representation of this prefix
 func (me Prefix) ToStdIPNet() *net.IPNet {
 	return &net.IPNet{
-		IP:   me.Addr.ToStdIP(),
+		IP:   me.Address.ToStdIP(),
 		Mask: net.CIDRMask(me.Length(), SIZE),
 	}
 }
@@ -121,7 +121,7 @@ func (me Prefix) Length() int {
 	return int(me.length)
 }
 
-// Mask returns a new Addr with 1s in the first `length` bits and then 0s
+// Mask returns a new Address with 1s in the first `length` bits and then 0s
 // representing the network mask for this prefix.
 func (me Prefix) Mask() Mask {
 	return lengthToMask(me.Length())
@@ -133,9 +133,9 @@ func (me Prefix) Mask() Mask {
 // sense like in a host route or point-to-point prefix (/32 and /31). It just
 // does the math.
 func (me Prefix) Network() Prefix {
-	network := me.Addr.ui & me.Mask().ui
+	network := me.Address.ui & me.Mask().ui
 	return Prefix{
-		Addr: Addr{
+		Address: Address{
 			ui: network,
 		},
 		length: me.length,
@@ -147,9 +147,9 @@ func (me Prefix) Network() Prefix {
 // make sense like in a host route or point-to-point prefix (/32 and /31). It
 // just does the math.
 func (me Prefix) Broadcast() Prefix {
-	network := me.Addr.ui | ^me.Mask().ui
+	network := me.Address.ui | ^me.Mask().ui
 	return Prefix{
-		Addr: Addr{
+		Address: Address{
 			ui: network,
 		},
 		length: me.length,
@@ -159,9 +159,9 @@ func (me Prefix) Broadcast() Prefix {
 // Host returns a new Prefix with the first `length` bits zeroed out so
 // that only the bits in the `host` part of the prefix are present
 func (me Prefix) Host() Prefix {
-	host := me.Addr.ui & ^me.Mask().ui
+	host := me.Address.ui & ^me.Mask().ui
 	return Prefix{
-		Addr: Addr{
+		Address: Address{
 			ui: host,
 		},
 		length: me.length,
@@ -176,17 +176,17 @@ func (me Prefix) ContainsPrefix(other Prefix) bool {
 		return false
 	}
 	mask := me.Mask().ui
-	return me.Addr.ui&mask == other.Addr.ui&mask
+	return me.Address.ui&mask == other.Address.ui&mask
 }
 
-// ContainsAddr returns true if the given containee is wholly contained
+// ContainsAddress returns true if the given containee is wholly contained
 // within this Prefix. It is equivalent to calling ContainsPrefix with the
 // given address interpreted as a host route.
-func (me Prefix) ContainsAddr(other Addr) bool {
+func (me Prefix) ContainsAddress(other Address) bool {
 	return me.ContainsPrefix(
 		Prefix{
-			Addr:   other,
-			length: uint32(SIZE),
+			Address: other,
+			length:  uint32(SIZE),
 		},
 	)
 }
@@ -200,23 +200,23 @@ func (me Prefix) Size() int64 {
 // String returns the string representation of this prefix in dotted-quad cidr
 // format (e.g 10.224.24.1/24)
 func (me Prefix) String() string {
-	return fmt.Sprintf("%s/%d", me.Addr.String(), me.Length())
+	return fmt.Sprintf("%s/%d", me.Address.String(), me.Length())
 }
 
 // Uint32 returns the address and mask as uint32s
 func (me Prefix) Uint32() (address, mask uint32) {
-	address = me.Addr.Uint32()
+	address = me.Address.Uint32()
 	mask = me.Mask().Uint32()
 	return
 }
 
-// AddrCallback is the type of function passed to Iterate over individual addresses
-type AddrCallback func(Addr) bool
+// AddressCallback is the type of function passed to Iterate over individual addresses
+type AddressCallback func(Address) bool
 
 // Iterate visits all of the addresses in the prefix in lexigraphical order
-func (me Prefix) Iterate(callback AddrCallback) bool {
-	for a := me.Network().Addr.Uint32(); a <= me.Broadcast().Addr.Uint32(); a++ {
-		if !callback(Addr{a}) {
+func (me Prefix) Iterate(callback AddressCallback) bool {
+	for a := me.Network().Address.Uint32(); a <= me.Broadcast().Address.Uint32(); a++ {
+		if !callback(Address{a}) {
 			return false
 		}
 	}
@@ -235,13 +235,13 @@ func (me Prefix) Range() Range {
 // if the prefix is a /32, the return value is undefined
 func (me Prefix) Halves() (a, b Prefix) {
 	if me.length < 32 {
-		base := me.Network().Addr
+		base := me.Network().Address
 		a = Prefix{
-			Addr{base.ui},
+			Address{base.ui},
 			me.length + 1,
 		}
 		b = Prefix{
-			Addr{base.ui | (0x80000000 >> me.length)},
+			Address{base.ui | (0x80000000 >> me.length)},
 			me.length + 1,
 		}
 	}
@@ -251,5 +251,5 @@ func (me Prefix) Halves() (a, b Prefix) {
 // Set returns the set that includes the same addresses as the prefix
 // It ignores any bits set in the host part of the address.
 func (me Prefix) Set() Set {
-	return Set{trieNodeSet32FromPrefix(me)}
+	return Set{setNodeFromPrefix(me)}
 }

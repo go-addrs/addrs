@@ -12,7 +12,7 @@ package ipv4
 // supports efficient aggregation of prefix/value pairs based on equality of
 // values. See the README.md file for a more detailed discussion..
 type Map struct {
-	trie *trieNode32
+	trie *trieNode
 }
 
 // Match indicates how closely the given key matches the search result
@@ -35,7 +35,7 @@ func (m *Map) Size() int {
 // InsertPrefix inserts the given prefix with the given value into the map
 func (m *Map) InsertPrefix(prefix Prefix, value interface{}) error {
 	var err error
-	var newHead *trieNode32
+	var newHead *trieNode
 	newHead, err = m.trie.Insert(prefix, value)
 	if err != nil {
 		return err
@@ -47,7 +47,7 @@ func (m *Map) InsertPrefix(prefix Prefix, value interface{}) error {
 
 // Insert is a convenient alternative to InsertPrefix that treats the given IP
 // address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) Insert(ip Addr, value interface{}) error {
+func (m *Map) Insert(ip Address, value interface{}) error {
 	return m.InsertPrefix(ipToKey(ip), value)
 }
 
@@ -55,7 +55,7 @@ func (m *Map) Insert(ip Addr, value interface{}) error {
 // If the prefix already existed, it updates the associated value in place.
 func (m *Map) UpdatePrefix(prefix Prefix, value interface{}) error {
 	var err error
-	var newHead *trieNode32
+	var newHead *trieNode
 	newHead, err = m.trie.Update(prefix, value)
 	if err != nil {
 		return err
@@ -67,7 +67,7 @@ func (m *Map) UpdatePrefix(prefix Prefix, value interface{}) error {
 
 // Update is a convenient alternative to UpdatePrefix that treats
 // the given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) Update(ip Addr, value interface{}) error {
+func (m *Map) Update(ip Address, value interface{}) error {
 	return m.UpdatePrefix(ipToKey(ip), value)
 }
 
@@ -75,7 +75,7 @@ func (m *Map) Update(ip Addr, value interface{}) error {
 // If the prefix already existed, it updates the associated value in place.
 func (m *Map) InsertOrUpdatePrefix(prefix Prefix, value interface{}) error {
 	var err error
-	var newHead *trieNode32
+	var newHead *trieNode
 	newHead, err = m.trie.InsertOrUpdate(prefix, value)
 	if err != nil {
 		return err
@@ -87,7 +87,7 @@ func (m *Map) InsertOrUpdatePrefix(prefix Prefix, value interface{}) error {
 
 // InsertOrUpdate is a convenient alternative to InsertOrUpdatePrefix that treats
 // the given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) InsertOrUpdate(ip Addr, value interface{}) error {
+func (m *Map) InsertOrUpdate(ip Address, value interface{}) error {
 	return m.InsertOrUpdatePrefix(ipToKey(ip), value)
 }
 
@@ -107,7 +107,7 @@ func (m *Map) GetPrefix(prefix Prefix) (interface{}, bool) {
 
 // Get is a convenient alternative to GetPrefix that treats the given IP address
 // as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) Get(ip Addr) (interface{}, bool) {
+func (m *Map) Get(ip Address) (interface{}, bool) {
 	return m.GetPrefix(ipToKey(ip))
 }
 
@@ -115,7 +115,7 @@ func (m *Map) Get(ip Addr) (interface{}, bool) {
 // already exists. If it does not exist, it inserts it with the given value and
 // returns that.
 func (m *Map) GetOrInsertPrefix(prefix Prefix, value interface{}) (interface{}, error) {
-	var newHead, node *trieNode32
+	var newHead, node *trieNode
 	newHead, node = m.trie.GetOrInsert(prefix, value)
 	m.trie = newHead
 	return node.Data, nil
@@ -123,7 +123,7 @@ func (m *Map) GetOrInsertPrefix(prefix Prefix, value interface{}) (interface{}, 
 
 // GetOrInsert is a convenient alternative to GetOrInsertPrefix that treats the
 // given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) GetOrInsert(ip Addr, value interface{}) (interface{}, error) {
+func (m *Map) GetOrInsert(ip Address, value interface{}) (interface{}, error) {
 	return m.GetOrInsertPrefix(ipToKey(ip), value)
 }
 
@@ -132,7 +132,7 @@ func (m *Map) GetOrInsert(ip Addr, value interface{}) (interface{}, error) {
 // Prefix representing the longest prefix matched. If a match is *not*
 // found, matched is MatchNone and the other fields should be ignored
 func (m *Map) MatchPrefix(searchPrefix Prefix) (matched Match, prefix Prefix, value interface{}) {
-	var node *trieNode32
+	var node *trieNode
 	node = m.trie.Match(searchPrefix)
 	if node == nil {
 		return MatchNone, Prefix{}, nil
@@ -149,7 +149,7 @@ func (m *Map) MatchPrefix(searchPrefix Prefix) (matched Match, prefix Prefix, va
 
 // Match is a convenient alternative to MatchPrefix that treats the given IP
 // address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) Match(ip Addr) (matched Match, prefix Prefix, value interface{}) {
+func (m *Map) Match(ip Address) (matched Match, prefix Prefix, value interface{}) {
 	return m.MatchPrefix(ipToKey(ip))
 }
 
@@ -162,18 +162,18 @@ func (m *Map) RemovePrefix(prefix Prefix) (err error) {
 
 // Remove is a convenient alternative to RemovePrefix that treats the given IP
 // address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) Remove(ip Addr) error {
+func (m *Map) Remove(ip Address) error {
 	return m.RemovePrefix(ipToKey(ip))
 }
 
 // MapCallback is the signature of the callback functions that can be passed to
 // Iterate or Aggregate to handle each prefix/value combination.
-type MapCallback trie32Callback
+type MapCallback trieCallback
 
 // Iterate invokes the given callback function for each prefix/value pair in
 // the map in lexigraphical order.
 func (m *Map) Iterate(callback MapCallback) bool {
-	return m.trie.Iterate(trie32Callback(callback))
+	return m.trie.Iterate(trieCallback(callback))
 }
 
 // Aggregate invokes then given callback function for each prefix/value pair in
@@ -186,12 +186,12 @@ func (m *Map) Iterate(callback MapCallback) bool {
 //    same value as the same match against the non-aggregated set.
 // 3. The aggregated and non-aggregated sets of prefixes may be disjoint.
 func (m *Map) Aggregate(callback MapCallback) bool {
-	return m.trie.Aggregate(trie32Callback(callback))
+	return m.trie.Aggregate(trieCallback(callback))
 }
 
-func ipToKey(ip Addr) Prefix {
+func ipToKey(ip Address) Prefix {
 	return Prefix{
-		Addr:   ip,
-		length: uint32(SIZE),
+		Address: ip,
+		length:  uint32(SIZE),
 	}
 }

@@ -2,7 +2,7 @@ package ipv4
 
 // SetBuilder is a structure used to build an immutable Set
 type SetBuilder struct {
-	trie *trieNodeSet32
+	trie *setNode
 }
 
 // Set returns the immutable set effectively freezing this builder
@@ -11,7 +11,7 @@ func (me *SetBuilder) Set() Set {
 }
 
 // Insert inserts the given address into the set
-func (me *SetBuilder) Insert(addr Addr) {
+func (me *SetBuilder) Insert(addr Address) {
 	me.InsertPrefix(ipToKey(addr))
 }
 
@@ -21,7 +21,7 @@ func (me *SetBuilder) InsertPrefix(prefix Prefix) {
 }
 
 // Remove inserts the given address into the set
-func (me *SetBuilder) Remove(addr Addr) {
+func (me *SetBuilder) Remove(addr Address) {
 	me.RemovePrefix(ipToKey(addr))
 }
 

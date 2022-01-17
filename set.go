@@ -6,7 +6,7 @@ package ipv4
 // It supports conversion to/and from Ranges and Prefixes
 // Sets are immutable and can be built using a SetBuilder
 type Set struct {
-	trie *trieNodeSet32
+	trie *setNode
 }
 
 // Size returns the number of IP addresses
@@ -29,7 +29,7 @@ func (me Set) IteratePrefixes(callback PrefixCallback) bool {
 
 // Iterate calls `callback` for each address stored in lexographical order. It
 // stops iteration immediately if callback returns false.
-func (me Set) Iterate(callback AddrCallback) bool {
+func (me Set) Iterate(callback AddressCallback) bool {
 	return me.IteratePrefixes(func(prefix Prefix) bool {
 		return prefix.Iterate(callback)
 	})
@@ -51,7 +51,7 @@ func (me Set) Equal(other Set) bool {
 }
 
 // Contains tests if the given address is in the set
-func (me Set) Contains(addr Addr) bool {
+func (me Set) Contains(addr Address) bool {
 	return me.ContainsPrefix(ipToKey(addr))
 }
 

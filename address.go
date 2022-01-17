@@ -10,55 +10,55 @@ const (
 	SIZE int = 32
 )
 
-// Addr represents an IPv4 address
-type Addr struct {
+// Address represents an IPv4 address
+type Address struct {
 	ui uint32
 }
 
-// AddrFromUint32 returns the IPv4 address from its 32 bit unsigned representation
-func AddrFromUint32(ui uint32) Addr {
-	return Addr{ui}
+// AddressFromUint32 returns the IPv4 address from its 32 bit unsigned representation
+func AddressFromUint32(ui uint32) Address {
+	return Address{ui}
 }
 
-// AddrFromBytes returns the IPv4 address of the `a.b.c.d`.
-func AddrFromBytes(a, b, c, d byte) Addr {
-	return Addr{
+// AddressFromBytes returns the IPv4 address of the `a.b.c.d`.
+func AddressFromBytes(a, b, c, d byte) Address {
+	return Address{
 		ui: uint32(a)<<24 | uint32(b)<<16 | uint32(c)<<8 | uint32(d),
 	}
 }
 
-// AddrFromStdIP converts
-func AddrFromStdIP(ip net.IP) (Addr, error) {
+// AddressFromStdIP converts
+func AddressFromStdIP(ip net.IP) (Address, error) {
 	return fromSlice(ip.To4())
 }
 
-// ParseAddr returns the ip represented by `addr` in dotted-quad notation. If
+// ParseAddress returns the ip represented by `addr` in dotted-quad notation. If
 // the address cannot be parsed, then error is non-nil and the address returned
 // must be ignored.
-func ParseAddr(address string) (Addr, error) {
+func ParseAddress(address string) (Address, error) {
 	netIP := net.ParseIP(address)
 	if netIP == nil {
-		return Addr{}, fmt.Errorf("failed to parse IPv4: %s", address)
+		return Address{}, fmt.Errorf("failed to parse IPv4: %s", address)
 	}
 
 	netIPv4 := netIP.To4()
 	if netIPv4 == nil {
-		return Addr{}, fmt.Errorf("address is not IPv4: %s", address)
+		return Address{}, fmt.Errorf("address is not IPv4: %s", address)
 	}
 
-	return AddrFromStdIP(netIPv4)
+	return AddressFromStdIP(netIPv4)
 }
 
-// MinAddr returns the address, a or b, which comes first in lexigraphical order
-func MinAddr(a, b Addr) Addr {
+// MinAddress returns the address, a or b, which comes first in lexigraphical order
+func MinAddress(a, b Address) Address {
 	if a.LessThan(b) {
 		return a
 	}
 	return b
 }
 
-// MaxAddr returns the address, a or b, which comes last in lexigraphical order
-func MaxAddr(a, b Addr) Addr {
+// MaxAddress returns the address, a or b, which comes last in lexigraphical order
+func MaxAddress(a, b Address) Address {
 	if a.LessThan(b) {
 		return b
 	}
@@ -66,80 +66,80 @@ func MaxAddr(a, b Addr) Addr {
 }
 
 // ToStdIP returns a net.IP representation of the address which always has 4 bytes
-func (me Addr) ToStdIP() net.IP {
+func (me Address) ToStdIP() net.IP {
 	a, b, c, d := me.toBytes()
 	return net.IPv4(a, b, c, d)
 }
 
 // Equal reports whether this IPv4 address is the same as other
-func (me Addr) Equal(other Addr) bool {
+func (me Address) Equal(other Address) bool {
 	return me == other
 }
 
 // LessThan reports whether this IPv4 address comes strictly before `other`
 // lexigraphically.
-func (me Addr) LessThan(other Addr) bool {
+func (me Address) LessThan(other Address) bool {
 	return me.ui < other.ui
 }
 
 // DefaultMask returns the default IP mask for the given IP
-func (me Addr) DefaultMask() Mask {
+func (me Address) DefaultMask() Mask {
 	ones, _ := me.ToStdIP().DefaultMask().Size()
 	return lengthToMask(ones)
 }
 
 // Prefix returns a host prefix (/32) with the address
-func (me Addr) Prefix() Prefix {
+func (me Address) Prefix() Prefix {
 	return Prefix{me, uint32(SIZE)}
 }
 
 // String returns a string representing the address in dotted-quad notation
-func (me Addr) String() string {
+func (me Address) String() string {
 	a, b, c, d := me.toBytes()
 	return fmt.Sprintf("%d.%d.%d.%d", a, b, c, d)
 }
 
 // Uint32 returns the address as a uint32
-func (me Addr) Uint32() uint32 {
+func (me Address) Uint32() uint32 {
 	return me.ui
 }
 
 // IsGlobalUnicast calls the same method from net.IP
-func (me Addr) IsGlobalUnicast() bool {
+func (me Address) IsGlobalUnicast() bool {
 	return me.ToStdIP().IsGlobalUnicast()
 }
 
 // IsInterfaceLocalMulticast calls the same method from net.IP
-func (me Addr) IsInterfaceLocalMulticast() bool {
+func (me Address) IsInterfaceLocalMulticast() bool {
 	return me.ToStdIP().IsInterfaceLocalMulticast()
 }
 
 // IsLinkLocalMulticast calls the same method from net.IP
-func (me Addr) IsLinkLocalMulticast() bool {
+func (me Address) IsLinkLocalMulticast() bool {
 	return me.ToStdIP().IsLinkLocalMulticast()
 }
 
 // IsLinkLocalUnicast calls the same method from net.IP
-func (me Addr) IsLinkLocalUnicast() bool {
+func (me Address) IsLinkLocalUnicast() bool {
 	return me.ToStdIP().IsLinkLocalUnicast()
 }
 
 // IsLoopback calls the same method from net.IP
-func (me Addr) IsLoopback() bool {
+func (me Address) IsLoopback() bool {
 	return me.ToStdIP().IsLoopback()
 }
 
 // IsMulticast calls the same method from net.IP
-func (me Addr) IsMulticast() bool {
+func (me Address) IsMulticast() bool {
 	return me.ToStdIP().IsMulticast()
 }
 
 // IsUnspecified calls the same method from net.IP
-func (me Addr) IsUnspecified() bool {
+func (me Address) IsUnspecified() bool {
 	return me.ToStdIP().IsUnspecified()
 }
 
-func (me Addr) toBytes() (a, b, c, d byte) {
+func (me Address) toBytes() (a, b, c, d byte) {
 	a = byte(me.ui & 0xff000000 >> 24)
 	b = byte(me.ui & 0xff0000 >> 16)
 	c = byte(me.ui & 0xff00 >> 8)
@@ -149,12 +149,12 @@ func (me Addr) toBytes() (a, b, c, d byte) {
 
 // fromSlice returns the IPv4 address from a slice with four bytes or an error
 // if the slice is the wrong size.
-func fromSlice(s []byte) (Addr, error) {
+func fromSlice(s []byte) (Address, error) {
 	if s == nil {
-		return Addr{}, fmt.Errorf("failed to parse nil ip")
+		return Address{}, fmt.Errorf("failed to parse nil ip")
 	}
 	if len(s) != 4 {
-		return Addr{}, fmt.Errorf("failed to parse ip because slice size is not equal to 4")
+		return Address{}, fmt.Errorf("failed to parse ip because slice size is not equal to 4")
 	}
-	return AddrFromBytes(s[0], s[1], s[2], s[3]), nil
+	return AddressFromBytes(s[0], s[1], s[2], s[3]), nil
 }

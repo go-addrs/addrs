@@ -6,53 +6,53 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func validRange(t *testing.T, first, last Addr) Range {
+func validRange(t *testing.T, first, last Address) Range {
 	r, err := NewRange(first, last)
 	assert.Nil(t, err)
 	return r
 }
 
 func TestNewRange(t *testing.T) {
-	rangeError := func(first, last Addr) error {
+	rangeError := func(first, last Address) error {
 		_, err := NewRange(first, last)
 		return err
 	}
 
-	assert.Nil(t, rangeError(Addr{100}, Addr{200}))
-	assert.Nil(t, rangeError(Addr{100}, Addr{100}))
-	assert.NotNil(t, rangeError(Addr{200}, Addr{100}))
-	assert.NotNil(t, rangeError(Addr{200}, Addr{199}))
-	assert.NotNil(t, rangeError(Addr{0xffffffff}, Addr{0}))
+	assert.Nil(t, rangeError(Address{100}, Address{200}))
+	assert.Nil(t, rangeError(Address{100}, Address{100}))
+	assert.NotNil(t, rangeError(Address{200}, Address{100}))
+	assert.NotNil(t, rangeError(Address{200}, Address{199}))
+	assert.NotNil(t, rangeError(Address{0xffffffff}, Address{0}))
 }
 
 func TestRangeString(t *testing.T) {
-	assert.Equal(t, "[18.52.86.120,35.69.103.137]", validRange(t, Addr{ui: 0x12345678}, Addr{ui: 0x23456789}).String())
+	assert.Equal(t, "[18.52.86.120,35.69.103.137]", validRange(t, Address{ui: 0x12345678}, Address{ui: 0x23456789}).String())
 	assert.Equal(t, "[10.224.24.0,10.224.24.255]", unsafeParsePrefix("10.224.24.1/24").Range().String())
 }
 
 func TestRangeSize(t *testing.T) {
 	assert.Equal(t, 0x100, unsafeParsePrefix("10.224.24.1/24").Range().Size())
 	assert.Equal(t, 0x20000, unsafeParsePrefix("10.224.24.1/15").Range().Size())
-	assert.Equal(t, 0x11111112, validRange(t, Addr{ui: 0x12345678}, Addr{ui: 0x23456789}).Size())
+	assert.Equal(t, 0x11111112, validRange(t, Address{ui: 0x12345678}, Address{ui: 0x23456789}).Size())
 }
 
 func TestRangeFirstLast(t *testing.T) {
 	tests := []struct {
 		description string
 		r           Range
-		first, last Addr
+		first, last Address
 	}{
 		{
 			description: "unaligned",
-			r:           validRange(t, Addr{ui: 0x12345678}, Addr{ui: 0x23456789}),
-			first:       Addr{ui: 0x12345678},
-			last:        Addr{ui: 0x23456789},
+			r:           validRange(t, Address{ui: 0x12345678}, Address{ui: 0x23456789}),
+			first:       Address{ui: 0x12345678},
+			last:        Address{ui: 0x23456789},
 		},
 		{
 			description: "prefix",
 			r:           unsafeParsePrefix("10.224.24.1/24").Range(),
-			first:       unsafeParseAddr("10.224.24.0"),
-			last:        unsafeParseAddr("10.224.24.255"),
+			first:       unsafeParseAddress("10.224.24.0"),
+			last:        unsafeParseAddress("10.224.24.255"),
 		},
 	}
 	for _, tt := range tests {
@@ -75,7 +75,7 @@ func TestRangeContains(t *testing.T) {
 		},
 		{
 			description: "unaligned",
-			a:           validRange(t, Addr{ui: 0x12345678}, Addr{ui: 0x23456789}),
+			a:           validRange(t, Address{ui: 0x12345678}, Address{ui: 0x23456789}),
 			b:           unsafeParsePrefix("20.224.26.1/24").Range(),
 		},
 	}
@@ -104,10 +104,10 @@ func TestRangeMinus(t *testing.T) {
 		},
 		{
 			description: "overlap right",
-			a:           Range{Addr{100}, Addr{200}},
-			b:           Range{Addr{50}, Addr{150}},
+			a:           Range{Address{100}, Address{200}},
+			b:           Range{Address{50}, Address{150}},
 			result: []Range{
-				Range{Addr{151}, Addr{200}},
+				Range{Address{151}, Address{200}},
 			},
 		},
 		{
@@ -118,8 +118,8 @@ func TestRangeMinus(t *testing.T) {
 		},
 		{
 			description: "overlap all",
-			a:           Range{Addr{100}, Addr{200}},
-			b:           Range{Addr{50}, Addr{250}},
+			a:           Range{Address{100}, Address{200}},
+			b:           Range{Address{50}, Address{250}},
 			result:      []Range{},
 		},
 
@@ -128,7 +128,7 @@ func TestRangeMinus(t *testing.T) {
 			a:           unsafeParsePrefix("10.224.24.0/22").Range(),
 			b:           unsafeParsePrefix("10.224.24.0/24").Range(),
 			result: []Range{
-				validRange(t, unsafeParseAddr("10.224.25.0"), unsafeParseAddr("10.224.27.255")),
+				validRange(t, unsafeParseAddress("10.224.25.0"), unsafeParseAddress("10.224.27.255")),
 			},
 		},
 		{
@@ -146,11 +146,11 @@ func TestRangeMinus(t *testing.T) {
 
 		{
 			description: "wholly contained",
-			a:           Range{Addr{100}, Addr{200}},
-			b:           Range{Addr{110}, Addr{190}},
+			a:           Range{Address{100}, Address{200}},
+			b:           Range{Address{110}, Address{190}},
 			result: []Range{
-				Range{Addr{100}, Addr{109}},
-				Range{Addr{191}, Addr{200}},
+				Range{Address{100}, Address{109}},
+				Range{Address{191}, Address{200}},
 			},
 		},
 		{
@@ -158,15 +158,15 @@ func TestRangeMinus(t *testing.T) {
 			a:           unsafeParsePrefix("10.224.24.0/22").Range(),
 			b:           unsafeParsePrefix("10.224.27.0/24").Range(),
 			result: []Range{
-				validRange(t, unsafeParseAddr("10.224.24.0"), unsafeParseAddr("10.224.26.255")),
+				validRange(t, unsafeParseAddress("10.224.24.0"), unsafeParseAddress("10.224.26.255")),
 			},
 		},
 		{
 			description: "overlap left",
-			a:           Range{Addr{100}, Addr{200}},
-			b:           Range{Addr{150}, Addr{250}},
+			a:           Range{Address{100}, Address{200}},
+			b:           Range{Address{150}, Address{250}},
 			result: []Range{
-				Range{Addr{100}, Addr{149}},
+				Range{Address{100}, Address{149}},
 			},
 		},
 
@@ -194,7 +194,7 @@ func TestRangeMinus(t *testing.T) {
 }
 
 func TestRangeSet(t *testing.T) {
-	r := Range{unsafeParseAddr("7.0.37.17"), unsafeParseAddr("13.8.222.113")}
+	r := Range{unsafeParseAddress("7.0.37.17"), unsafeParseAddress("13.8.222.113")}
 
 	// I calculated this manually from the above arbitrarily chosen range.
 	golden := SetBuilder{}

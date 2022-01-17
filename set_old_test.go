@@ -8,15 +8,15 @@ import (
 )
 
 var (
-	Eights = unsafeParseAddr("8.8.8.8")
-	Nines  = unsafeParseAddr("9.9.9.9")
+	Eights = unsafeParseAddress("8.8.8.8")
+	Nines  = unsafeParseAddress("9.9.9.9")
 
 	Ten24          = unsafeParsePrefix("10.0.0.0/24")
 	TenOne24       = unsafeParsePrefix("10.0.1.0/24")
 	TenTwo24       = unsafeParsePrefix("10.0.2.0/24")
 	Ten24128       = unsafeParsePrefix("10.0.0.128/25")
-	Ten24Router    = unsafeParseAddr("10.0.0.1")
-	Ten24Broadcast = unsafeParseAddr("10.0.0.255")
+	Ten24Router    = unsafeParseAddress("10.0.0.1")
+	Ten24Broadcast = unsafeParseAddress("10.0.0.255")
 )
 
 func TestOldSetInit(t *testing.T) {
@@ -64,13 +64,13 @@ func TestOldSetInsertPrefixwork(t *testing.T) {
 func TestOldSetInsertSequential(t *testing.T) {
 	sb := SetBuilder{}
 
-	sb.Insert(unsafeParseAddr("192.168.1.0"))
+	sb.Insert(unsafeParseAddress("192.168.1.0"))
 	assert.Equal(t, 1, sb.trie.NumNodes())
-	sb.Insert(unsafeParseAddr("192.168.1.1"))
+	sb.Insert(unsafeParseAddress("192.168.1.1"))
 	assert.Equal(t, 1, sb.trie.NumNodes())
-	sb.Insert(unsafeParseAddr("192.168.1.2"))
+	sb.Insert(unsafeParseAddress("192.168.1.2"))
 	assert.Equal(t, 2, sb.trie.NumNodes())
-	sb.Insert(unsafeParseAddr("192.168.1.3"))
+	sb.Insert(unsafeParseAddress("192.168.1.3"))
 	assert.Equal(t, 1, sb.trie.NumNodes())
 	assert.Equal(t, int64(4), sb.Set().Size())
 
@@ -166,8 +166,8 @@ func TestOldSetRemoveAll(t *testing.T) {
 
 func TestOldSet_RemoveTop(t *testing.T) {
 	testSet := SetBuilder{}
-	ip1 := unsafeParseAddr("10.0.0.1")
-	ip2 := unsafeParseAddr("10.0.0.2")
+	ip1 := unsafeParseAddress("10.0.0.1")
+	ip2 := unsafeParseAddress("10.0.0.2")
 
 	testSet.Insert(ip2) // top
 	testSet.Insert(ip1) // inserted at left
@@ -318,8 +318,8 @@ func TestOldSetAllocateDeallocate(t *testing.T) {
 
 	assert.Equal(t, int64(65536), sb.Set().Size())
 
-	ips := make([]Addr, 0, sb.Set().Size())
-	sb.Set().Iterate(func(ip Addr) bool {
+	ips := make([]Address, 0, sb.Set().Size())
+	sb.Set().Iterate(func(ip Address) bool {
 		ips = append(ips, ip)
 		return true
 	})
@@ -329,14 +329,14 @@ func TestOldSetAllocateDeallocate(t *testing.T) {
 		allocated.Insert(ips[rand.Intn(65536)])
 	}
 	assert.Equal(t, int64(14500), allocated.Set().Size())
-	allocated.Set().Iterate(func(ip Addr) bool {
+	allocated.Set().Iterate(func(ip Address) bool {
 		assert.True(t, sb.Set().Contains(ip))
 		return true
 	})
 
 	available := sb.Set().Difference(allocated.Set())
 	assert.Equal(t, int64(51036), available.Size())
-	available.Iterate(func(ip Addr) bool {
+	available.Iterate(func(ip Address) bool {
 		assert.True(t, sb.Set().Contains(ip))
 		assert.False(t, allocated.Set().Contains(ip))
 		return true

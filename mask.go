@@ -8,7 +8,7 @@ import (
 
 // Mask represents an IPv4 prefix mask. It has 0-32 leading 1s and then all
 // remaining bits are 0s
-type Mask Addr
+type Mask Address
 
 // MaxUint32 is the maximum integer that can be stored in a uint32, "all ones"
 const MaxUint32 = ^uint32(0)
@@ -24,7 +24,7 @@ func CreateMask(length int) (Mask, error) {
 
 // MaskFromBytes returns the IPv4 address mask represented by `a.b.c.d`.
 func MaskFromBytes(a, b, c, d byte) (Mask, error) {
-	m := Mask(AddrFromBytes(a, b, c, d))
+	m := Mask(AddressFromBytes(a, b, c, d))
 	if !m.valid() {
 		return Mask{}, fmt.Errorf("failed to create a valid mask from bytes: %d, %d, %d, %d", a, b, c, d)
 	}
@@ -68,7 +68,7 @@ func (me Mask) ToStdIPMask() net.IPMask {
 
 // String returns the net.IPMask representation of this Mask
 func (me Mask) String() string {
-	return Addr(me).String()
+	return Address(me).String()
 }
 
 // Uint32 returns the mask as a uint32

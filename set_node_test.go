@@ -6,178 +6,178 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func printTrieSet32(trie *trieNodeSet32) {
-	printTrie32((*trieNode32)(trie))
+func printTrieSet(trie *setNode) {
+	printTrie((*trieNode)(trie))
 }
 
 func TestTrieNodeSet32Union(t *testing.T) {
-	a := trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/32"))
-	b := trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.128/32"))
+	a := setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/32"))
+	b := setNodeFromPrefix(unsafeParsePrefix("10.224.24.128/32"))
 	tests := []struct {
 		description string
-		sets        []*trieNodeSet32
-		in, out     []Addr
+		sets        []*setNode
+		in, out     []Address
 	}{
 		{
 			description: "two adjacent",
-			sets: []*trieNodeSet32{
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/25")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.128/25")),
+			sets: []*setNode{
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/25")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.128/25")),
 			},
-			in: []Addr{
-				unsafeParseAddr("10.224.24.0"),
-				unsafeParseAddr("10.224.24.255"),
-				unsafeParseAddr("10.224.24.127"),
-				unsafeParseAddr("10.224.24.128"),
+			in: []Address{
+				unsafeParseAddress("10.224.24.0"),
+				unsafeParseAddress("10.224.24.255"),
+				unsafeParseAddress("10.224.24.127"),
+				unsafeParseAddress("10.224.24.128"),
 			},
-			out: []Addr{
-				unsafeParseAddr("10.224.23.255"),
-				unsafeParseAddr("10.224.25.0"),
+			out: []Address{
+				unsafeParseAddress("10.224.23.255"),
+				unsafeParseAddress("10.224.25.0"),
 			},
 		},
 		{
 			description: "nil",
-			sets: []*trieNodeSet32{
+			sets: []*setNode{
 				nil,
 			},
-			in: []Addr{},
-			out: []Addr{
-				unsafeParseAddr("10.224.23.117"),
-				unsafeParseAddr("200.193.25.0"),
+			in: []Address{},
+			out: []Address{
+				unsafeParseAddress("10.224.23.117"),
+				unsafeParseAddress("200.193.25.0"),
 			},
 		},
 		{
 			description: "not nil then nil",
-			sets: []*trieNodeSet32{
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/32")),
+			sets: []*setNode{
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/32")),
 				nil,
 			},
-			in: []Addr{
-				unsafeParseAddr("10.224.24.0"),
+			in: []Address{
+				unsafeParseAddress("10.224.24.0"),
 			},
-			out: []Addr{
-				unsafeParseAddr("10.224.23.255"),
-				unsafeParseAddr("200.193.24.1"),
+			out: []Address{
+				unsafeParseAddress("10.224.23.255"),
+				unsafeParseAddress("200.193.24.1"),
 			},
 		},
 		{
 			description: "same",
-			sets: []*trieNodeSet32{
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/32")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/32")),
+			sets: []*setNode{
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/32")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/32")),
 			},
-			in: []Addr{
-				unsafeParseAddr("10.224.24.0"),
+			in: []Address{
+				unsafeParseAddress("10.224.24.0"),
 			},
 		},
 		{
 			description: "different then same",
-			sets: []*trieNodeSet32{
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.29.0/32")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/32")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/32")),
+			sets: []*setNode{
+				setNodeFromPrefix(unsafeParsePrefix("10.224.29.0/32")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/32")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/32")),
 			},
-			in: []Addr{
-				unsafeParseAddr("10.224.24.0"),
-				unsafeParseAddr("10.224.29.0"),
+			in: []Address{
+				unsafeParseAddress("10.224.24.0"),
+				unsafeParseAddress("10.224.29.0"),
 			},
 		},
 		{
 			description: "duplicates",
-			sets: []*trieNodeSet32{
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/32")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.128/32")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/24")),
+			sets: []*setNode{
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/32")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.128/32")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/24")),
 			},
-			in: []Addr{
-				unsafeParseAddr("10.224.24.0"),
-				unsafeParseAddr("10.224.24.128"),
-				unsafeParseAddr("10.224.24.255"),
+			in: []Address{
+				unsafeParseAddress("10.224.24.0"),
+				unsafeParseAddress("10.224.24.128"),
+				unsafeParseAddress("10.224.24.255"),
 			},
-			out: []Addr{
-				unsafeParseAddr("10.224.25.0"),
-				unsafeParseAddr("10.224.28.0"),
+			out: []Address{
+				unsafeParseAddress("10.224.25.0"),
+				unsafeParseAddress("10.224.28.0"),
 			},
 		},
 		{
 			description: "union of union",
-			sets: []*trieNodeSet32{
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/32")).Union(trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.128/32"))),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/32")).Union(trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.128/32"))),
+			sets: []*setNode{
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/32")).Union(setNodeFromPrefix(unsafeParsePrefix("10.224.24.128/32"))),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/32")).Union(setNodeFromPrefix(unsafeParsePrefix("10.224.24.128/32"))),
 			},
-			in: []Addr{
-				unsafeParseAddr("10.224.24.0"),
-				unsafeParseAddr("10.224.24.128"),
+			in: []Address{
+				unsafeParseAddress("10.224.24.0"),
+				unsafeParseAddress("10.224.24.128"),
 			},
-			out: []Addr{
-				unsafeParseAddr("10.224.24.255"),
-				unsafeParseAddr("10.224.25.0"),
-				unsafeParseAddr("10.224.28.0"),
+			out: []Address{
+				unsafeParseAddress("10.224.24.255"),
+				unsafeParseAddress("10.224.25.0"),
+				unsafeParseAddress("10.224.28.0"),
 			},
 		},
 		{
 			description: "reverse unions",
-			sets: []*trieNodeSet32{
+			sets: []*setNode{
 				a.Union(b),
 				b.Union(a),
 			},
-			in: []Addr{
-				unsafeParseAddr("10.224.24.0"),
-				unsafeParseAddr("10.224.24.128"),
+			in: []Address{
+				unsafeParseAddress("10.224.24.0"),
+				unsafeParseAddress("10.224.24.128"),
 			},
-			out: []Addr{
-				unsafeParseAddr("10.224.24.255"),
-				unsafeParseAddr("10.224.25.0"),
-				unsafeParseAddr("10.224.28.0"),
+			out: []Address{
+				unsafeParseAddress("10.224.24.255"),
+				unsafeParseAddress("10.224.25.0"),
+				unsafeParseAddress("10.224.28.0"),
 			},
 		},
 		{
 			description: "progressively super",
-			sets: []*trieNodeSet32{
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/32")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/31")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/30")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/29")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/28")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/27")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/26")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/25")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/24")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/23")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/22")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/21")),
-				trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/20")),
+			sets: []*setNode{
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/32")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/31")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/30")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/29")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/28")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/27")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/26")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/25")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/24")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/23")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/22")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/21")),
+				setNodeFromPrefix(unsafeParsePrefix("10.224.24.0/20")),
 			},
-			in: []Addr{
-				unsafeParseAddr("10.224.16.0"),
-				unsafeParseAddr("10.224.17.0"),
-				unsafeParseAddr("10.224.18.0"),
-				unsafeParseAddr("10.224.19.0"),
-				unsafeParseAddr("10.224.20.0"),
-				unsafeParseAddr("10.224.21.0"),
-				unsafeParseAddr("10.224.22.0"),
-				unsafeParseAddr("10.224.23.0"),
-				unsafeParseAddr("10.224.24.0"),
-				unsafeParseAddr("10.224.25.0"),
-				unsafeParseAddr("10.224.26.0"),
-				unsafeParseAddr("10.224.27.0"),
-				unsafeParseAddr("10.224.28.0"),
-				unsafeParseAddr("10.224.29.0"),
-				unsafeParseAddr("10.224.30.0"),
-				unsafeParseAddr("10.224.31.0"),
+			in: []Address{
+				unsafeParseAddress("10.224.16.0"),
+				unsafeParseAddress("10.224.17.0"),
+				unsafeParseAddress("10.224.18.0"),
+				unsafeParseAddress("10.224.19.0"),
+				unsafeParseAddress("10.224.20.0"),
+				unsafeParseAddress("10.224.21.0"),
+				unsafeParseAddress("10.224.22.0"),
+				unsafeParseAddress("10.224.23.0"),
+				unsafeParseAddress("10.224.24.0"),
+				unsafeParseAddress("10.224.25.0"),
+				unsafeParseAddress("10.224.26.0"),
+				unsafeParseAddress("10.224.27.0"),
+				unsafeParseAddress("10.224.28.0"),
+				unsafeParseAddress("10.224.29.0"),
+				unsafeParseAddress("10.224.30.0"),
+				unsafeParseAddress("10.224.31.0"),
 			},
-			out: []Addr{
-				unsafeParseAddr("10.224.15.0"),
-				unsafeParseAddr("10.224.32.0"),
+			out: []Address{
+				unsafeParseAddress("10.224.15.0"),
+				unsafeParseAddress("10.224.32.0"),
 			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
-			test := func(sets []*trieNodeSet32) func(*testing.T) {
+			test := func(sets []*setNode) func(*testing.T) {
 				return func(t *testing.T) {
-					var s *trieNodeSet32
+					var s *setNode
 					for _, set := range sets {
 						s = s.Union(set)
 						assert.Equal(t, s, s.Union(s))
@@ -196,56 +196,56 @@ func TestTrieNodeSet32Union(t *testing.T) {
 				}
 			}
 			t.Run("forward", test(tt.sets))
-			t.Run("backward", test(([]*trieNodeSet32)(reverse(tt.sets))))
+			t.Run("backward", test(([]*setNode)(reverse(tt.sets))))
 		})
 	}
 	t.Run("not active", func(t *testing.T) {
-		var one, two *trieNodeSet32
+		var one, two *setNode
 		one = one.Insert(unsafeParsePrefix("198.51.100.0/25"))
 		one = one.Insert(unsafeParsePrefix("203.0.113.0/25"))
-		printTrieSet32(one)
+		printTrieSet(one)
 
 		two = two.Insert(unsafeParsePrefix("198.51.100.128/25"))
 		two = two.Insert(unsafeParsePrefix("203.0.113.128/25"))
-		printTrieSet32(two)
+		printTrieSet(two)
 
 		result := one.Union(two)
 		assert.Equal(t, int64(512), result.Size())
 		assert.NotNil(t, result.Match(unsafeParsePrefix("198.51.100.0/24")))
 		assert.NotNil(t, result.Match(unsafeParsePrefix("203.0.113.0/24")))
-		printTrieSet32(result)
+		printTrieSet(result)
 		assert.Nil(t, result.Match(unsafeParsePrefix("192.0.0.0/4")))
 	})
 }
 
-func TestInsertOverlappingSet32(t *testing.T) {
+func TestInsertOverlappingSet(t *testing.T) {
 	tests := []struct {
 		desc    string
 		a, b, c Prefix
 	}{
 		{
 			desc: "16 and 24",
-			a:    Prefix{unsafeParseAddr("10.200.0.0"), 16},
-			b:    Prefix{unsafeParseAddr("10.200.20.0"), 24},
-			c:    Prefix{unsafeParseAddr("10.200.20.0"), 32},
+			a:    Prefix{unsafeParseAddress("10.200.0.0"), 16},
+			b:    Prefix{unsafeParseAddress("10.200.20.0"), 24},
+			c:    Prefix{unsafeParseAddress("10.200.20.0"), 32},
 		},
 		{
 			desc: "17 and 27",
-			a:    Prefix{unsafeParseAddr("10.200.0.0"), 17},
-			b:    Prefix{Addr{0x0ac800e0}, 27},
-			c:    Prefix{Addr{0x0ac800f8}, 31},
+			a:    Prefix{unsafeParseAddress("10.200.0.0"), 17},
+			b:    Prefix{Address{0x0ac800e0}, 27},
+			c:    Prefix{Address{0x0ac800f8}, 31},
 		},
 		{
 			desc: "0 and 8",
-			a:    Prefix{Addr{0}, 0},
-			b:    Prefix{unsafeParseAddr("10.0.0.0"), 8},
-			c:    Prefix{unsafeParseAddr("10.10.0.0"), 16},
+			a:    Prefix{Address{0}, 0},
+			b:    Prefix{unsafeParseAddress("10.0.0.0"), 8},
+			c:    Prefix{unsafeParseAddress("10.10.0.0"), 16},
 		},
 		{
 			desc: "0 and 8",
-			a:    Prefix{Addr{0}, 0},
-			b:    Prefix{unsafeParseAddr("10.0.0.0"), 8},
-			c:    Prefix{unsafeParseAddr("10.0.0.0"), 8},
+			a:    Prefix{Address{0}, 0},
+			b:    Prefix{unsafeParseAddress("10.0.0.0"), 8},
+			c:    Prefix{unsafeParseAddress("10.0.0.0"), 8},
 		},
 	}
 
@@ -255,7 +255,7 @@ func TestInsertOverlappingSet32(t *testing.T) {
 			// checks that they are found in the resulting trie
 			subTest := func(first, second, third Prefix) func(t *testing.T) {
 				return func(t *testing.T) {
-					var trie *trieNodeSet32
+					var trie *setNode
 
 					trie = trie.Insert(first)
 					assert.NotNil(t, trie.Match(first))
@@ -283,8 +283,8 @@ func TestInsertOverlappingSet32(t *testing.T) {
 }
 
 // https://stackoverflow.com/a/61218109
-func reverse(s []*trieNodeSet32) []*trieNodeSet32 {
-	a := make([]*trieNodeSet32, len(s))
+func reverse(s []*setNode) []*setNode {
+	a := make([]*setNode, len(s))
 	copy(a, s)
 
 	for i := len(a)/2 - 1; i >= 0; i-- {
@@ -297,7 +297,7 @@ func reverse(s []*trieNodeSet32) []*trieNodeSet32 {
 
 func TestSetRemove(t *testing.T) {
 	t.Run("test remove from nil", func(t *testing.T) {
-		var trie *trieNodeSet32
+		var trie *setNode
 
 		assert.Equal(t, int64(0), trie.Size())
 
@@ -305,7 +305,7 @@ func TestSetRemove(t *testing.T) {
 		assert.Equal(t, int64(0), trie.Size())
 	})
 	t.Run("test remove all", func(t *testing.T) {
-		var trie *trieNodeSet32
+		var trie *setNode
 
 		prefix := unsafeParsePrefix("203.0.113.0/24")
 		trie = trie.Insert(prefix)
@@ -315,7 +315,7 @@ func TestSetRemove(t *testing.T) {
 		assert.Equal(t, int64(0), trie.Size())
 	})
 	t.Run("test remove one address", func(t *testing.T) {
-		var trie *trieNodeSet32
+		var trie *setNode
 
 		prefix := unsafeParsePrefix("203.0.113.0/24")
 		trie = trie.Insert(prefix)
@@ -325,7 +325,7 @@ func TestSetRemove(t *testing.T) {
 		assert.Equal(t, int64(255), trie.Size())
 	})
 	t.Run("test remove half", func(t *testing.T) {
-		var trie *trieNodeSet32
+		var trie *setNode
 
 		prefix := unsafeParsePrefix("203.0.113.0/24")
 		trie = trie.Insert(prefix)
@@ -335,7 +335,7 @@ func TestSetRemove(t *testing.T) {
 		assert.Equal(t, int64(128), trie.Size())
 	})
 	t.Run("test remove more", func(t *testing.T) {
-		var trie *trieNodeSet32
+		var trie *setNode
 
 		prefix := unsafeParsePrefix("203.0.113.0/24")
 		trie = trie.Insert(prefix)
@@ -348,7 +348,7 @@ func TestSetRemove(t *testing.T) {
 
 func TestSetIntersect(t *testing.T) {
 	t.Run("with nil", func(t *testing.T) {
-		var one, two, three *trieNodeSet32
+		var one, two, three *setNode
 
 		three = three.Insert(unsafeParsePrefix("203.0.113.0/24"))
 
@@ -361,7 +361,7 @@ func TestSetIntersect(t *testing.T) {
 		assert.Equal(t, int64(0), three.Intersect(one).Size())
 	})
 	t.Run("disjoint", func(t *testing.T) {
-		var one, two *trieNodeSet32
+		var one, two *setNode
 
 		one = one.Insert(unsafeParsePrefix("203.0.113.0/27"))
 		two = two.Insert(unsafeParsePrefix("203.0.113.128/25"))
@@ -369,7 +369,7 @@ func TestSetIntersect(t *testing.T) {
 		assert.Equal(t, int64(0), two.Intersect(one).Size())
 	})
 	t.Run("subset", func(t *testing.T) {
-		var one, two *trieNodeSet32
+		var one, two *setNode
 
 		one = one.Insert(unsafeParsePrefix("203.0.113.0/24"))
 		two = two.Insert(unsafeParsePrefix("203.0.113.128/25"))
@@ -380,7 +380,7 @@ func TestSetIntersect(t *testing.T) {
 		assert.NotNil(t, result.Match(unsafeParsePrefix("203.0.113.217/32")))
 	})
 	t.Run("recursive", func(t *testing.T) {
-		var one, two *trieNodeSet32
+		var one, two *setNode
 		one = one.Insert(unsafeParsePrefix("198.51.100.0/24"))
 		one = one.Insert(unsafeParsePrefix("203.0.113.0/24"))
 		two = two.Insert(unsafeParsePrefix("203.0.113.128/25"))
@@ -401,7 +401,7 @@ func TestSetIntersect(t *testing.T) {
 
 func TestSetDifference(t *testing.T) {
 	t.Run("with nil", func(t *testing.T) {
-		var one, two, three *trieNodeSet32
+		var one, two, three *setNode
 
 		three = three.Insert(unsafeParsePrefix("203.0.113.0/24"))
 
@@ -414,7 +414,7 @@ func TestSetDifference(t *testing.T) {
 		assert.Equal(t, int64(256), three.Difference(one).Size())
 	})
 	t.Run("disjoint", func(t *testing.T) {
-		var one, two *trieNodeSet32
+		var one, two *setNode
 
 		one = one.Insert(unsafeParsePrefix("203.0.113.0/27"))
 		two = two.Insert(unsafeParsePrefix("203.0.113.128/25"))
@@ -430,7 +430,7 @@ func TestSetDifference(t *testing.T) {
 		assert.NotNil(t, result.Match(unsafeParsePrefix("203.0.113.128/25")))
 	})
 	t.Run("subset", func(t *testing.T) {
-		var one, two *trieNodeSet32
+		var one, two *setNode
 
 		one = one.Insert(unsafeParsePrefix("203.0.113.0/24"))
 		two = two.Insert(unsafeParsePrefix("203.0.113.128/25"))
@@ -443,7 +443,7 @@ func TestSetDifference(t *testing.T) {
 		assert.Equal(t, int64(128), two.Difference(one).Size())
 	})
 	t.Run("recursive", func(t *testing.T) {
-		var one, two *trieNodeSet32
+		var one, two *setNode
 		one = one.Insert(unsafeParsePrefix("198.51.100.0/24"))
 		one = one.Insert(unsafeParsePrefix("203.0.113.0/24"))
 		two = two.Insert(unsafeParsePrefix("203.0.113.128/25"))
@@ -461,7 +461,7 @@ func TestSetDifference(t *testing.T) {
 		assert.NotNil(t, result.Match(unsafeParsePrefix("203.0.113.128/25")))
 	})
 	t.Run("no difference", func(t *testing.T) {
-		var one, two *trieNodeSet32
+		var one, two *setNode
 		one = one.Insert(unsafeParsePrefix("198.51.100.0/24"))
 		one = one.Insert(unsafeParsePrefix("203.0.113.0/24"))
 
@@ -474,7 +474,7 @@ func TestSetDifference(t *testing.T) {
 		assert.Nil(t, result.Match(unsafeParsePrefix("192.0.2.0/24")))
 	})
 	t.Run("not active", func(t *testing.T) {
-		var one, two *trieNodeSet32
+		var one, two *setNode
 		one = one.Insert(unsafeParsePrefix("192.0.0.0/4"))
 
 		two = two.Insert(unsafeParsePrefix("198.51.100.0/24"))

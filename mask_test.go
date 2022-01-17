@@ -8,7 +8,7 @@ import (
 )
 
 func TestDefaultMask(t *testing.T) {
-	ip, _ := ParseAddr("192.0.2.1")
+	ip, _ := ParseAddress("192.0.2.1")
 	assert.Equal(t, Mask{ui: 0xffffff00}, ip.DefaultMask())
 }
 
@@ -82,7 +82,7 @@ func TestMaskToStdIPMask(t *testing.T) {
 	assert.Equal(t, net.CIDRMask(25, SIZE), Mask{ui: 0xffffff80}.ToStdIPMask())
 }
 
-func TestAddrString(t *testing.T) {
+func TestAddressString(t *testing.T) {
 	ips := []string{
 		"0.0.0.0",
 		"10.224.24.117",
@@ -92,7 +92,7 @@ func TestAddrString(t *testing.T) {
 
 	for _, ip := range ips {
 		t.Run(ip, func(t *testing.T) {
-			assert.Equal(t, ip, unsafeParseAddr(ip).String())
+			assert.Equal(t, ip, unsafeParseAddress(ip).String())
 		})
 	}
 }

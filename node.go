@@ -5,13 +5,13 @@ import (
 	"math/bits"
 )
 
-type trieNode32 struct {
+type trieNode struct {
 	Prefix   Prefix
 	Data     interface{}
 	size     uint32
 	h        uint16
 	isActive bool
-	children [2]*trieNode32
+	children [2]*trieNode
 }
 
 // bitsToBytes calculates the number of bytes (including possible
@@ -54,44 +54,42 @@ func intMax(a, b int) int {
 // | true    | false | 0     | `longer` belongs in `shorter`'s `children[0]`
 // | true    | false | 1     | `longer` belongs in `shorter`'s `children[1]`
 // | true    | true  | NA    | `shorter` and `longer` are the same key
-func contains32(shorter, longer Prefix) (matches, exact bool, common, child uint32) {
+func contains(shorter, longer Prefix) (matches, exact bool, common, child uint32) {
 	mask := uint32(0xffffffff) << (32 - shorter.length)
 
-	matches = shorter.Addr.ui&mask == longer.Addr.ui&mask
+	matches = shorter.Address.ui&mask == longer.Address.ui&mask
 	if matches {
 		exact = shorter.length == longer.length
 		common = shorter.length
 	} else {
-		common = uint32(bits.LeadingZeros32(shorter.Addr.ui ^ longer.Addr.ui))
+		common = uint32(bits.LeadingZeros32(shorter.Address.ui ^ longer.Address.ui))
 	}
 	if !exact {
 		// Whether `longer` goes on the left (0) or right (1)
 		pivotMask := uint32(0x80000000) >> common
-		if longer.Addr.ui&pivotMask != 0 {
+		if longer.Address.ui&pivotMask != 0 {
 			child = 1
 		}
 	}
 	return
 }
 
-type compare int
-
 const (
-	compareSame        compare = iota
-	compareContains            // Second key is a subset of the first
-	compareIsContained         // Second key is a superset of the first
+	compareSame        int = iota
+	compareContains        // Second key is a subset of the first
+	compareIsContained     // Second key is a superset of the first
 	compareDisjoint
 )
 
-// compare32 is a helper which compares two keys to find their relationship
-func compare32(a, b Prefix) (result compare, reversed bool, common, child uint32) {
+// compare is a helper which compares two keys to find their relationship
+func compare(a, b Prefix) (result int, reversed bool, common, child uint32) {
 	var aMatch, bMatch bool
 	// Figure out which is the longer prefix and reverse them if b is shorter
 	reversed = b.length < a.length
 	if reversed {
-		bMatch, aMatch, common, child = contains32(b, a)
+		bMatch, aMatch, common, child = contains(b, a)
 	} else {
-		aMatch, bMatch, common, child = contains32(a, b)
+		aMatch, bMatch, common, child = contains(a, b)
 	}
 	switch {
 	case aMatch && bMatch:
@@ -106,16 +104,16 @@ func compare32(a, b Prefix) (result compare, reversed bool, common, child uint32
 	return
 }
 
-func (me *trieNode32) makeCopy() *trieNode32 {
+func (me *trieNode) makeCopy() *trieNode {
 	if me == nil {
 		return nil
 	}
-	doppelganger := &trieNode32{}
+	doppelganger := &trieNode{}
 	*doppelganger = *me
 	return doppelganger
 }
 
-func (me *trieNode32) setSize() {
+func (me *trieNode) setSize() {
 	// me is not nil by design
 	me.size = uint32(me.children[0].NumNodes() + me.children[1].NumNodes())
 	me.h = 1 + uint16(uint16(intMax(me.children[0].height(), me.children[1].height())))
@@ -125,7 +123,7 @@ func (me *trieNode32) setSize() {
 }
 
 // Equal returns true if all of the entries are the same in the two data structures
-func (me *trieNode32) Equal(other *trieNode32) bool {
+func (me *trieNode) Equal(other *trieNode) bool {
 	switch {
 	case me == other:
 		return true
@@ -151,10 +149,10 @@ func (me *trieNode32) Equal(other *trieNode32) bool {
 }
 
 // GetOrInsert returns the existing value if an exact match is found, otherwise, inserts the given default
-func (me *trieNode32) GetOrInsert(searchKey Prefix, data interface{}) (head, result *trieNode32) {
+func (me *trieNode) GetOrInsert(searchKey Prefix, data interface{}) (head, result *trieNode) {
 	defer func() {
 		if result == nil {
-			result = &trieNode32{Prefix: searchKey, Data: data}
+			result = &trieNode{Prefix: searchKey, Data: data}
 
 			// The only error from insert is that the key already exists. But, that cannot happen by design.
 			head, _ = me.insert(result, insertOpts{insert: true})
@@ -165,13 +163,13 @@ func (me *trieNode32) GetOrInsert(searchKey Prefix, data interface{}) (head, res
 		return
 	}
 
-	matches, exact, _, child := contains32(me.Prefix, searchKey)
+	matches, exact, _, child := contains(me.Prefix, searchKey)
 	if !matches {
 		return
 	}
 
 	if !exact {
-		var newChild *trieNode32
+		var newChild *trieNode
 		newChild, result = me.children[child].GetOrInsert(searchKey, data)
 
 		head = me.makeCopy()
@@ -200,7 +198,7 @@ func (me *trieNode32) GetOrInsert(searchKey Prefix, data interface{}) (head, res
 //
 // "longest" means that if multiple existing entries in the trie match the one
 // with the longest length will be returned. It is the most specific match.
-func (me *trieNode32) Match(searchKey Prefix) *trieNode32 {
+func (me *trieNode) Match(searchKey Prefix) *trieNode {
 	if me == nil {
 		return nil
 	}
@@ -210,7 +208,7 @@ func (me *trieNode32) Match(searchKey Prefix) *trieNode32 {
 		return nil
 	}
 
-	matches, exact, _, child := contains32(nodeKey, searchKey)
+	matches, exact, _, child := contains(nodeKey, searchKey)
 	if !matches {
 		return nil
 	}
@@ -232,7 +230,7 @@ func (me *trieNode32) Match(searchKey Prefix) *trieNode32 {
 // Note that this may have to search all nodes recursively to find the answer.
 // The implementation can be changed to store the size in each node at the cost
 // of adding about 8 more bits to the size of each node.
-func (me *trieNode32) Size() int64 {
+func (me *trieNode) Size() int64 {
 	if me == nil {
 		return 0
 	}
@@ -243,7 +241,7 @@ func (me *trieNode32) Size() int64 {
 }
 
 // NumNodes returns the number of entries in the trie
-func (me *trieNode32) NumNodes() int {
+func (me *trieNode) NumNodes() int {
 	if me == nil {
 		return 0
 	}
@@ -251,7 +249,7 @@ func (me *trieNode32) NumNodes() int {
 }
 
 // height returns the maximum height of the trie.
-func (me *trieNode32) height() int {
+func (me *trieNode) height() int {
 	if me == nil {
 		return 0
 	}
@@ -260,11 +258,11 @@ func (me *trieNode32) height() int {
 
 // isValid returns true if the tree is valid
 // this method is only for unit tests to check the integrity of the structure
-func (me *trieNode32) isValid() bool {
+func (me *trieNode) isValid() bool {
 	return me.isValidLen(0)
 }
 
-func (me *trieNode32) isValidLen(minLen uint32) bool {
+func (me *trieNode) isValidLen(minLen uint32) bool {
 	if me == nil {
 		return true
 	}
@@ -291,32 +289,32 @@ func (me *trieNode32) isValidLen(minLen uint32) bool {
 }
 
 // Update updates the key / value only if the key already exists
-func (me *trieNode32) Update(key Prefix, data interface{}) (newHead *trieNode32, err error) {
-	return me.insert(&trieNode32{Prefix: key, Data: data}, insertOpts{update: true})
+func (me *trieNode) Update(key Prefix, data interface{}) (newHead *trieNode, err error) {
+	return me.insert(&trieNode{Prefix: key, Data: data}, insertOpts{update: true})
 }
 
 // InsertOrUpdate inserts the key / value if the key didn't previously exist.
 // Otherwise, it updates the data.
-func (me *trieNode32) InsertOrUpdate(key Prefix, data interface{}) (newHead *trieNode32, err error) {
-	return me.insert(&trieNode32{Prefix: key, Data: data}, insertOpts{insert: true, update: true})
+func (me *trieNode) InsertOrUpdate(key Prefix, data interface{}) (newHead *trieNode, err error) {
+	return me.insert(&trieNode{Prefix: key, Data: data}, insertOpts{insert: true, update: true})
 }
 
 // Insert is the public form of insert(...)
-func (me *trieNode32) Insert(key Prefix, data interface{}) (newHead *trieNode32, err error) {
-	return me.insert(&trieNode32{Prefix: key, Data: data}, insertOpts{insert: true})
+func (me *trieNode) Insert(key Prefix, data interface{}) (newHead *trieNode, err error) {
+	return me.insert(&trieNode{Prefix: key, Data: data}, insertOpts{insert: true})
 }
 
 type insertOpts struct {
 	insert, update, flatten bool
 }
 
-func (me *trieNode32) flatten() {
+func (me *trieNode) flatten() {
 	defer me.setSize()
 
 	if me.isActive {
 		// If the current node is active, then anything referenced by the
 		// children is redundant, they can be removed.
-		me.children = [2]*trieNode32{}
+		me.children = [2]*trieNode{}
 		return
 	}
 	left, right := me.children[0], me.children[1]
@@ -338,14 +336,14 @@ func (me *trieNode32) flatten() {
 		// cannot be combined. Do nothing.
 		return
 	}
-	me.children = [2]*trieNode32{}
+	me.children = [2]*trieNode{}
 	me.isActive = true
 }
 
 // insert adds a node into the trie and return the new root of the trie. It is
 // important to note that the root of the trie can change. If the new node
 // cannot be inserted, nil is returned.
-func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNode32, err error) {
+func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, err error) {
 	defer func() {
 		if me != newHead {
 			if opts.flatten {
@@ -364,7 +362,7 @@ func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNo
 	}
 
 	// Test containership both ways
-	result, reversed, common, child := compare32(me.Prefix, node.Prefix)
+	result, reversed, common, child := compare(me.Prefix, node.Prefix)
 	switch result {
 	case compareSame:
 		// They have the same key
@@ -407,13 +405,13 @@ func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNo
 
 	case compareDisjoint:
 		// Keys are disjoint. Create a new (inactive) parent node to join them side-by-side.
-		var newChild *trieNode32
+		var newChild *trieNode
 		newChild, err := newChild.insert(node, opts)
 		if err != nil {
 			return me, err
 		}
 
-		var children [2]*trieNode32
+		var children [2]*trieNode
 
 		if (child == 1) != reversed { // (child == 1) XOR reversed
 			children[0], children[1] = me, newChild
@@ -421,10 +419,10 @@ func (me *trieNode32) insert(node *trieNode32, opts insertOpts) (newHead *trieNo
 			children[0], children[1] = newChild, me
 		}
 
-		return &trieNode32{
+		return &trieNode{
 			Prefix: Prefix{
-				Addr: Addr{
-					ui: me.Prefix.Addr.ui & ^(uint32(0xffffffff) >> common), // zero out bits not in common
+				Address: Address{
+					ui: me.Prefix.Address.ui & ^(uint32(0xffffffff) >> common), // zero out bits not in common
 				},
 				length: common,
 			},
@@ -440,11 +438,11 @@ type deleteOpts struct {
 
 // Delete removes a node from the trie given a key and returns the new root of
 // the trie. It is important to note that the root of the trie can change.
-func (me *trieNode32) Delete(key Prefix) (newHead *trieNode32, err error) {
+func (me *trieNode) Delete(key Prefix) (newHead *trieNode, err error) {
 	return me.del(key, deleteOpts{})
 }
 
-func (me *trieNode32) del(key Prefix, opts deleteOpts) (newHead *trieNode32, err error) {
+func (me *trieNode) del(key Prefix, opts deleteOpts) (newHead *trieNode, err error) {
 	defer func() {
 		if err == nil && newHead != nil {
 			newHead.setSize()
@@ -458,7 +456,7 @@ func (me *trieNode32) del(key Prefix, opts deleteOpts) (newHead *trieNode32, err
 		return me, fmt.Errorf("cannot delete from a nil")
 	}
 
-	result, _, _, child := compare32(me.Prefix, key)
+	result, _, _, child := compare(me.Prefix, key)
 	switch result {
 	case compareSame:
 		if opts.flatten {
@@ -484,15 +482,15 @@ func (me *trieNode32) del(key Prefix, opts deleteOpts) (newHead *trieNode32, err
 			// split this prefix into ranges and insert them
 			super, sub := me.Prefix.Range(), key.Range()
 			remainingRanges := super.Minus(sub)
-			var s *trieNodeSet32
+			var s *setNode
 			if len(remainingRanges) == 1 {
-				s = trieNodeSet32FromRange(remainingRanges[0])
+				s = setNodeFromRange(remainingRanges[0])
 			} else {
-				a := trieNodeSet32FromRange(remainingRanges[0])
-				b := trieNodeSet32FromRange(remainingRanges[1])
+				a := setNodeFromRange(remainingRanges[0])
+				b := setNodeFromRange(remainingRanges[1])
 				s = a.Union(b)
 			}
-			return (*trieNode32)(s), nil
+			return (*trieNode)(s), nil
 		}
 		// Delete recursively.
 		newChild, err := me.children[child].del(key, opts)
@@ -522,7 +520,7 @@ func (me *trieNode32) del(key Prefix, opts deleteOpts) (newHead *trieNode32, err
 
 // active returns whether a node represents an active prefix in the tree (true)
 // or an intermediate node (false). It is safe to call on a nil pointer.
-func (me *trieNode32) active() bool {
+func (me *trieNode) active() bool {
 	if me == nil {
 		return false
 	}
@@ -566,7 +564,7 @@ type EqualComparable interface {
 //
 // returns true and the data used to compare with if they are aggregable, false
 // otherwise (and data must be ignored).
-func (me *trieNode32) aggregable(data dataContainer) (bool, dataContainer) {
+func (me *trieNode) aggregable(data dataContainer) (bool, dataContainer) {
 	// Note that me != nil by design
 
 	if me.isActive {
@@ -603,18 +601,18 @@ func (me *trieNode32) aggregable(data dataContainer) (bool, dataContainer) {
 	return false, dataContainer{}
 }
 
-// trienode32Callback defines the signature of a function you can pass to Iterate or
+// trieCallback defines the signature of a function you can pass to Iterate or
 // Aggregate to handle each key / value pair found while iterating. Each
 // invocation of your callback should return true if iteration should continue
 // (as long as another key / value pair exists) or false to stop iterating and
 // return immediately (meaning your callback will not be called again).
-type trie32Callback func(Prefix, interface{}) bool
+type trieCallback func(Prefix, interface{}) bool
 
 // Iterate walks the entire tree and calls the given function for each active
 // node. The order of visiting nodes is essentially lexigraphical:
 // - disjoint prefixes are visited in lexigraphical order
 // - shorter prefixes are visited immediately before longer prefixes that they contain
-func (me *trieNode32) Iterate(callback trie32Callback) bool {
+func (me *trieNode) Iterate(callback trieCallback) bool {
 	if me == nil {
 		return true
 	}
@@ -638,7 +636,7 @@ func (me *trieNode32) Iterate(callback trie32Callback) bool {
 //             this value then its key is not aggregable with containing
 //             prefixes.
 // `callback`: function to call with each key/data pair found.
-func (me *trieNode32) aggregate(data dataContainer, callback trie32Callback) bool {
+func (me *trieNode) aggregate(data dataContainer, callback trieCallback) bool {
 	if me == nil {
 		return true
 	}
@@ -684,6 +682,6 @@ func (me *trieNode32) aggregate(data dataContainer, callback trie32Callback) boo
 // Prefixes are only considered aggregable if their data compare equal. This is
 // useful for aggregating prefixes where the next hop is the same but not where
 // they're different.
-func (me *trieNode32) Aggregate(callback trie32Callback) bool {
+func (me *trieNode) Aggregate(callback trieCallback) bool {
 	return me.aggregate(dataContainer{}, callback)
 }
