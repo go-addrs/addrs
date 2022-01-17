@@ -291,3 +291,7 @@ func (me *trieNodeSet32) height() int {
 func (me *trieNodeSet32) active() bool {
 	return (*trieNode32)(me).active()
 }
+
+func (me *trieNodeSet32) Iterate(callback trie32Callback) bool {
+	return (*trieNode32)(me).Iterate(callback)
+}
