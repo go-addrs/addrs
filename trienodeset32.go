@@ -20,14 +20,6 @@ func trieNodeSet32FromPrefix(p Prefix) *trieNodeSet32 {
 	}
 }
 
-func (me *trieNodeSet32) halves() (a, b *trieNodeSet32) {
-	if !me.isActive {
-		return
-	}
-	aPrefix, bPrefix := me.Prefix.Halves()
-	return trieNodeSet32FromPrefix(aPrefix), trieNodeSet32FromPrefix(bPrefix)
-}
-
 func trieNodeSet32FromRange(r Range) *trieNodeSet32 {
 	// xor shows the bits that are different between first and last
 	xor := r.first.ui ^ r.last.ui
@@ -223,18 +215,24 @@ func (me *trieNodeSet32) Difference(other *trieNodeSet32) (rc *trieNodeSet32) {
 		return left.Union(right)
 	}
 
+	// Assumes `me` is active as checked above
+	halves := func() (a, b *trieNodeSet32) {
+		aPrefix, bPrefix := me.Prefix.Halves()
+		return trieNodeSet32FromPrefix(aPrefix), trieNodeSet32FromPrefix(bPrefix)
+	}
+
 	switch result {
 	case compareSame:
 		if other.isActive {
 			return nil
 		}
-		a, b := me.halves()
+		a, b := halves()
 		return a.Difference(other.Left()).Union(
 			b.Difference(other.Right()),
 		)
 
 	case compareContains:
-		a, b := me.halves()
+		a, b := halves()
 		halves := [2]*trieNodeSet32{a, b}
 		whole := halves[(child+1)%2]
 		partial := halves[child].Difference(other)

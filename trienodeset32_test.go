@@ -10,13 +10,6 @@ func printTrieSet32(trie *trieNodeSet32) {
 	printTrie32((*trieNode32)(trie))
 }
 
-func TestTrieNodeSet32Halves(t *testing.T) {
-	set := trieNodeSet32FromPrefix(unsafeParsePrefix("0.0.0.0/0"))
-	a, b := set.halves()
-	assert.Equal(t, trieNodeSet32FromPrefix(unsafeParsePrefix("0.0.0.0/1")), a)
-	assert.Equal(t, trieNodeSet32FromPrefix(unsafeParsePrefix("128.0.0.0/1")), b)
-}
-
 func TestTrieNodeSet32Union(t *testing.T) {
 	a := trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.0/32"))
 	b := trieNodeSet32FromPrefix(unsafeParsePrefix("10.224.24.128/32"))
