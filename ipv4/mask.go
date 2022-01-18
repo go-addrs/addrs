@@ -14,7 +14,7 @@ const maxUint32 = ^uint32(0)
 
 // CreateMask converts the given length (0-32) into a mask with that number of leading 1s
 func CreateMask(length int) (Mask, error) {
-	if length < 0 || SIZE < length {
+	if length < 0 || addressSize < length {
 		return Mask{}, fmt.Errorf("failed to create Mask where length %d isn't between 0 and 32", length)
 	}
 
@@ -42,7 +42,7 @@ func MaskFromUint32(ui uint32) (Mask, error) {
 // MaskFromNetIPMask converts a net.IPMask to a Mask
 func MaskFromNetIPMask(mask net.IPMask) (Mask, error) {
 	ones, bits := mask.Size()
-	if bits != SIZE {
+	if bits != addressSize {
 		return Mask{}, fmt.Errorf("failed to convert IPMask with size != 32")
 	}
 	m, err := CreateMask(ones)
@@ -62,7 +62,7 @@ func (me Mask) Length() int {
 
 // ToNetIPMask returns the net.IPMask representation of this Mask
 func (me Mask) ToNetIPMask() net.IPMask {
-	return net.CIDRMask(me.Length(), SIZE)
+	return net.CIDRMask(me.Length(), addressSize)
 }
 
 // String returns the net.IPMask representation of this Mask
@@ -81,6 +81,6 @@ func (me Mask) valid() bool {
 
 func lengthToMask(length int) Mask {
 	return Mask{
-		ui: maxUint32 << (SIZE - length),
+		ui: maxUint32 << (addressSize - length),
 	}
 }

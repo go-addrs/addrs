@@ -16,6 +16,10 @@ func unsafeParseAddress(str string) Address {
 	return addr
 }
 
+func TestAddressSize(t *testing.T) {
+	assert.Equal(t, 32, Address{}.Size())
+}
+
 func TestParseAddress(t *testing.T) {
 	ip, err := ParseAddress("10.224.24.1")
 	assert.Nil(t, err)

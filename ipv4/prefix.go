@@ -17,7 +17,7 @@ type Prefix struct {
 
 // PrefixFromUint32 returns the IPv4 address from its 32 bit unsigned representation
 func PrefixFromUint32(ui uint32, length int) (Prefix, error) {
-	if length < 0 || SIZE < length {
+	if length < 0 || addressSize < length {
 		return Prefix{}, fmt.Errorf("failed to convert prefix, length %d isn't between 0 and 32", length)
 	}
 	return Prefix{Address{ui}, uint32(length)}, nil
@@ -25,7 +25,7 @@ func PrefixFromUint32(ui uint32, length int) (Prefix, error) {
 
 // PrefixFromBytes returns the IPv4 address of the `a.b.c.d`.
 func PrefixFromBytes(a, b, c, d byte, length int) (Prefix, error) {
-	if length < 0 || SIZE < length {
+	if length < 0 || addressSize < length {
 		return Prefix{}, fmt.Errorf("failed to convert prefix, length %d isn't between 0 and 32", length)
 	}
 	return Prefix{
@@ -40,7 +40,7 @@ func PrefixFromNetIPNet(net *net.IPNet) (Prefix, error) {
 		return Prefix{}, fmt.Errorf("failed to convert nil *net.IPNet")
 	}
 	ones, bits := net.Mask.Size()
-	if bits != SIZE {
+	if bits != addressSize {
 		return Prefix{}, fmt.Errorf("failed to convert IPNet with size != 32")
 	}
 	addr, err := AddressFromNetIP(net.IP)
@@ -89,7 +89,7 @@ func ParsePrefix(prefix string) (Prefix, error) {
 func (me Prefix) ToNetIPNet() *net.IPNet {
 	return &net.IPNet{
 		IP:   me.Address.ToNetIP(),
-		Mask: net.CIDRMask(me.Length(), SIZE),
+		Mask: net.CIDRMask(me.Length(), addressSize),
 	}
 }
 
@@ -184,7 +184,7 @@ func (me Prefix) Contains(other Address) bool {
 // Size returns the number of addresses in the prefix, including network and
 // broadcast addresses. It ignores any bits set in the host part of the address.
 func (me Prefix) Size() int64 {
-	return 1 << (SIZE - me.Length())
+	return 1 << (addressSize - me.Length())
 }
 
 // String returns the string representation of this prefix in dotted-quad cidr

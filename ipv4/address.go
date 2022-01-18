@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	// SIZE is the number of bits that an IPv4 address takes
-	SIZE int = 32
+	// addressSize is the number of bits that an IPv4 address takes
+	addressSize int = 32
 )
 
 // Address represents an IPv4 address
@@ -91,13 +91,18 @@ func (me Address) DefaultMask() Mask {
 
 // HostPrefix returns a host prefix (/32) with the address
 func (me Address) HostPrefix() Prefix {
-	return Prefix{me, uint32(SIZE)}
+	return Prefix{me, uint32(addressSize)}
 }
 
 // String returns a string representing the address in dotted-quad notation
 func (me Address) String() string {
 	a, b, c, d := me.toBytes()
 	return fmt.Sprintf("%d.%d.%d.%d", a, b, c, d)
+}
+
+// Size returns the size of an address (always 32)
+func (me Address) Size() int {
+	return addressSize
 }
 
 // Uint32 returns the address as a uint32
