@@ -396,7 +396,7 @@ func TestPrefixUint32(t *testing.T) {
 
 func TestPrefixFromAddressMask(t *testing.T) {
 	address := Address{ui: 0x0ae01801}
-	mask, _ := CreateMask(24)
+	mask, _ := MaskFromLength(24)
 	assert.Equal(t, Prefix{Address: address, length: 24}, PrefixFromAddressMask(address, mask))
 }
 

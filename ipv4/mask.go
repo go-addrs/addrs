@@ -12,8 +12,8 @@ type Mask Address
 
 const maxUint32 = ^uint32(0)
 
-// CreateMask converts the given length (0-32) into a mask with that number of leading 1s
-func CreateMask(length int) (Mask, error) {
+// MaskFromLength converts the given length (0-32) into a mask with that number of leading 1s
+func MaskFromLength(length int) (Mask, error) {
 	if length < 0 || addressSize < length {
 		return Mask{}, fmt.Errorf("failed to create Mask where length %d isn't between 0 and 32", length)
 	}
@@ -45,7 +45,7 @@ func MaskFromNetIPMask(mask net.IPMask) (Mask, error) {
 	if bits != addressSize {
 		return Mask{}, fmt.Errorf("failed to convert IPMask with size != 32")
 	}
-	m, err := CreateMask(ones)
+	m, err := MaskFromLength(ones)
 	if err != nil {
 		return Mask{}, err
 	}
