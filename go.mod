@@ -1,4 +1,4 @@
-module gopkg.in/ipv4.v1
+module gopkg.in/addrs.v0
 
 go 1.16
 
