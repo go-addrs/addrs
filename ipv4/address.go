@@ -27,8 +27,8 @@ func AddressFromBytes(a, b, c, d byte) Address {
 	}
 }
 
-// AddressFromStdIP converts
-func AddressFromStdIP(ip net.IP) (Address, error) {
+// AddressFromNetIP converts
+func AddressFromNetIP(ip net.IP) (Address, error) {
 	return fromSlice(ip.To4())
 }
 
@@ -46,7 +46,7 @@ func ParseAddress(address string) (Address, error) {
 		return Address{}, fmt.Errorf("address is not IPv4: %s", address)
 	}
 
-	return AddressFromStdIP(netIPv4)
+	return AddressFromNetIP(netIPv4)
 }
 
 // MinAddress returns the address, a or b, which comes first in lexigraphical order
@@ -65,8 +65,8 @@ func MaxAddress(a, b Address) Address {
 	return a
 }
 
-// ToStdIP returns a net.IP representation of the address which always has 4 bytes
-func (me Address) ToStdIP() net.IP {
+// ToNetIP returns a net.IP representation of the address which always has 4 bytes
+func (me Address) ToNetIP() net.IP {
 	a, b, c, d := me.toBytes()
 	return net.IPv4(a, b, c, d)
 }
@@ -84,7 +84,7 @@ func (me Address) LessThan(other Address) bool {
 
 // DefaultMask returns the default IP mask for the given IP
 func (me Address) DefaultMask() Mask {
-	ones, _ := me.ToStdIP().DefaultMask().Size()
+	ones, _ := me.ToNetIP().DefaultMask().Size()
 	return lengthToMask(ones)
 }
 
@@ -106,37 +106,37 @@ func (me Address) Uint32() uint32 {
 
 // IsGlobalUnicast calls the same method from net.IP
 func (me Address) IsGlobalUnicast() bool {
-	return me.ToStdIP().IsGlobalUnicast()
+	return me.ToNetIP().IsGlobalUnicast()
 }
 
 // IsInterfaceLocalMulticast calls the same method from net.IP
 func (me Address) IsInterfaceLocalMulticast() bool {
-	return me.ToStdIP().IsInterfaceLocalMulticast()
+	return me.ToNetIP().IsInterfaceLocalMulticast()
 }
 
 // IsLinkLocalMulticast calls the same method from net.IP
 func (me Address) IsLinkLocalMulticast() bool {
-	return me.ToStdIP().IsLinkLocalMulticast()
+	return me.ToNetIP().IsLinkLocalMulticast()
 }
 
 // IsLinkLocalUnicast calls the same method from net.IP
 func (me Address) IsLinkLocalUnicast() bool {
-	return me.ToStdIP().IsLinkLocalUnicast()
+	return me.ToNetIP().IsLinkLocalUnicast()
 }
 
 // IsLoopback calls the same method from net.IP
 func (me Address) IsLoopback() bool {
-	return me.ToStdIP().IsLoopback()
+	return me.ToNetIP().IsLoopback()
 }
 
 // IsMulticast calls the same method from net.IP
 func (me Address) IsMulticast() bool {
-	return me.ToStdIP().IsMulticast()
+	return me.ToNetIP().IsMulticast()
 }
 
 // IsUnspecified calls the same method from net.IP
 func (me Address) IsUnspecified() bool {
-	return me.ToStdIP().IsUnspecified()
+	return me.ToNetIP().IsUnspecified()
 }
 
 func (me Address) toBytes() (a, b, c, d byte) {

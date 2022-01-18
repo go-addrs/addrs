@@ -40,8 +40,8 @@ func MaskFromUint32(ui uint32) (Mask, error) {
 	return m, nil
 }
 
-// MaskFromStdIPMask converts a net.IPMask to a Mask
-func MaskFromStdIPMask(mask net.IPMask) (Mask, error) {
+// MaskFromNetIPMask converts a net.IPMask to a Mask
+func MaskFromNetIPMask(mask net.IPMask) (Mask, error) {
 	ones, bits := mask.Size()
 	if bits != SIZE {
 		return Mask{}, fmt.Errorf("failed to convert IPMask with size != 32")
@@ -61,8 +61,8 @@ func (me Mask) Length() int {
 	return bits.LeadingZeros32(^me.ui)
 }
 
-// ToStdIPMask returns the net.IPMask representation of this Mask
-func (me Mask) ToStdIPMask() net.IPMask {
+// ToNetIPMask returns the net.IPMask representation of this Mask
+func (me Mask) ToNetIPMask() net.IPMask {
 	return net.CIDRMask(me.Length(), SIZE)
 }
 

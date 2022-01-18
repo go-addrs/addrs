@@ -69,7 +69,7 @@ func TestParsePrefix(t *testing.T) {
 	}
 }
 
-func TestPrefixFromStdIPNet(t *testing.T) {
+func TestPrefixFromNetIPNet(t *testing.T) {
 	tests := []struct {
 		description string
 		net         *net.IPNet
@@ -103,7 +103,7 @@ func TestPrefixFromStdIPNet(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
-			net, err := PrefixFromStdIPNet(tt.net)
+			net, err := PrefixFromNetIPNet(tt.net)
 			if tt.isErr {
 				assert.NotNil(t, err)
 			} else {
@@ -370,8 +370,8 @@ func TestPrefixSize(t *testing.T) {
 	}
 }
 
-func TestPrefixToStdIPNet(t *testing.T) {
-	assert.Equal(t, "10.224.24.1/24", unsafeParsePrefix("10.224.24.1/24").ToStdIPNet().String())
+func TestPrefixToNetIPNet(t *testing.T) {
+	assert.Equal(t, "10.224.24.1/24", unsafeParsePrefix("10.224.24.1/24").ToNetIPNet().String())
 }
 
 func TestPrefixString(t *testing.T) {

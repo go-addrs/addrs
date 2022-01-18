@@ -56,10 +56,10 @@ func TestMaskFromBytes(t *testing.T) {
 	assert.Equal(t, Mask{ui: 0xffffffff}, unsafeMaskFromBytes(0xff, 0xff, 0xff, 0xff))
 }
 
-func TestMaskFromStdIPMask(t *testing.T) {
+func TestMaskFromNetIPMask(t *testing.T) {
 	convert := func(ones, bits int) Mask {
 		stdMask := net.CIDRMask(ones, bits)
-		mask, err := MaskFromStdIPMask(stdMask)
+		mask, err := MaskFromNetIPMask(stdMask)
 		assert.Nil(t, err)
 		return mask
 	}
@@ -70,7 +70,7 @@ func TestMaskFromStdIPMask(t *testing.T) {
 
 	runWithError := func(ones, bits int) {
 		stdMask := net.CIDRMask(ones, bits)
-		_, err := MaskFromStdIPMask(stdMask)
+		_, err := MaskFromNetIPMask(stdMask)
 		assert.NotNil(t, err)
 	}
 	runWithError(64, 128)
@@ -78,8 +78,8 @@ func TestMaskFromStdIPMask(t *testing.T) {
 	runWithError(33, 32)
 }
 
-func TestMaskToStdIPMask(t *testing.T) {
-	assert.Equal(t, net.CIDRMask(25, SIZE), Mask{ui: 0xffffff80}.ToStdIPMask())
+func TestMaskToNetIPMask(t *testing.T) {
+	assert.Equal(t, net.CIDRMask(25, SIZE), Mask{ui: 0xffffff80}.ToNetIPMask())
 }
 
 func TestAddressString(t *testing.T) {

@@ -39,8 +39,8 @@ func PrefixFromBytes(a, b, c, d byte, length int) (Prefix, error) {
 	}, nil
 }
 
-// PrefixFromStdIPNet converts the given *net.IPNet to a Prefix
-func PrefixFromStdIPNet(net *net.IPNet) (Prefix, error) {
+// PrefixFromNetIPNet converts the given *net.IPNet to a Prefix
+func PrefixFromNetIPNet(net *net.IPNet) (Prefix, error) {
 	if net == nil {
 		return Prefix{}, fmt.Errorf("failed to convert nil *net.IPNet")
 	}
@@ -48,7 +48,7 @@ func PrefixFromStdIPNet(net *net.IPNet) (Prefix, error) {
 	if bits != SIZE {
 		return Prefix{}, fmt.Errorf("failed to convert IPNet with size != 32")
 	}
-	addr, err := AddressFromStdIP(net.IP)
+	addr, err := AddressFromNetIP(net.IP)
 	if err != nil {
 		return Prefix{}, err
 	}
@@ -87,13 +87,13 @@ func ParsePrefix(prefix string) (Prefix, error) {
 	if err != nil {
 		return Prefix{}, err
 	}
-	return PrefixFromStdIPNet(ipNet)
+	return PrefixFromNetIPNet(ipNet)
 }
 
-// ToStdIPNet returns a *net.IPNet representation of this prefix
-func (me Prefix) ToStdIPNet() *net.IPNet {
+// ToNetIPNet returns a *net.IPNet representation of this prefix
+func (me Prefix) ToNetIPNet() *net.IPNet {
 	return &net.IPNet{
-		IP:   me.Address.ToStdIP(),
+		IP:   me.Address.ToNetIP(),
 		Mask: net.CIDRMask(me.Length(), SIZE),
 	}
 }

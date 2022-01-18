@@ -22,7 +22,7 @@ func TestParseAddress(t *testing.T) {
 	assert.Equal(t, AddressFromUint32(0x0ae01801), ip)
 }
 
-func TestAddressFromStdIP(t *testing.T) {
+func TestAddressFromNetIP(t *testing.T) {
 	tests := []struct {
 		description string
 		ip          net.IP
@@ -48,7 +48,7 @@ func TestAddressFromStdIP(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
-			ip, err := AddressFromStdIP(tt.ip)
+			ip, err := AddressFromNetIP(tt.ip)
 			if tt.isErr {
 				assert.NotNil(t, err)
 			} else {
