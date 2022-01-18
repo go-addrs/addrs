@@ -15,11 +15,6 @@ type Prefix struct {
 	length  uint32
 }
 
-// IP returns the address part of the prefix alone
-func (me Prefix) IP() Address {
-	return me.Address
-}
-
 // PrefixFromUint32 returns the IPv4 address from its 32 bit unsigned representation
 func PrefixFromUint32(ui uint32, length int) (Prefix, error) {
 	if length < 0 || SIZE < length {
@@ -107,11 +102,11 @@ func (me Prefix) Equal(other Prefix) bool {
 // lexigraphically.
 func (me Prefix) LessThan(other Prefix) bool {
 	meNet, otherNet := me.Network(), other.Network()
-	if !meNet.IP().Equal(otherNet.IP()) {
-		return meNet.IP().LessThan(otherNet.IP())
+	if !meNet.Address.Equal(otherNet.Address) {
+		return meNet.Address.LessThan(otherNet.Address)
 	}
 	if me.length == other.length {
-		return me.Host().IP().LessThan(other.Host().IP())
+		return me.Host().Address.LessThan(other.Host().Address)
 	}
 	return me.length < other.length
 }
@@ -222,7 +217,7 @@ func (me Prefix) Iterate(callback AddressCallback) bool {
 // It ignores any bits set in the host part of the address.
 func (me Prefix) Range() Range {
 	// Note: this error can be ignored by design
-	r, _ := NewRange(me.Network().IP(), me.Broadcast().IP())
+	r, _ := NewRange(me.Network().Address, me.Broadcast().Address)
 	return r
 }
 

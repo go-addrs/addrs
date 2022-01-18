@@ -128,14 +128,14 @@ func TestOldSetRemovePrefixworkBroadcast(t *testing.T) {
 
 	sb.InsertPrefix(Ten24)
 	assert.Equal(t, 1, sb.trie.NumNodes())
-	sb.Remove(Ten24.IP())
+	sb.Remove(Ten24.Address)
 	sb.Remove(Ten24Broadcast)
 	assert.Equal(t, int64(254), sb.Set().Size())
 	assert.Equal(t, 14, sb.trie.NumNodes())
 	assert.False(t, sb.Set().ContainsPrefix(Ten24))
 	assert.False(t, sb.Set().ContainsPrefix(Ten24128))
 	assert.False(t, sb.Set().Contains(Ten24Broadcast))
-	assert.False(t, sb.Set().Contains(Ten24.IP()))
+	assert.False(t, sb.Set().Contains(Ten24.Address))
 
 	cidr := unsafeParsePrefix("10.0.0.128/26")
 	assert.True(t, sb.Set().ContainsPrefix(cidr))
