@@ -278,7 +278,7 @@ func (me *setNode) Size() int64 {
 }
 
 // NumNodes returns the number of entries in the trie
-func (me *setNode) NumNodes() int {
+func (me *setNode) NumNodes() int64 {
 	return (*trieNode)(me).NumNodes()
 }
 

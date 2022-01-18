@@ -241,11 +241,11 @@ func (me *trieNode) Size() int64 {
 }
 
 // NumNodes returns the number of entries in the trie
-func (me *trieNode) NumNodes() int {
+func (me *trieNode) NumNodes() int64 {
 	if me == nil {
 		return 0
 	}
-	return int(me.size)
+	return int64(me.size)
 }
 
 // height returns the maximum height of the trie.

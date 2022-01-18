@@ -261,19 +261,19 @@ func TestInsertOverlappingSet(t *testing.T) {
 					assert.NotNil(t, trie.Match(first))
 					assert.True(t, trie.isValid())
 					assert.Equal(t, 1, trie.height())
-					assert.Equal(t, 1, trie.NumNodes())
+					assert.Equal(t, int64(1), trie.NumNodes())
 
 					trie = trie.Insert(second)
 					assert.NotNil(t, trie.Match(second))
 					assert.True(t, trie.isValid())
 					assert.Equal(t, 1, trie.height())
-					assert.Equal(t, 1, trie.NumNodes())
+					assert.Equal(t, int64(1), trie.NumNodes())
 
 					trie = trie.Insert(third)
 					assert.NotNil(t, trie.Match(third))
 					assert.True(t, trie.isValid())
 					assert.Equal(t, 1, trie.height())
-					assert.Equal(t, 1, trie.NumNodes())
+					assert.Equal(t, int64(1), trie.NumNodes())
 				}
 			}
 			t.Run("forward", subTest(tt.a, tt.b, tt.c))

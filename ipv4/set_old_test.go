@@ -43,7 +43,7 @@ func TestOldSetInsert(t *testing.T) {
 	assert.True(t, sb.Set().Contains(Nines))
 	assert.False(t, sb.Set().Contains(Eights))
 	sb.Insert(Eights)
-	assert.Equal(t, 2, sb.trie.NumNodes())
+	assert.Equal(t, int64(2), sb.trie.NumNodes())
 	assert.True(t, sb.Set().Contains(Eights))
 	assert.True(t, sb.Set().isValid())
 }
@@ -52,7 +52,7 @@ func TestOldSetInsertPrefixwork(t *testing.T) {
 	sb := SetBuilder{}
 
 	sb.InsertPrefix(Ten24)
-	assert.Equal(t, 1, sb.trie.NumNodes())
+	assert.Equal(t, int64(1), sb.trie.NumNodes())
 	assert.Equal(t, int64(256), sb.Set().Size())
 	assert.True(t, sb.Set().ContainsPrefix(Ten24))
 	assert.True(t, sb.Set().ContainsPrefix(Ten24128))
@@ -65,13 +65,13 @@ func TestOldSetInsertSequential(t *testing.T) {
 	sb := SetBuilder{}
 
 	sb.Insert(unsafeParseAddress("192.168.1.0"))
-	assert.Equal(t, 1, sb.trie.NumNodes())
+	assert.Equal(t, int64(1), sb.trie.NumNodes())
 	sb.Insert(unsafeParseAddress("192.168.1.1"))
-	assert.Equal(t, 1, sb.trie.NumNodes())
+	assert.Equal(t, int64(1), sb.trie.NumNodes())
 	sb.Insert(unsafeParseAddress("192.168.1.2"))
-	assert.Equal(t, 2, sb.trie.NumNodes())
+	assert.Equal(t, int64(2), sb.trie.NumNodes())
 	sb.Insert(unsafeParseAddress("192.168.1.3"))
-	assert.Equal(t, 1, sb.trie.NumNodes())
+	assert.Equal(t, int64(1), sb.trie.NumNodes())
 	assert.Equal(t, int64(4), sb.Set().Size())
 
 	cidr := unsafeParsePrefix("192.168.1.0/30")
@@ -79,27 +79,27 @@ func TestOldSetInsertSequential(t *testing.T) {
 
 	cidr = unsafeParsePrefix("192.168.1.4/31")
 	sb.InsertPrefix(cidr)
-	assert.Equal(t, 2, sb.trie.NumNodes())
+	assert.Equal(t, int64(2), sb.trie.NumNodes())
 	assert.True(t, sb.Set().ContainsPrefix(cidr))
 
 	cidr = unsafeParsePrefix("192.168.1.6/31")
 	sb.InsertPrefix(cidr)
-	assert.Equal(t, 1, sb.trie.NumNodes())
+	assert.Equal(t, int64(1), sb.trie.NumNodes())
 	assert.True(t, sb.Set().ContainsPrefix(cidr))
 
 	cidr = unsafeParsePrefix("192.168.1.6/31")
 	sb.InsertPrefix(cidr)
-	assert.Equal(t, 1, sb.trie.NumNodes())
+	assert.Equal(t, int64(1), sb.trie.NumNodes())
 	assert.True(t, sb.Set().ContainsPrefix(cidr))
 
 	cidr = unsafeParsePrefix("192.168.0.240/29")
 	sb.InsertPrefix(cidr)
-	assert.Equal(t, 2, sb.trie.NumNodes())
+	assert.Equal(t, int64(2), sb.trie.NumNodes())
 	assert.True(t, sb.Set().ContainsPrefix(cidr))
 
 	cidr = unsafeParsePrefix("192.168.0.248/29")
 	sb.InsertPrefix(cidr)
-	assert.Equal(t, 2, sb.trie.NumNodes())
+	assert.Equal(t, int64(2), sb.trie.NumNodes())
 	assert.True(t, sb.Set().ContainsPrefix(cidr))
 	assert.True(t, sb.Set().isValid())
 }
@@ -108,9 +108,9 @@ func TestOldSetRemove(t *testing.T) {
 	sb := SetBuilder{}
 
 	sb.InsertPrefix(Ten24)
-	assert.Equal(t, 1, sb.trie.NumNodes())
+	assert.Equal(t, int64(1), sb.trie.NumNodes())
 	sb.RemovePrefix(Ten24128)
-	assert.Equal(t, 1, sb.trie.NumNodes())
+	assert.Equal(t, int64(1), sb.trie.NumNodes())
 	assert.Equal(t, int64(128), sb.Set().Size())
 	assert.False(t, sb.Set().ContainsPrefix(Ten24))
 	assert.False(t, sb.Set().ContainsPrefix(Ten24128))
@@ -119,7 +119,7 @@ func TestOldSetRemove(t *testing.T) {
 
 	sb.Remove(Ten24Router)
 	assert.Equal(t, int64(127), sb.Set().Size())
-	assert.Equal(t, 7, sb.trie.NumNodes())
+	assert.Equal(t, int64(7), sb.trie.NumNodes())
 	assert.True(t, sb.Set().isValid())
 }
 
@@ -127,11 +127,11 @@ func TestOldSetRemovePrefixworkBroadcast(t *testing.T) {
 	sb := SetBuilder{}
 
 	sb.InsertPrefix(Ten24)
-	assert.Equal(t, 1, sb.trie.NumNodes())
+	assert.Equal(t, int64(1), sb.trie.NumNodes())
 	sb.Remove(Ten24.Address)
 	sb.Remove(Ten24Broadcast)
 	assert.Equal(t, int64(254), sb.Set().Size())
-	assert.Equal(t, 14, sb.trie.NumNodes())
+	assert.Equal(t, int64(14), sb.trie.NumNodes())
 	assert.False(t, sb.Set().ContainsPrefix(Ten24))
 	assert.False(t, sb.Set().ContainsPrefix(Ten24128))
 	assert.False(t, sb.Set().Contains(Ten24Broadcast))
@@ -143,7 +143,7 @@ func TestOldSetRemovePrefixworkBroadcast(t *testing.T) {
 
 	sb.Remove(Ten24Router)
 	assert.Equal(t, int64(253), sb.Set().Size())
-	assert.Equal(t, 13, sb.trie.NumNodes())
+	assert.Equal(t, int64(13), sb.trie.NumNodes())
 	assert.True(t, sb.Set().isValid())
 }
 
@@ -153,11 +153,11 @@ func TestOldSetRemoveAll(t *testing.T) {
 	sb.InsertPrefix(Ten24)
 	cidr1 := unsafeParsePrefix("192.168.0.0/25")
 	sb.InsertPrefix(cidr1)
-	assert.Equal(t, 2, sb.trie.NumNodes())
+	assert.Equal(t, int64(2), sb.trie.NumNodes())
 
 	cidr2 := unsafeParsePrefix("0.0.0.0/0")
 	sb.RemovePrefix(cidr2)
-	assert.Equal(t, 0, sb.trie.NumNodes())
+	assert.Equal(t, int64(0), sb.trie.NumNodes())
 	assert.False(t, sb.Set().ContainsPrefix(Ten24))
 	assert.False(t, sb.Set().ContainsPrefix(Ten24128))
 	assert.False(t, sb.Set().ContainsPrefix(cidr1))
@@ -183,9 +183,9 @@ func TestOldSetInsertOverlapping(t *testing.T) {
 
 	sb.InsertPrefix(Ten24128)
 	assert.False(t, sb.Set().ContainsPrefix(Ten24))
-	assert.Equal(t, 1, sb.trie.NumNodes())
+	assert.Equal(t, int64(1), sb.trie.NumNodes())
 	sb.InsertPrefix(Ten24)
-	assert.Equal(t, 1, sb.trie.NumNodes())
+	assert.Equal(t, int64(1), sb.trie.NumNodes())
 	assert.Equal(t, int64(256), sb.Set().Size())
 	assert.True(t, sb.Set().ContainsPrefix(Ten24))
 	assert.True(t, sb.Set().Contains(Ten24Router))

@@ -282,7 +282,7 @@ func TestMatchZeroLength(t *testing.T) {
 
 func TestGetOrInsertTrivial(t *testing.T) {
 	var trie *trieNode
-	assert.Equal(t, 0, trie.NumNodes())
+	assert.Equal(t, int64(0), trie.NumNodes())
 	assert.True(t, trie.isValid())
 
 	key := Prefix{Address{0}, 0}
@@ -1167,7 +1167,7 @@ func TestDeleteRecursiveLeftChild32Promote(t *testing.T) {
 	match := trie.Match(childKey)
 	assert.Nil(t, match)
 	assert.Equal(t, 1, trie.height())
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.Equal(t, int64(1), trie.NumNodes())
 }
 
 func TestDeleteKeyTooBroad(t *testing.T) {
@@ -1238,7 +1238,7 @@ func TestSuccessivelyBetter(t *testing.T) {
 		var err error
 		trie, err = trie.Insert(key, nil)
 		assert.Nil(t, err)
-		assert.Equal(t, index+1, trie.NumNodes())
+		assert.Equal(t, int64(index+1), trie.NumNodes())
 		assert.True(t, trie.isValid())
 		assert.Equal(t, index+1, trie.height())
 
@@ -1259,7 +1259,7 @@ func TestSuccessivelyBetter(t *testing.T) {
 		var err error
 		trie, err = trie.Delete(key)
 		assert.Nil(t, err)
-		assert.Equal(t, len(keys)-index-1, trie.NumNodes())
+		assert.Equal(t, int64(len(keys)-index-1), trie.NumNodes())
 		assert.True(t, trie.isValid())
 		assert.Equal(t, len(keys)-index-1, trie.height())
 

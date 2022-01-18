@@ -28,7 +28,7 @@ const (
 )
 
 // Size returns the number of exact prefixes stored in the map
-func (m *Map) Size() int {
+func (m *Map) Size() int64 {
 	return m.trie.NumNodes()
 }
 
