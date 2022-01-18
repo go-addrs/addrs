@@ -52,7 +52,7 @@ func (m *Map) InsertPrefix(prefix Prefix, value interface{}) error {
 // Insert is a convenient alternative to InsertPrefix that treats the given IP
 // address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
 func (m *Map) Insert(ip Address, value interface{}) error {
-	return m.InsertPrefix(ipToKey(ip), value)
+	return m.InsertPrefix(ip.HostPrefix(), value)
 }
 
 // UpdatePrefix inserts the given prefix with the given value into the map.
@@ -72,7 +72,7 @@ func (m *Map) UpdatePrefix(prefix Prefix, value interface{}) error {
 // Update is a convenient alternative to UpdatePrefix that treats
 // the given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
 func (m *Map) Update(ip Address, value interface{}) error {
-	return m.UpdatePrefix(ipToKey(ip), value)
+	return m.UpdatePrefix(ip.HostPrefix(), value)
 }
 
 // InsertOrUpdatePrefix inserts the given prefix with the given value into the map.
@@ -91,7 +91,7 @@ func (m *Map) InsertOrUpdatePrefix(prefix Prefix, value interface{}) {
 // InsertOrUpdate is a convenient alternative to InsertOrUpdatePrefix that treats
 // the given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
 func (m *Map) InsertOrUpdate(ip Address, value interface{}) {
-	m.InsertOrUpdatePrefix(ipToKey(ip), value)
+	m.InsertOrUpdatePrefix(ip.HostPrefix(), value)
 }
 
 // GetPrefix returns the value in the map associated with the given network prefix
@@ -111,7 +111,7 @@ func (m *Map) GetPrefix(prefix Prefix) (interface{}, bool) {
 // Get is a convenient alternative to GetPrefix that treats the given IP address
 // as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
 func (m *Map) Get(ip Address) (value interface{}, found bool) {
-	return m.GetPrefix(ipToKey(ip))
+	return m.GetPrefix(ip.HostPrefix())
 }
 
 // GetOrInsertPrefix returns the value associated with the given prefix if it
@@ -127,7 +127,7 @@ func (m *Map) GetOrInsertPrefix(prefix Prefix, value interface{}) interface{} {
 // GetOrInsert is a convenient alternative to GetOrInsertPrefix that treats the
 // given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
 func (m *Map) GetOrInsert(ip Address, value interface{}) interface{} {
-	return m.GetOrInsertPrefix(ipToKey(ip), value)
+	return m.GetOrInsertPrefix(ip.HostPrefix(), value)
 }
 
 // LongestMatchPrefix returns the value in the map associated with the given
@@ -153,7 +153,7 @@ func (m *Map) LongestMatchPrefix(searchPrefix Prefix) (matched Match, prefix Pre
 // LongestMatch is a convenient alternative to MatchPrefix that treats the
 // given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
 func (m *Map) LongestMatch(ip Address) (matched Match, prefix Prefix, value interface{}) {
-	return m.LongestMatchPrefix(ipToKey(ip))
+	return m.LongestMatchPrefix(ip.HostPrefix())
 }
 
 // RemovePrefix removes the given prefix from the map with its associated value.
@@ -166,7 +166,7 @@ func (m *Map) RemovePrefix(prefix Prefix) (err error) {
 // Remove is a convenient alternative to RemovePrefix that treats the given IP
 // address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
 func (m *Map) Remove(ip Address) error {
-	return m.RemovePrefix(ipToKey(ip))
+	return m.RemovePrefix(ip.HostPrefix())
 }
 
 // MapCallback is the signature of the callback functions that can be passed to
@@ -194,11 +194,4 @@ func (m *Map) Iterate(callback MapCallback) bool {
 // 3. The aggregated and non-aggregated sets of prefixes may be disjoint.
 func (m *Map) IterateAggregates(callback MapCallback) bool {
 	return m.trie.Aggregate(trieCallback(callback))
-}
-
-func ipToKey(ip Address) Prefix {
-	return Prefix{
-		Address: ip,
-		length:  uint32(SIZE),
-	}
 }

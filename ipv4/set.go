@@ -57,7 +57,7 @@ func (me Set) Equal(other Set) bool {
 
 // Contains tests if the given address is in the set
 func (me Set) Contains(addr Address) bool {
-	return me.ContainsPrefix(ipToKey(addr))
+	return me.ContainsPrefix(addr.HostPrefix())
 }
 
 // ContainsPrefix tests if the given prefix is entirely contained in the set

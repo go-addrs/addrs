@@ -12,7 +12,7 @@ func (me *SetBuilder) Set() Set {
 
 // Insert inserts the given address into the set
 func (me *SetBuilder) Insert(addr Address) {
-	me.InsertPrefix(ipToKey(addr))
+	me.InsertPrefix(addr.HostPrefix())
 }
 
 // InsertPrefix inserts the given prefix (all of its addreses) into the set
@@ -22,7 +22,7 @@ func (me *SetBuilder) InsertPrefix(prefix Prefix) {
 
 // Remove inserts the given address into the set
 func (me *SetBuilder) Remove(addr Address) {
-	me.RemovePrefix(ipToKey(addr))
+	me.RemovePrefix(addr.HostPrefix())
 }
 
 // RemovePrefix inserts the given prefix (all of its addreses) into the set
