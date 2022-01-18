@@ -41,8 +41,8 @@ func (me Range) String() string {
 	return fmt.Sprintf("[%s,%s]", me.first, me.last)
 }
 
-// Contains returns true iff this range entirely contains the given other range
-func (me Range) Contains(other Range) bool {
+// ContainsRange returns true iff this range entirely contains the given other range
+func (me Range) ContainsRange(other Range) bool {
 	if me.Size() == 0 {
 		return other.Size() == 0
 	}

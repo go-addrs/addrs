@@ -179,10 +179,10 @@ func (me Prefix) ContainsPrefix(other Prefix) bool {
 	return me.Address.ui&mask == other.Address.ui&mask
 }
 
-// ContainsAddress returns true if the given containee is wholly contained
-// within this Prefix. It is equivalent to calling ContainsPrefix with the
-// given address interpreted as a host route.
-func (me Prefix) ContainsAddress(other Address) bool {
+// Contains returns true if the given address is found in this Prefix. It is
+// equivalent to calling ContainsPrefix with the given address interpreted as a
+// host route.
+func (me Prefix) Contains(other Address) bool {
 	return me.ContainsPrefix(
 		Prefix{
 			Address: other,

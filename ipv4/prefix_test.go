@@ -328,12 +328,12 @@ func TestPrefixContainsAddress(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			for i, containee := range tt.containees {
 				t.Run(fmt.Sprintf("contains %d", i), func(t *testing.T) {
-					assert.True(t, tt.container.ContainsAddress(containee))
+					assert.True(t, tt.container.Contains(containee))
 				})
 			}
 			for i, notContainee := range tt.not {
 				t.Run(fmt.Sprintf("doesn't contain %d", i), func(t *testing.T) {
-					assert.False(t, tt.container.ContainsAddress(notContainee))
+					assert.False(t, tt.container.Contains(notContainee))
 				})
 			}
 		})
