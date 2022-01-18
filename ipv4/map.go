@@ -107,7 +107,7 @@ func (m *Map) GetPrefix(prefix Prefix) (interface{}, bool) {
 
 // Get is a convenient alternative to GetPrefix that treats the given IP address
 // as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) Get(ip Address) (interface{}, bool) {
+func (m *Map) Get(ip Address) (value interface{}, found bool) {
 	return m.GetPrefix(ipToKey(ip))
 }
 
