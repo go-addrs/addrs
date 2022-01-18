@@ -20,12 +20,20 @@ func (me Set) Size() int64 {
 }
 
 // PrefixCallback is the type of function you pass to iterate prefixes
+//
+// Each invocation of your callback should return true if iteration should
+// continue (as long as another key / value pair exists) or false to stop
+// iterating and return immediately (meaning your callback will not be called
+// again).
 type PrefixCallback func(Prefix) bool
 
 // IteratePrefixes calls `callback` for each prefix stored in lexographical
 // order. It stops iteration immediately if callback returns false. It always
 // uses the largest prefixes possible so if two prefixes are adjacent and can
 // be combined, they will be.
+//
+// It returns false if iteration was stopped due to a callback return false or
+// true if it iterated all items.
 func (me Set) IteratePrefixes(callback PrefixCallback) bool {
 	return me.trie.Iterate(func(prefix Prefix, data interface{}) bool {
 		return callback(prefix)
@@ -34,6 +42,9 @@ func (me Set) IteratePrefixes(callback PrefixCallback) bool {
 
 // Iterate calls `callback` for each address stored in lexographical order. It
 // stops iteration immediately if callback returns false.
+//
+// It returns false if iteration was stopped due to a callback return false or
+// true if it iterated all items.
 func (me Set) Iterate(callback AddressCallback) bool {
 	return me.IteratePrefixes(func(prefix Prefix) bool {
 		return prefix.Iterate(callback)

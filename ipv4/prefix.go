@@ -201,9 +201,17 @@ func (me Prefix) Uint32() (address, mask uint32) {
 }
 
 // AddressCallback is the type of function passed to Iterate over individual addresses
+//
+// Each invocation of your callback should return true if iteration should
+// continue (as long as another key / value pair exists) or false to stop
+// iterating and return immediately (meaning your callback will not be called
+// again).
 type AddressCallback func(Address) bool
 
 // Iterate visits all of the addresses in the prefix in lexigraphical order
+//
+// It returns false if iteration was stopped due to a callback return false or
+// true if it iterated all items.
 func (me Prefix) Iterate(callback AddressCallback) bool {
 	for a := me.Network().Address.Uint32(); a <= me.Broadcast().Address.Uint32(); a++ {
 		if !callback(Address{a}) {

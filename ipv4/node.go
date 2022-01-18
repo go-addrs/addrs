@@ -602,16 +602,21 @@ func (me *trieNode) aggregable(data dataContainer) (bool, dataContainer) {
 }
 
 // trieCallback defines the signature of a function you can pass to Iterate or
-// Aggregate to handle each key / value pair found while iterating. Each
-// invocation of your callback should return true if iteration should continue
-// (as long as another key / value pair exists) or false to stop iterating and
-// return immediately (meaning your callback will not be called again).
+// Aggregate to handle each key / value pair found while iterating.
+//
+// Each invocation of your callback should return true if iteration should
+// continue (as long as another key / value pair exists) or false to stop
+// iterating and return immediately (meaning your callback will not be called
+// again).
 type trieCallback func(Prefix, interface{}) bool
 
 // Iterate walks the entire tree and calls the given function for each active
 // node. The order of visiting nodes is essentially lexigraphical:
 // - disjoint prefixes are visited in lexigraphical order
 // - shorter prefixes are visited immediately before longer prefixes that they contain
+//
+// It returns false if iteration was stopped due to a callback return false or
+// true if it iterated all items.
 func (me *trieNode) Iterate(callback trieCallback) bool {
 	if me == nil {
 		return true

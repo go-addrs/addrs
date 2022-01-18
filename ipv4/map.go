@@ -171,10 +171,18 @@ func (m *Map) Remove(ip Address) error {
 
 // MapCallback is the signature of the callback functions that can be passed to
 // Iterate or IterateAggregates to handle each prefix/value combination.
+//
+// Each invocation of your callback should return true if iteration should
+// continue (as long as another key / value pair exists) or false to stop
+// iterating and return immediately (meaning your callback will not be called
+// again).
 type MapCallback func(Prefix, interface{}) bool
 
 // Iterate invokes the given callback function for each prefix/value pair in
 // the map in lexigraphical order.
+//
+// It returns false if iteration was stopped due to a callback return false or
+// true if it iterated all items.
 func (m *Map) Iterate(callback MapCallback) bool {
 	return m.trie.Iterate(trieCallback(callback))
 }
@@ -192,6 +200,9 @@ func (m *Map) Iterate(callback MapCallback) bool {
 //    longest prefix match against the aggregated set will always return the
 //    same value as the same match against the non-aggregated set.
 // 3. The aggregated and non-aggregated sets of prefixes may be disjoint.
+//
+// It returns false if iteration was stopped due to a callback return false or
+// true if it iterated all items.
 func (m *Map) IterateAggregates(callback MapCallback) bool {
 	return m.trie.Aggregate(trieCallback(callback))
 }
