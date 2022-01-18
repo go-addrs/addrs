@@ -234,7 +234,7 @@ func TestExample1(t *testing.T) {
 	)
 
 	result = []string{}
-	m.Aggregate(func(prefix Prefix, value interface{}) bool {
+	m.IterateAggregates(func(prefix Prefix, value interface{}) bool {
 		result = append(result, prefix.String())
 		return true
 	})
@@ -282,7 +282,7 @@ func TestExample2(t *testing.T) {
 	)
 
 	result = []pair{}
-	m.Aggregate(func(prefix Prefix, value interface{}) bool {
+	m.IterateAggregates(func(prefix Prefix, value interface{}) bool {
 		result = append(
 			result,
 			pair{
@@ -355,7 +355,7 @@ func TestExample3(t *testing.T) {
 	assert.Equal(t, 1, iterations)
 
 	result = []string{}
-	m.Aggregate(func(prefix Prefix, value interface{}) bool {
+	m.IterateAggregates(func(prefix Prefix, value interface{}) bool {
 		result = append(result, prefix.String())
 		return true
 	})
@@ -370,7 +370,7 @@ func TestExample3(t *testing.T) {
 		result,
 	)
 	iterations = 0
-	m.Aggregate(func(prefix Prefix, value interface{}) bool {
+	m.IterateAggregates(func(prefix Prefix, value interface{}) bool {
 		iterations++
 		return false
 	})
@@ -535,7 +535,7 @@ func TestMapIterate(t *testing.T) {
 	assert.True(t, trie.trie.isValid())
 }
 
-func TestMapAggregate(t *testing.T) {
+func TestMapIterateAggregates(t *testing.T) {
 	var trie Map
 
 	insertKey := Prefix{Address{0x0ae01800}, 24}
@@ -545,7 +545,7 @@ func TestMapAggregate(t *testing.T) {
 	trie.InsertPrefix(secondKey, true)
 
 	found := false
-	trie.Aggregate(func(key Prefix, value interface{}) bool {
+	trie.IterateAggregates(func(key Prefix, value interface{}) bool {
 		assert.Equal(t, insertKey, key)
 		assert.True(t, value.(bool))
 		found = true
