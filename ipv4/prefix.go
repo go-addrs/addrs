@@ -183,12 +183,7 @@ func (me Prefix) ContainsPrefix(other Prefix) bool {
 // equivalent to calling ContainsPrefix with the given address interpreted as a
 // host route.
 func (me Prefix) Contains(other Address) bool {
-	return me.ContainsPrefix(
-		Prefix{
-			Address: other,
-			length:  uint32(SIZE),
-		},
-	)
+	return me.ContainsPrefix(other.HostPrefix())
 }
 
 // Size returns the number of addresses in the prefix, including network and
