@@ -56,8 +56,7 @@ func TestGetOrInsertOnlyExactMatch(t *testing.T) {
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
 
-	value, err := m.GetOrInsert(unsafeParseAddress("10.224.24.1"), 5)
-	assert.Nil(t, err)
+	value := m.GetOrInsert(unsafeParseAddress("10.224.24.1"), 5)
 	assert.Equal(t, 5, value)
 	assert.Equal(t, int64(2), m.Size())
 }
@@ -67,8 +66,7 @@ func TestGetOrInsertNotFound(t *testing.T) {
 	err := m.Insert(unsafeParseAddress("10.224.24.1"), 3)
 	assert.Nil(t, err)
 
-	value, err := m.GetOrInsert(unsafeParseAddress("10.225.24.1"), 5)
-	assert.Nil(t, err)
+	value := m.GetOrInsert(unsafeParseAddress("10.225.24.1"), 5)
 	assert.Equal(t, 5, value)
 	assert.Equal(t, int64(2), m.Size())
 }
@@ -78,8 +76,7 @@ func TestGetOrInsertPrefixOnlyExactMatch(t *testing.T) {
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
 
-	value, err := m.GetOrInsertPrefix(unsafeParsePrefix("10.224.24.2/31"), 5)
-	assert.Nil(t, err)
+	value := m.GetOrInsertPrefix(unsafeParsePrefix("10.224.24.2/31"), 5)
 	assert.Equal(t, 5, value)
 	assert.Equal(t, int64(2), m.Size())
 }
@@ -89,8 +86,7 @@ func TestGetOrInsertPrefixNotFound(t *testing.T) {
 	err := m.Insert(unsafeParseAddress("10.224.24.1"), 3)
 	assert.Nil(t, err)
 
-	value, err := m.GetOrInsertPrefix(unsafeParsePrefix("10.225.24.2/31"), 5)
-	assert.Nil(t, err)
+	value := m.GetOrInsertPrefix(unsafeParsePrefix("10.225.24.2/31"), 5)
 	assert.Equal(t, 5, value)
 	assert.Equal(t, int64(2), m.Size())
 }
@@ -435,8 +431,7 @@ func TestMapGetOrInsert(t *testing.T) {
 	assert.Equal(t, int64(0), trie.trie.NumNodes())
 
 	key := Prefix{Address{0x0ae01800}, 24}
-	value, err := trie.GetOrInsertPrefix(key, true)
-	assert.Nil(t, err)
+	value := trie.GetOrInsertPrefix(key, true)
 	assert.True(t, value.(bool))
 	assert.Equal(t, int64(1), trie.trie.NumNodes())
 	assert.True(t, trie.trie.isValid())

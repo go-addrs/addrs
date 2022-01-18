@@ -117,16 +117,16 @@ func (m *Map) Get(ip Address) (value interface{}, found bool) {
 // GetOrInsertPrefix returns the value associated with the given prefix if it
 // already exists. If it does not exist, it inserts it with the given value and
 // returns that.
-func (m *Map) GetOrInsertPrefix(prefix Prefix, value interface{}) (interface{}, error) {
+func (m *Map) GetOrInsertPrefix(prefix Prefix, value interface{}) interface{} {
 	var newHead, node *trieNode
 	newHead, node = m.trie.GetOrInsert(prefix, value)
 	m.trie = newHead
-	return node.Data, nil
+	return node.Data
 }
 
 // GetOrInsert is a convenient alternative to GetOrInsertPrefix that treats the
 // given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) GetOrInsert(ip Address, value interface{}) (interface{}, error) {
+func (m *Map) GetOrInsert(ip Address, value interface{}) interface{} {
 	return m.GetOrInsertPrefix(ipToKey(ip), value)
 }
 
