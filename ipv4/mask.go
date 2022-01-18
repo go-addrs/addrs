@@ -30,7 +30,10 @@ func MaskFromBytes(a, b, c, d byte) (Mask, error) {
 	return m, nil
 }
 
-// MaskFromUint32 returns the IPv4 mask from its 32 bit unsigned representation
+// MaskFromUint32 returns the IPv4 mask from its 32 bit unsigned
+// representation. The string of bits can only have one transition from 1s to
+// 0s. For example: 11111111111111111110000000000000. It can be all 1s or all
+// 0s.
 func MaskFromUint32(ui uint32) (Mask, error) {
 	m := Mask{ui}
 	if !m.valid() {
