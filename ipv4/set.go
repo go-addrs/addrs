@@ -9,6 +9,11 @@ type Set struct {
 	trie *setNode
 }
 
+// Builder returns a SetBuilder which starts with the contents of the set
+func (me Set) Builder() SetBuilder {
+	return SetBuilder{trie: me.trie}
+}
+
 // Size returns the number of IP addresses
 func (me Set) Size() int64 {
 	return me.trie.Size()

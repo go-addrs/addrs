@@ -20,7 +20,7 @@ func TestSetBuilderInsertPrefix(t *testing.T) {
 }
 
 func TestSetBuilderRemovePrefix(t *testing.T) {
-	sb := SetBuilder{}
+	sb := Set{}.Builder()
 	sb.InsertPrefix(unsafeParsePrefix("10.0.0.0/16"))
 
 	assert.True(t, sb.Set().ContainsPrefix(unsafeParsePrefix("10.0.0.0/24")))
