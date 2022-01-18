@@ -15,25 +15,6 @@ type Prefix struct {
 	length  uint32
 }
 
-// PrefixFromUint32 returns the IPv4 address from its 32 bit unsigned representation
-func PrefixFromUint32(ui uint32, length int) (Prefix, error) {
-	if length < 0 || addressSize < length {
-		return Prefix{}, fmt.Errorf("failed to convert prefix, length %d isn't between 0 and 32", length)
-	}
-	return Prefix{Address{ui}, uint32(length)}, nil
-}
-
-// PrefixFromBytes returns the IPv4 address of the `a.b.c.d`.
-func PrefixFromBytes(a, b, c, d byte, length int) (Prefix, error) {
-	if length < 0 || addressSize < length {
-		return Prefix{}, fmt.Errorf("failed to convert prefix, length %d isn't between 0 and 32", length)
-	}
-	return Prefix{
-		Address: AddressFromBytes(a, b, c, d),
-		length:  uint32(length),
-	}, nil
-}
-
 // PrefixFromNetIPNet converts the given *net.IPNet to a Prefix
 func PrefixFromNetIPNet(net *net.IPNet) (Prefix, error) {
 	if net == nil {

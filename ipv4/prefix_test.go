@@ -18,11 +18,11 @@ func unsafeParsePrefix(cidr string) Prefix {
 }
 
 func unsafePrefixFromUint32(ip uint32, length int) Prefix {
-	prefix, err := PrefixFromUint32(ip, length)
+	mask, err := MaskFromLength(length)
 	if err != nil {
 		panic("only use this is happy cases")
 	}
-	return prefix
+	return PrefixFromAddressMask(Address{ip}, mask)
 }
 
 func unsafeParseNet(prefix string) *net.IPNet {
@@ -112,28 +112,6 @@ func TestPrefixFromNetIPNet(t *testing.T) {
 			}
 		})
 	}
-}
-
-func TestPrefixFromBytes(t *testing.T) {
-	prefix, err := PrefixFromBytes(10, 224, 24, 1, 22)
-	assert.Equal(t, unsafePrefixFromUint32(0x0ae01801, 22), prefix)
-	assert.Nil(t, err)
-
-	prefix, err = PrefixFromBytes(10, 224, 24, 1, 32)
-	assert.Equal(t, unsafePrefixFromUint32(0x0ae01801, 32), prefix)
-	assert.Nil(t, err)
-
-	prefix, err = PrefixFromBytes(10, 224, 24, 1, 33)
-	assert.NotNil(t, err)
-}
-
-func TestPrefixFromUint32(t *testing.T) {
-	prefix, err := PrefixFromUint32(0x0ae01801, 22)
-	assert.Equal(t, unsafeParsePrefix("10.224.24.1/22"), prefix)
-	assert.Nil(t, err)
-
-	prefix, err = PrefixFromUint32(0x0ae01801, 33)
-	assert.NotNil(t, err)
 }
 
 func TestPrefixEqual(t *testing.T) {
