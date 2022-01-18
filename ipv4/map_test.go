@@ -9,8 +9,7 @@ import (
 func TestInsertOrUpdate(t *testing.T) {
 	m := Map{}
 	m.Insert(unsafeParseAddress("10.224.24.1"), nil)
-	err := m.InsertOrUpdate(unsafeParseAddress("10.224.24.1"), 3)
-	assert.Nil(t, err)
+	m.InsertOrUpdate(unsafeParseAddress("10.224.24.1"), 3)
 	assert.Equal(t, int64(1), m.Size())
 
 	data, ok := m.Get(unsafeParseAddress("10.224.24.1"))
@@ -20,15 +19,13 @@ func TestInsertOrUpdate(t *testing.T) {
 
 func TestInsertOrUpdateDuplicate(t *testing.T) {
 	m := Map{}
-	err := m.InsertOrUpdate(unsafeParseAddress("10.224.24.1"), 3)
-	assert.Nil(t, err)
+	m.InsertOrUpdate(unsafeParseAddress("10.224.24.1"), 3)
 	assert.Equal(t, int64(1), m.Size())
 	data, ok := m.Get(unsafeParseAddress("10.224.24.1"))
 	assert.True(t, ok)
 	assert.Equal(t, 3, data)
 
-	err = m.InsertOrUpdate(unsafeParseAddress("10.224.24.1"), 4)
-	assert.Nil(t, err)
+	m.InsertOrUpdate(unsafeParseAddress("10.224.24.1"), 4)
 	assert.Equal(t, int64(1), m.Size())
 	data, ok = m.Get(unsafeParseAddress("10.224.24.1"))
 	assert.True(t, ok)
@@ -158,8 +155,7 @@ func TestInsertPrefix(t *testing.T) {
 func TestInsertOrUpdatePrefix(t *testing.T) {
 	m := Map{}
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.0/24"), nil)
-	err := m.InsertOrUpdatePrefix(unsafeParsePrefix("10.224.24.0/24"), 3)
-	assert.Nil(t, err)
+	m.InsertOrUpdatePrefix(unsafeParsePrefix("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
 
 	data, ok := m.GetPrefix(unsafeParsePrefix("10.224.24.0/24"))
@@ -393,16 +389,14 @@ func TestMapInsertOrUpdate(t *testing.T) {
 	assert.Equal(t, int64(0), trie.trie.NumNodes())
 
 	key := Prefix{Address{0x0ae01800}, 24}
-	err := trie.InsertOrUpdatePrefix(key, true)
-	assert.Nil(t, err)
+	trie.InsertOrUpdatePrefix(key, true)
 	assert.Equal(t, int64(1), trie.trie.NumNodes())
 	match, matchedKey, value := trie.LongestMatchPrefix(key)
 	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
 	assert.True(t, value.(bool))
 
-	err = trie.InsertOrUpdatePrefix(key, false)
-	assert.Nil(t, err)
+	trie.InsertOrUpdatePrefix(key, false)
 	assert.Equal(t, int64(1), trie.trie.NumNodes())
 	match, matchedKey, value = trie.LongestMatchPrefix(key)
 	assert.Equal(t, MatchExact, match)

@@ -1,5 +1,9 @@
 package ipv4
 
+import (
+	"fmt"
+)
+
 // Map is a structure that maps IP prefixes to values. For example, you can
 // insert the following values and they will all exist as distinct prefix/value
 // pairs in the map.
@@ -73,22 +77,21 @@ func (m *Map) Update(ip Address, value interface{}) error {
 
 // InsertOrUpdatePrefix inserts the given prefix with the given value into the map.
 // If the prefix already existed, it updates the associated value in place.
-func (m *Map) InsertOrUpdatePrefix(prefix Prefix, value interface{}) error {
+func (m *Map) InsertOrUpdatePrefix(prefix Prefix, value interface{}) {
 	var err error
 	var newHead *trieNode
 	newHead, err = m.trie.InsertOrUpdate(prefix, value)
 	if err != nil {
-		return err
+		panic(fmt.Errorf("this error shouldn't happen: %w", err))
 	}
 
 	m.trie = newHead
-	return nil
 }
 
 // InsertOrUpdate is a convenient alternative to InsertOrUpdatePrefix that treats
 // the given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) InsertOrUpdate(ip Address, value interface{}) error {
-	return m.InsertOrUpdatePrefix(ipToKey(ip), value)
+func (m *Map) InsertOrUpdate(ip Address, value interface{}) {
+	m.InsertOrUpdatePrefix(ipToKey(ip), value)
 }
 
 // GetPrefix returns the value in the map associated with the given network prefix
