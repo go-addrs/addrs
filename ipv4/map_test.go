@@ -105,7 +105,7 @@ func TestMatchLongestPrefixMatch(t *testing.T) {
 	m.InsertPrefix(unsafeParsePrefix("10.224.0.0/16"), 4)
 	assert.Equal(t, 2, m.Size())
 
-	matched, n, data := m.Match(unsafeParseAddress("10.224.24.1"))
+	matched, n, data := m.LongestMatch(unsafeParseAddress("10.224.24.1"))
 	assert.Equal(t, MatchContains, matched)
 	assert.Equal(t, unsafeParsePrefix("10.224.24.0/24"), n)
 	assert.Equal(t, 3, data)
@@ -117,7 +117,7 @@ func TestMatchNotFound(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, 1, m.Size())
 
-	matched, _, _ := m.Match(unsafeParseAddress("10.225.24.1"))
+	matched, _, _ := m.LongestMatch(unsafeParseAddress("10.225.24.1"))
 	assert.Equal(t, MatchNone, matched)
 }
 
@@ -197,7 +197,7 @@ func TestMatchPrefixLongestPrefixMatch(t *testing.T) {
 	m.InsertPrefix(unsafeParsePrefix("10.224.0.0/16"), 4)
 	assert.Equal(t, 2, m.Size())
 
-	matched, n, data := m.MatchPrefix(unsafeParsePrefix("10.224.24.0/27"))
+	matched, n, data := m.LongestMatchPrefix(unsafeParsePrefix("10.224.24.0/27"))
 	assert.Equal(t, MatchContains, matched)
 	assert.Equal(t, 3, data)
 	assert.Equal(t, unsafeParsePrefix("10.224.24.0/24"), n)
@@ -208,7 +208,7 @@ func TestMatchPrefixNotFound(t *testing.T) {
 	m.InsertPrefix(unsafeParsePrefix("10.224.24.0/24"), 3)
 	assert.Equal(t, 1, m.Size())
 
-	matched, _, _ := m.MatchPrefix(unsafeParsePrefix("10.225.24.0/24"))
+	matched, _, _ := m.LongestMatchPrefix(unsafeParsePrefix("10.225.24.0/24"))
 	assert.Equal(t, MatchNone, matched)
 }
 
@@ -396,7 +396,7 @@ func TestMapInsertOrUpdate(t *testing.T) {
 	err := trie.InsertOrUpdatePrefix(key, true)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, trie.trie.NumNodes())
-	match, matchedKey, value := trie.MatchPrefix(key)
+	match, matchedKey, value := trie.LongestMatchPrefix(key)
 	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
 	assert.True(t, value.(bool))
@@ -404,7 +404,7 @@ func TestMapInsertOrUpdate(t *testing.T) {
 	err = trie.InsertOrUpdatePrefix(key, false)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, trie.trie.NumNodes())
-	match, matchedKey, value = trie.MatchPrefix(key)
+	match, matchedKey, value = trie.LongestMatchPrefix(key)
 	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
 	assert.False(t, value.(bool))
@@ -421,7 +421,7 @@ func TestMapUpdate(t *testing.T) {
 	err := trie.UpdatePrefix(key, true)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, trie.trie.NumNodes())
-	match, matchedKey, value := trie.MatchPrefix(key)
+	match, matchedKey, value := trie.LongestMatchPrefix(key)
 	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
 	assert.True(t, value.(bool))
@@ -429,7 +429,7 @@ func TestMapUpdate(t *testing.T) {
 	err = trie.UpdatePrefix(key, false)
 	assert.Nil(t, err)
 	assert.Equal(t, 1, trie.trie.NumNodes())
-	match, matchedKey, value = trie.MatchPrefix(key)
+	match, matchedKey, value = trie.LongestMatchPrefix(key)
 	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
 	assert.False(t, value.(bool))
@@ -455,13 +455,13 @@ func TestMapMatch(t *testing.T) {
 	trie.InsertPrefix(insertKey, true)
 
 	t.Run("None", func(t *testing.T) {
-		level, _, _ := trie.MatchPrefix(Prefix{Address{0x0ae01000}, 24})
+		level, _, _ := trie.LongestMatchPrefix(Prefix{Address{0x0ae01000}, 24})
 		assert.Equal(t, MatchNone, level)
 		assert.True(t, trie.trie.isValid())
 	})
 
 	t.Run("Exact", func(t *testing.T) {
-		level, key, value := trie.MatchPrefix(Prefix{Address{0x0ae01800}, 24})
+		level, key, value := trie.LongestMatchPrefix(Prefix{Address{0x0ae01800}, 24})
 		assert.Equal(t, MatchExact, level)
 		assert.Equal(t, insertKey, key)
 		assert.True(t, value.(bool))
@@ -469,7 +469,7 @@ func TestMapMatch(t *testing.T) {
 	})
 
 	t.Run("Contains", func(t *testing.T) {
-		level, key, value := trie.MatchPrefix(Prefix{Address{0x0ae01817}, 32})
+		level, key, value := trie.LongestMatchPrefix(Prefix{Address{0x0ae01817}, 32})
 		assert.Equal(t, MatchContains, level)
 		assert.Equal(t, insertKey, key)
 		assert.True(t, value.(bool))

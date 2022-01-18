@@ -96,7 +96,7 @@ func (m *Map) InsertOrUpdate(ip Address, value interface{}) error {
 // exact match is not found, found is false and value is nil and should be
 // ignored.
 func (m *Map) GetPrefix(prefix Prefix) (interface{}, bool) {
-	match, _, value := m.MatchPrefix(prefix)
+	match, _, value := m.LongestMatchPrefix(prefix)
 
 	if match == MatchExact {
 		return value, true
@@ -127,11 +127,11 @@ func (m *Map) GetOrInsert(ip Address, value interface{}) (interface{}, error) {
 	return m.GetOrInsertPrefix(ipToKey(ip), value)
 }
 
-// MatchPrefix returns the value in the map associated with the given network
-// prefix using a longest prefix match. If a match is found, it returns a
-// Prefix representing the longest prefix matched. If a match is *not*
-// found, matched is MatchNone and the other fields should be ignored
-func (m *Map) MatchPrefix(searchPrefix Prefix) (matched Match, prefix Prefix, value interface{}) {
+// LongestMatchPrefix returns the value in the map associated with the given
+// network prefix using a longest prefix match. If a match is found, it returns
+// a Prefix representing the longest prefix matched. If a match is *not* found,
+// matched is MatchNone and the other fields should be ignored
+func (m *Map) LongestMatchPrefix(searchPrefix Prefix) (matched Match, prefix Prefix, value interface{}) {
 	var node *trieNode
 	node = m.trie.Match(searchPrefix)
 	if node == nil {
@@ -147,10 +147,10 @@ func (m *Map) MatchPrefix(searchPrefix Prefix) (matched Match, prefix Prefix, va
 	return MatchContains, resultKey, node.Data
 }
 
-// Match is a convenient alternative to MatchPrefix that treats the given IP
-// address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) Match(ip Address) (matched Match, prefix Prefix, value interface{}) {
-	return m.MatchPrefix(ipToKey(ip))
+// LongestMatch is a convenient alternative to MatchPrefix that treats the
+// given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
+func (m *Map) LongestMatch(ip Address) (matched Match, prefix Prefix, value interface{}) {
+	return m.LongestMatchPrefix(ipToKey(ip))
 }
 
 // RemovePrefix removes the given prefix from the map with its associated value.
