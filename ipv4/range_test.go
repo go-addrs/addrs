@@ -31,9 +31,9 @@ func TestRangeString(t *testing.T) {
 }
 
 func TestRangeSize(t *testing.T) {
-	assert.Equal(t, 0x100, unsafeParsePrefix("10.224.24.1/24").Range().Size())
-	assert.Equal(t, 0x20000, unsafeParsePrefix("10.224.24.1/15").Range().Size())
-	assert.Equal(t, 0x11111112, validRange(t, Address{ui: 0x12345678}, Address{ui: 0x23456789}).Size())
+	assert.Equal(t, int64(0x100), unsafeParsePrefix("10.224.24.1/24").Range().Size())
+	assert.Equal(t, int64(0x20000), unsafeParsePrefix("10.224.24.1/15").Range().Size())
+	assert.Equal(t, int64(0x11111112), validRange(t, Address{ui: 0x12345678}, Address{ui: 0x23456789}).Size())
 }
 
 func TestRangeFirstLast(t *testing.T) {

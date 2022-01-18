@@ -23,8 +23,8 @@ func NewRange(first, last Address) (Range, error) {
 }
 
 // Size returns the number of addresses in the range
-func (me Range) Size() int {
-	return 1 + int(me.last.ui-me.first.ui)
+func (me Range) Size() int64 {
+	return 1 + int64(me.last.ui-me.first.ui)
 }
 
 // First returns the first address in the range
