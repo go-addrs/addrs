@@ -154,8 +154,12 @@ func (me *trieNode) GetOrInsert(searchKey Prefix, data interface{}) (head, resul
 		if result == nil {
 			result = &trieNode{Prefix: searchKey, Data: data}
 
-			// The only error from insert is that the key already exists. But, that cannot happen by design.
-			head, _ = me.insert(result, insertOpts{insert: true})
+			var err error
+			head, err = me.insert(result, insertOpts{insert: true})
+			if err != nil {
+				// when getting *or* inserting, we design around the errors that could come from insert
+				panic(fmt.Errorf("this error shouldn't happen: %w", err))
+			}
 		}
 	}()
 
@@ -295,8 +299,14 @@ func (me *trieNode) Update(key Prefix, data interface{}) (newHead *trieNode, err
 
 // InsertOrUpdate inserts the key / value if the key didn't previously exist.
 // Otherwise, it updates the data.
-func (me *trieNode) InsertOrUpdate(key Prefix, data interface{}) (newHead *trieNode, err error) {
-	return me.insert(&trieNode{Prefix: key, Data: data}, insertOpts{insert: true, update: true})
+func (me *trieNode) InsertOrUpdate(key Prefix, data interface{}) (newHead *trieNode) {
+	var err error
+	newHead, err = me.insert(&trieNode{Prefix: key, Data: data}, insertOpts{insert: true, update: true})
+	if err != nil {
+		// when inserting *or* updating, we design around the errors that could come from insert
+		panic(fmt.Errorf("this error shouldn't happen: %w", err))
+	}
+	return newHead
 }
 
 // Insert is the public form of insert(...)
