@@ -229,7 +229,7 @@ func (me *trieNode) Match(searchKey Prefix) *trieNode {
 // Size returns the number of addresses that could match this node
 // Note that this may have to search all nodes recursively to find the answer.
 // The implementation can be changed to store the size in each node at the cost
-// of adding about 8 more bits to the size of each node.
+// of adding about 8 more bytes to the size of each node.
 func (me *trieNode) Size() int64 {
 	if me == nil {
 		return 0
