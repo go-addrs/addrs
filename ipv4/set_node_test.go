@@ -203,17 +203,14 @@ func TestTrieNodeSet32Union(t *testing.T) {
 		var one, two *setNode
 		one = one.Insert(unsafeParsePrefix("198.51.100.0/25"))
 		one = one.Insert(unsafeParsePrefix("203.0.113.0/25"))
-		printTrieSet(one)
 
 		two = two.Insert(unsafeParsePrefix("198.51.100.128/25"))
 		two = two.Insert(unsafeParsePrefix("203.0.113.128/25"))
-		printTrieSet(two)
 
 		result := one.Union(two)
 		assert.Equal(t, int64(512), result.Size())
 		assert.NotNil(t, result.Match(unsafeParsePrefix("198.51.100.0/24")))
 		assert.NotNil(t, result.Match(unsafeParsePrefix("203.0.113.0/24")))
-		printTrieSet(result)
 		assert.Nil(t, result.Match(unsafeParsePrefix("192.0.0.0/4")))
 	})
 }

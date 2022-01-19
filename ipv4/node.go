@@ -104,22 +104,31 @@ func compare(a, b Prefix) (result int, reversed bool, common, child uint32) {
 	return
 }
 
-func (me *trieNode) makeCopy() *trieNode {
+func (me *trieNode) mutate(mutator func(*trieNode)) *trieNode {
+	if me == nil {
+		return nil
+	}
+
+	mutator(me)
+
+	numNodes := me.children[0].NumNodes() + me.children[1].NumNodes()
+	height := 1 + intMax(me.children[0].height(), me.children[1].height())
+
+	me.size = uint32(numNodes)
+	me.h = uint16(height)
+	if me.isActive {
+		me.size++
+	}
+	return me
+}
+
+func (me *trieNode) copyMutate(mutator func(*trieNode)) *trieNode {
 	if me == nil {
 		return nil
 	}
 	doppelganger := &trieNode{}
 	*doppelganger = *me
-	return doppelganger
-}
-
-func (me *trieNode) setSize() {
-	// me is not nil by design
-	me.size = uint32(me.children[0].NumNodes() + me.children[1].NumNodes())
-	me.h = 1 + uint16(uint16(intMax(me.children[0].height(), me.children[1].height())))
-	if me.isActive {
-		me.size++
-	}
+	return doppelganger.mutate(mutator)
 }
 
 // Equal returns true if all of the entries are the same in the two data structures
@@ -176,9 +185,9 @@ func (me *trieNode) GetOrInsert(searchKey Prefix, data interface{}) (head, resul
 		var newChild *trieNode
 		newChild, result = me.children[child].GetOrInsert(searchKey, data)
 
-		head = me.makeCopy()
-		head.children[child] = newChild
-		head.setSize()
+		head = me.copyMutate(func(n *trieNode) {
+			n.children[child] = newChild
+		})
 		return
 	}
 
@@ -354,20 +363,13 @@ func (me *trieNode) flatten() {
 // important to note that the root of the trie can change. If the new node
 // cannot be inserted, nil is returned.
 func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, err error) {
-	defer func() {
-		if me != newHead {
-			if opts.flatten {
-				newHead.flatten()
-			}
-			newHead.setSize()
-		}
-	}()
-
 	if me == nil {
 		if !opts.insert {
 			return me, fmt.Errorf("the key doesn't exist to update")
 		}
-		node.isActive = true
+		node = node.mutate(func(n *trieNode) {
+			n.isActive = true
+		})
 		return node, nil
 	}
 
@@ -386,8 +388,13 @@ func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, 
 			// avoid copy-on-write when it will be flattened resulting in no effective change
 			return me, nil
 		}
-		node.children = me.children
-		node.isActive = true
+		node = node.mutate(func(n *trieNode) {
+			n.children = me.children
+			n.isActive = true
+			if opts.flatten {
+				n.flatten()
+			}
+		})
 		return node, nil
 
 	case compareContains:
@@ -400,8 +407,12 @@ func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, 
 		if err != nil {
 			return me, err
 		}
-		newNode := me.makeCopy()
-		newNode.children[child] = newChild
+		newNode := me.copyMutate(func(n *trieNode) {
+			n.children[child] = newChild
+			if opts.flatten {
+				n.flatten()
+			}
+		})
 		return newNode, nil
 
 	case compareIsContained:
@@ -409,8 +420,13 @@ func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, 
 		if !opts.insert {
 			return me, fmt.Errorf("the key doesn't exist to update")
 		}
-		node.children[child] = me
-		node.isActive = true
+		node = node.mutate(func(n *trieNode) {
+			n.children[child] = me
+			n.isActive = true
+			if opts.flatten {
+				n.flatten()
+			}
+		})
 		return node, nil
 
 	case compareDisjoint:
@@ -429,7 +445,7 @@ func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, 
 			children[0], children[1] = newChild, me
 		}
 
-		return &trieNode{
+		newNode := &trieNode{
 			Prefix: Prefix{
 				Address: Address{
 					ui: me.Prefix.Address.ui & ^(uint32(0xffffffff) >> common), // zero out bits not in common
@@ -437,7 +453,13 @@ func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, 
 				length: common,
 			},
 			children: children,
-		}, nil
+		}
+		newNode.mutate(func(n *trieNode) {
+			if opts.flatten {
+				n.flatten()
+			}
+		})
+		return newNode, nil
 	}
 	panic("unreachable code")
 }
@@ -453,12 +475,6 @@ func (me *trieNode) Delete(key Prefix) (newHead *trieNode, err error) {
 }
 
 func (me *trieNode) del(key Prefix, opts deleteOpts) (newHead *trieNode, err error) {
-	defer func() {
-		if err == nil && newHead != nil {
-			newHead.setSize()
-		}
-	}()
-
 	if me == nil {
 		if opts.flatten {
 			return nil, nil
@@ -482,8 +498,9 @@ func (me *trieNode) del(key Prefix, opts deleteOpts) (newHead *trieNode, err err
 		}
 
 		// The two children are disjoint so keep this inactive node.
-		newNode := me.makeCopy()
-		newNode.isActive = false
+		newNode := me.copyMutate(func(n *trieNode) {
+			n.isActive = false
+		})
 		return newNode, nil
 
 	case compareContains:
@@ -512,8 +529,9 @@ func (me *trieNode) del(key Prefix, opts deleteOpts) (newHead *trieNode, err err
 			// Promote the other child up
 			return me.children[(child+1)%2], nil
 		}
-		newNode := me.makeCopy()
-		newNode.children[child] = newChild
+		newNode := me.copyMutate(func(n *trieNode) {
+			n.children[child] = newChild
+		})
 		return newNode, nil
 
 	case compareIsContained:

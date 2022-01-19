@@ -1349,7 +1349,7 @@ func printTrie(trie *trieNode) {
 			return
 		}
 		for i := 0; i < level; i++ {
-			fmt.Printf(" ")
+			fmt.Printf("   ")
 		}
 		fmt.Printf("%+v, %v, %d\n", trie, trie.isActive, trie.size)
 		recurse(trie.children[0], level+1)

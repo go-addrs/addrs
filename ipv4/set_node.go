@@ -71,14 +71,21 @@ func (me *setNode) Right() *setNode {
 	return (*setNode)(me.children[1])
 }
 
+// so much casting!
+func (me *setNode) mutate(mutator func(*setNode)) *setNode {
+	n := (*trieNode)(me)
+	n = n.mutate(func(node *trieNode) {
+		mutator((*setNode)(node))
+	})
+	return (*setNode)(n)
+}
+
+func (me *setNode) flatten() {
+	(*trieNode)(me).flatten()
+}
+
 // Union returns the flattened union of prefixes.
 func (me *setNode) Union(other *setNode) (rc *setNode) {
-	defer func() {
-		if rc != nil {
-			rc.setSize()
-		}
-	}()
-
 	if me == other {
 		return me
 	}
@@ -115,7 +122,9 @@ func (me *setNode) Union(other *setNode) (rc *setNode) {
 				(*trieNode)(right),
 			},
 		}
-		return newHead
+		return newHead.mutate(func(n *setNode) {
+			n.flatten()
+		})
 
 	case compareContains, compareIsContained:
 		super, sub := me, other
@@ -145,7 +154,9 @@ func (me *setNode) Union(other *setNode) (rc *setNode) {
 				(*trieNode)(right),
 			},
 		}
-		return newHead
+		return newHead.mutate(func(n *setNode) {
+			n.flatten()
+		})
 
 	default:
 		var left, right *setNode
@@ -168,7 +179,9 @@ func (me *setNode) Union(other *setNode) (rc *setNode) {
 				(*trieNode)(right),
 			},
 		}
-		return newHead
+		return newHead.mutate(func(n *setNode) {
+			n.flatten()
+		})
 	}
 }
 
@@ -178,17 +191,6 @@ func (me *setNode) Match(searchKey Prefix) *setNode {
 
 func (me *setNode) isValid() bool {
 	return (*trieNode)(me).isValid()
-}
-
-func (me *setNode) setSize() {
-	if me.Left().active() &&
-		me.Right().active() &&
-		me.Prefix.length+1 == me.Left().Prefix.length &&
-		me.Left().Prefix.length == me.Right().Prefix.length {
-		me.isActive = true
-		me.children = [2]*trieNode{}
-	}
-	(*trieNode)(me).setSize()
 }
 
 // Difference returns the flattened difference of prefixes.
