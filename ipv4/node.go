@@ -308,9 +308,9 @@ type insertOpts struct {
 	insert, update, flatten bool
 }
 
+// flatten assumes that `me` is a new node. It should not be called that had
+// already existed as a node in the trie because it does not make a copy.
 func (me *trieNode) flatten() {
-	defer me.setSize()
-
 	if me.isActive {
 		// If the current node is active, then anything referenced by the
 		// children is redundant, they can be removed.

@@ -1625,8 +1625,6 @@ func TestFlatten(t *testing.T) {
 		}
 		n.flatten()
 		assert.Equal(t, prefix, n.Prefix)
-		assert.Equal(t, uint32(1), n.size)
-		assert.Equal(t, uint16(1), n.h)
 		assert.True(t, n.isActive)
 		assert.Nil(t, n.children[0])
 		assert.Nil(t, n.children[1])
@@ -1731,8 +1729,6 @@ func TestFlatten(t *testing.T) {
 		n.flatten()
 		assert.Equal(t, prefix, n.Prefix)
 		assert.True(t, n.isActive)
-		assert.Equal(t, uint32(1), n.size)
-		assert.Equal(t, uint16(1), n.h)
 		assert.Nil(t, n.children[0])
 		assert.Nil(t, n.children[1])
 	})
