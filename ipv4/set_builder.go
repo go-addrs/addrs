@@ -17,7 +17,7 @@ func NewSetBuilder() SetBuilder {
 }
 
 // Set returns the immutable set effectively freezing this builder
-func (me *SetBuilder) Set() Set {
+func (me SetBuilder) Set() Set {
 	return Set{trie: me.sb.trie}
 }
 
