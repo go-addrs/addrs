@@ -11,7 +11,11 @@ type Set struct {
 
 // Builder returns a SetBuilder which starts with the contents of the set
 func (me Set) Builder() SetBuilder {
-	return SetBuilder{trie: me.trie}
+	return SetBuilder{
+		sb: &sharedSetBuilder{
+			trie: me.trie,
+		},
+	}
 }
 
 // Size returns the number of IP addresses

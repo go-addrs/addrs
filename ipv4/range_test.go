@@ -197,7 +197,7 @@ func TestRangeSet(t *testing.T) {
 	r := Range{unsafeParseAddress("7.0.37.17"), unsafeParseAddress("13.8.222.113")}
 
 	// I calculated this manually from the above arbitrarily chosen range.
-	golden := SetBuilder{}
+	golden := NewSetBuilder()
 	golden.InsertPrefix(unsafeParsePrefix("7.0.37.17/32"))
 	golden.InsertPrefix(unsafeParsePrefix("7.0.37.18/31"))
 	golden.InsertPrefix(unsafeParsePrefix("7.0.37.20/30"))

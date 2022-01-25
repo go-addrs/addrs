@@ -7,7 +7,7 @@ import (
 )
 
 func TestSetContainsPrefix(t *testing.T) {
-	sb := SetBuilder{}
+	sb := NewSetBuilder()
 	sb.InsertPrefix(unsafeParsePrefix("10.0.0.0/16"))
 	assert.True(t, sb.Set().ContainsPrefix(unsafeParsePrefix("10.0.0.0/24")))
 	assert.True(t, sb.Set().ContainsPrefix(unsafeParsePrefix("10.0.30.0/27")))
