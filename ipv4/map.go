@@ -1,9 +1,5 @@
 package ipv4
 
-type sharedMap struct {
-	trie *trieNode
-}
-
 // Map is a structure that maps IP prefixes to values. For example, you can
 // insert the following values and they will all exist as distinct prefix/value
 // pairs in the map.
@@ -16,13 +12,19 @@ type sharedMap struct {
 // supports efficient aggregation of prefix/value pairs based on equality of
 // values. See the README.md file for a more detailed discussion..
 type Map struct {
-	m *sharedMap
+	// This is an abuse of ImmutableMap because it uses its package privileges
+	// to turn it into a mutable one. This could be refactored to be cleaner
+	// without changing the interface.
+
+	// Be careful not to take an ImmutableMap from outside the package and turn
+	// it into a mutable one. That would break the contract.
+	m *ImmutableMap
 }
 
 // NewMap returns a new fully-initialized Map
 func NewMap() Map {
 	return Map{
-		m: &sharedMap{},
+		m: &ImmutableMap{},
 	}
 }
 
@@ -40,7 +42,7 @@ const (
 
 // Size returns the number of exact prefixes stored in the map
 func (me Map) Size() int64 {
-	return me.m.trie.NumNodes()
+	return me.m.Size()
 }
 
 // InsertPrefix inserts the given prefix with the given value into the map
@@ -99,19 +101,13 @@ func (me Map) InsertOrUpdate(ip Address, value interface{}) {
 // exact match is not found, found is false and value is nil and should be
 // ignored.
 func (me Map) GetPrefix(prefix Prefix) (interface{}, bool) {
-	match, _, value := me.LongestMatchPrefix(prefix)
-
-	if match == MatchExact {
-		return value, true
-	}
-
-	return nil, false
+	return me.m.GetPrefix(prefix)
 }
 
 // Get is a convenient alternative to GetPrefix that treats the given IP address
 // as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
 func (me Map) Get(ip Address) (value interface{}, found bool) {
-	return me.GetPrefix(ip.HostPrefix())
+	return me.m.GetPrefix(ip.HostPrefix())
 }
 
 // GetOrInsertPrefix returns the value associated with the given prefix if it
@@ -135,25 +131,13 @@ func (me Map) GetOrInsert(ip Address, value interface{}) interface{} {
 // a Prefix representing the longest prefix matched. If a match is *not* found,
 // matched is MatchNone and the other fields should be ignored
 func (me Map) LongestMatchPrefix(searchPrefix Prefix) (matched Match, prefix Prefix, value interface{}) {
-	var node *trieNode
-	node = me.m.trie.Match(searchPrefix)
-	if node == nil {
-		return MatchNone, Prefix{}, nil
-	}
-
-	var resultKey Prefix
-	resultKey = node.Prefix
-
-	if node.Prefix.length == searchPrefix.length {
-		return MatchExact, resultKey, node.Data
-	}
-	return MatchContains, resultKey, node.Data
+	return me.m.LongestMatchPrefix(searchPrefix)
 }
 
 // LongestMatch is a convenient alternative to MatchPrefix that treats the
 // given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
 func (me Map) LongestMatch(ip Address) (matched Match, prefix Prefix, value interface{}) {
-	return me.LongestMatchPrefix(ip.HostPrefix())
+	return me.m.LongestMatchPrefix(ip.HostPrefix())
 }
 
 // RemovePrefix removes the given prefix from the map with its associated value.
@@ -169,22 +153,13 @@ func (me Map) Remove(ip Address) error {
 	return me.RemovePrefix(ip.HostPrefix())
 }
 
-// MapCallback is the signature of the callback functions that can be passed to
-// Iterate or IterateAggregates to handle each prefix/value combination.
-//
-// Each invocation of your callback should return true if iteration should
-// continue (as long as another key / value pair exists) or false to stop
-// iterating and return immediately (meaning your callback will not be called
-// again).
-type MapCallback func(Prefix, interface{}) bool
-
 // Iterate invokes the given callback function for each prefix/value pair in
 // the map in lexigraphical order.
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
 func (me Map) Iterate(callback MapCallback) bool {
-	return me.m.trie.Iterate(trieCallback(callback))
+	return me.m.Iterate(callback)
 }
 
 // IterateAggregates invokes then given callback function for each prefix/value
@@ -204,5 +179,12 @@ func (me Map) Iterate(callback MapCallback) bool {
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
 func (me Map) IterateAggregates(callback MapCallback) bool {
-	return me.m.trie.Aggregate(trieCallback(callback))
+	return me.m.IterateAggregates(callback)
+}
+
+// Immutable returns an immutable snapshot of this Map. Due to the COW nature
+// of the underlying datastructure, it is very cheap to create these --
+// effectively a pointer copy.
+func (me Map) Immutable() ImmutableMap {
+	return *me.m
 }
