@@ -1,5 +1,9 @@
 package ipv4
 
+type sharedMap struct {
+	trie *trieNode
+}
+
 // Map is a structure that maps IP prefixes to values. For example, you can
 // insert the following values and they will all exist as distinct prefix/value
 // pairs in the map.
@@ -12,7 +16,14 @@ package ipv4
 // supports efficient aggregation of prefix/value pairs based on equality of
 // values. See the README.md file for a more detailed discussion..
 type Map struct {
-	trie *trieNode
+	m *sharedMap
+}
+
+// NewMap returns a new fully-initialized Map
+func NewMap() Map {
+	return Map{
+		m: &sharedMap{},
+	}
 }
 
 // Match indicates how closely the given key matches the search result
@@ -28,67 +39,67 @@ const (
 )
 
 // Size returns the number of exact prefixes stored in the map
-func (m *Map) Size() int64 {
-	return m.trie.NumNodes()
+func (me Map) Size() int64 {
+	return me.m.trie.NumNodes()
 }
 
 // InsertPrefix inserts the given prefix with the given value into the map
-func (m *Map) InsertPrefix(prefix Prefix, value interface{}) error {
+func (me Map) InsertPrefix(prefix Prefix, value interface{}) error {
 	var err error
 	var newHead *trieNode
-	newHead, err = m.trie.Insert(prefix, value)
+	newHead, err = me.m.trie.Insert(prefix, value)
 	if err != nil {
 		return err
 	}
 
-	m.trie = newHead
+	me.m.trie = newHead
 	return nil
 }
 
 // Insert is a convenient alternative to InsertPrefix that treats the given IP
 // address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) Insert(ip Address, value interface{}) error {
-	return m.InsertPrefix(ip.HostPrefix(), value)
+func (me Map) Insert(ip Address, value interface{}) error {
+	return me.InsertPrefix(ip.HostPrefix(), value)
 }
 
 // UpdatePrefix inserts the given prefix with the given value into the map.
 // If the prefix already existed, it updates the associated value in place.
-func (m *Map) UpdatePrefix(prefix Prefix, value interface{}) error {
+func (me Map) UpdatePrefix(prefix Prefix, value interface{}) error {
 	var err error
 	var newHead *trieNode
-	newHead, err = m.trie.Update(prefix, value)
+	newHead, err = me.m.trie.Update(prefix, value)
 	if err != nil {
 		return err
 	}
 
-	m.trie = newHead
+	me.m.trie = newHead
 	return nil
 }
 
 // Update is a convenient alternative to UpdatePrefix that treats
 // the given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) Update(ip Address, value interface{}) error {
-	return m.UpdatePrefix(ip.HostPrefix(), value)
+func (me Map) Update(ip Address, value interface{}) error {
+	return me.UpdatePrefix(ip.HostPrefix(), value)
 }
 
 // InsertOrUpdatePrefix inserts the given prefix with the given value into the map.
 // If the prefix already existed, it updates the associated value in place.
-func (m *Map) InsertOrUpdatePrefix(prefix Prefix, value interface{}) {
-	m.trie = m.trie.InsertOrUpdate(prefix, value)
+func (me Map) InsertOrUpdatePrefix(prefix Prefix, value interface{}) {
+	me.m.trie = me.m.trie.InsertOrUpdate(prefix, value)
 }
 
 // InsertOrUpdate is a convenient alternative to InsertOrUpdatePrefix that treats
 // the given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) InsertOrUpdate(ip Address, value interface{}) {
-	m.InsertOrUpdatePrefix(ip.HostPrefix(), value)
+func (me Map) InsertOrUpdate(ip Address, value interface{}) {
+	me.InsertOrUpdatePrefix(ip.HostPrefix(), value)
 }
 
 // GetPrefix returns the value in the map associated with the given network prefix
 // with an exact match: both the IP and the prefix length must match. If an
 // exact match is not found, found is false and value is nil and should be
 // ignored.
-func (m *Map) GetPrefix(prefix Prefix) (interface{}, bool) {
-	match, _, value := m.LongestMatchPrefix(prefix)
+func (me Map) GetPrefix(prefix Prefix) (interface{}, bool) {
+	match, _, value := me.LongestMatchPrefix(prefix)
 
 	if match == MatchExact {
 		return value, true
@@ -99,33 +110,33 @@ func (m *Map) GetPrefix(prefix Prefix) (interface{}, bool) {
 
 // Get is a convenient alternative to GetPrefix that treats the given IP address
 // as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) Get(ip Address) (value interface{}, found bool) {
-	return m.GetPrefix(ip.HostPrefix())
+func (me Map) Get(ip Address) (value interface{}, found bool) {
+	return me.GetPrefix(ip.HostPrefix())
 }
 
 // GetOrInsertPrefix returns the value associated with the given prefix if it
 // already exists. If it does not exist, it inserts it with the given value and
 // returns that.
-func (m *Map) GetOrInsertPrefix(prefix Prefix, value interface{}) interface{} {
+func (me Map) GetOrInsertPrefix(prefix Prefix, value interface{}) interface{} {
 	var newHead, node *trieNode
-	newHead, node = m.trie.GetOrInsert(prefix, value)
-	m.trie = newHead
+	newHead, node = me.m.trie.GetOrInsert(prefix, value)
+	me.m.trie = newHead
 	return node.Data
 }
 
 // GetOrInsert is a convenient alternative to GetOrInsertPrefix that treats the
 // given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) GetOrInsert(ip Address, value interface{}) interface{} {
-	return m.GetOrInsertPrefix(ip.HostPrefix(), value)
+func (me Map) GetOrInsert(ip Address, value interface{}) interface{} {
+	return me.GetOrInsertPrefix(ip.HostPrefix(), value)
 }
 
 // LongestMatchPrefix returns the value in the map associated with the given
 // network prefix using a longest prefix match. If a match is found, it returns
 // a Prefix representing the longest prefix matched. If a match is *not* found,
 // matched is MatchNone and the other fields should be ignored
-func (m *Map) LongestMatchPrefix(searchPrefix Prefix) (matched Match, prefix Prefix, value interface{}) {
+func (me Map) LongestMatchPrefix(searchPrefix Prefix) (matched Match, prefix Prefix, value interface{}) {
 	var node *trieNode
-	node = m.trie.Match(searchPrefix)
+	node = me.m.trie.Match(searchPrefix)
 	if node == nil {
 		return MatchNone, Prefix{}, nil
 	}
@@ -141,21 +152,21 @@ func (m *Map) LongestMatchPrefix(searchPrefix Prefix) (matched Match, prefix Pre
 
 // LongestMatch is a convenient alternative to MatchPrefix that treats the
 // given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) LongestMatch(ip Address) (matched Match, prefix Prefix, value interface{}) {
-	return m.LongestMatchPrefix(ip.HostPrefix())
+func (me Map) LongestMatch(ip Address) (matched Match, prefix Prefix, value interface{}) {
+	return me.LongestMatchPrefix(ip.HostPrefix())
 }
 
 // RemovePrefix removes the given prefix from the map with its associated value.
 // Only a prefix with an exact match will be removed.
-func (m *Map) RemovePrefix(prefix Prefix) (err error) {
-	m.trie, err = m.trie.Delete(prefix)
+func (me Map) RemovePrefix(prefix Prefix) (err error) {
+	me.m.trie, err = me.m.trie.Delete(prefix)
 	return
 }
 
 // Remove is a convenient alternative to RemovePrefix that treats the given IP
 // address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (m *Map) Remove(ip Address) error {
-	return m.RemovePrefix(ip.HostPrefix())
+func (me Map) Remove(ip Address) error {
+	return me.RemovePrefix(ip.HostPrefix())
 }
 
 // MapCallback is the signature of the callback functions that can be passed to
@@ -172,8 +183,8 @@ type MapCallback func(Prefix, interface{}) bool
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (m *Map) Iterate(callback MapCallback) bool {
-	return m.trie.Iterate(trieCallback(callback))
+func (me Map) Iterate(callback MapCallback) bool {
+	return me.m.trie.Iterate(trieCallback(callback))
 }
 
 // IterateAggregates invokes then given callback function for each prefix/value
@@ -192,6 +203,6 @@ func (m *Map) Iterate(callback MapCallback) bool {
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (m *Map) IterateAggregates(callback MapCallback) bool {
-	return m.trie.Aggregate(trieCallback(callback))
+func (me Map) IterateAggregates(callback MapCallback) bool {
+	return me.m.trie.Aggregate(trieCallback(callback))
 }
