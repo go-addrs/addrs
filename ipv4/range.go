@@ -71,7 +71,11 @@ func (me Range) Minus(other Range) []Range {
 
 // Set returns a Set containing the same ips as this range
 func (me Range) Set() Set {
-	return Set{setNodeFromRange(me)}
+	return Set{
+		s: &ImmutableSet{
+			trie: setNodeFromRange(me),
+		},
+	}
 }
 
 // prev returns the address just before the range (or maxint) if the range

@@ -6,13 +6,47 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestSetContainsPrefix(t *testing.T) {
-	sb := NewSetBuilder()
-	sb.InsertPrefix(unsafeParsePrefix("10.0.0.0/16"))
-	assert.True(t, sb.Set().ContainsPrefix(unsafeParsePrefix("10.0.0.0/24")))
-	assert.True(t, sb.Set().ContainsPrefix(unsafeParsePrefix("10.0.30.0/27")))
-	assert.True(t, sb.Set().ContainsPrefix(unsafeParsePrefix("10.0.128.0/17")))
-	assert.False(t, sb.Set().ContainsPrefix(unsafeParsePrefix("10.224.0.0/24")))
-	assert.False(t, sb.Set().ContainsPrefix(unsafeParsePrefix("10.1.30.0/27")))
-	assert.False(t, sb.Set().ContainsPrefix(unsafeParsePrefix("10.0.128.0/15")))
+func TestSetInsertPrefix(t *testing.T) {
+	s := NewSet()
+	s.InsertPrefix(unsafeParsePrefix("10.0.0.0/24"))
+
+	assert.True(t, s.ContainsPrefix(unsafeParsePrefix("10.0.0.0/24")))
+	assert.False(t, s.ContainsPrefix(unsafeParsePrefix("10.0.0.0/16")))
+
+	s.InsertPrefix(unsafeParsePrefix("10.0.0.0/16"))
+
+	assert.True(t, s.ContainsPrefix(unsafeParsePrefix("10.0.0.0/24")))
+	assert.True(t, s.ContainsPrefix(unsafeParsePrefix("10.0.0.0/16")))
+}
+
+func TestSetRemovePrefix(t *testing.T) {
+	s := ImmutableSet{}.Set()
+	s.InsertPrefix(unsafeParsePrefix("10.0.0.0/16"))
+
+	assert.True(t, s.ContainsPrefix(unsafeParsePrefix("10.0.0.0/24")))
+	assert.True(t, s.ContainsPrefix(unsafeParsePrefix("10.0.0.0/16")))
+
+	s.RemovePrefix(unsafeParsePrefix("10.0.0.0/24"))
+
+	assert.False(t, s.ContainsPrefix(unsafeParsePrefix("10.0.0.0/24")))
+	assert.False(t, s.ContainsPrefix(unsafeParsePrefix("10.0.0.0/16")))
+	assert.True(t, s.ContainsPrefix(unsafeParsePrefix("10.0.1.0/24")))
+}
+
+func TestSetAsReferenceType(t *testing.T) {
+	s := NewSet()
+
+	func(s Set) {
+		s.InsertPrefix(unsafeParsePrefix("10.0.0.0/24"))
+	}(s)
+
+	assert.True(t, s.ContainsPrefix(unsafeParsePrefix("10.0.0.0/24")))
+	assert.False(t, s.ContainsPrefix(unsafeParsePrefix("10.0.0.0/16")))
+
+	func(s Set) {
+		s.InsertPrefix(unsafeParsePrefix("10.0.0.0/16"))
+	}(s)
+
+	assert.True(t, s.ContainsPrefix(unsafeParsePrefix("10.0.0.0/24")))
+	assert.True(t, s.ContainsPrefix(unsafeParsePrefix("10.0.0.0/16")))
 }

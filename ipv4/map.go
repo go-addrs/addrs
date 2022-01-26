@@ -186,5 +186,7 @@ func (me Map) IterateAggregates(callback MapCallback) bool {
 // of the underlying datastructure, it is very cheap to create these --
 // effectively a pointer copy.
 func (me Map) Immutable() ImmutableMap {
-	return *me.m
+	return ImmutableMap{
+		trie: me.m.trie,
+	}
 }

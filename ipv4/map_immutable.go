@@ -1,6 +1,6 @@
 package ipv4
 
-// ImmutableMap is like a Map except without the ability to modify it.
+// ImmutableMap is like a Map except this its contents are frozen
 type ImmutableMap struct {
 	trie *trieNode
 }
