@@ -50,3 +50,27 @@ func TestSetAsReferenceType(t *testing.T) {
 	assert.True(t, s.ContainsPrefix(unsafeParsePrefix("10.0.0.0/24")))
 	assert.True(t, s.ContainsPrefix(unsafeParsePrefix("10.0.0.0/16")))
 }
+
+func TestSetInsertSet(t *testing.T) {
+	a, b := NewSet(), NewSet()
+	a.InsertPrefix(unsafeParsePrefix("10.0.0.0/25"))
+	b.InsertPrefix(unsafeParsePrefix("10.0.0.128/25"))
+
+	a.InsertSet(b)
+	assert.True(t, a.isValid())
+	assert.True(t, a.ContainsPrefix(unsafeParsePrefix("10.0.0.0/25")))
+	assert.True(t, a.ContainsPrefix(unsafeParsePrefix("10.0.0.128/25")))
+	assert.True(t, a.ContainsPrefix(unsafeParsePrefix("10.0.0.0/24")))
+}
+
+func TestSetRemoveSet(t *testing.T) {
+	a, b := NewSet(), NewSet()
+	a.InsertPrefix(unsafeParsePrefix("10.0.0.0/24"))
+	b.InsertPrefix(unsafeParsePrefix("10.0.0.128/25"))
+
+	a.RemoveSet(b)
+	assert.True(t, a.isValid())
+	assert.True(t, a.ContainsPrefix(unsafeParsePrefix("10.0.0.0/25")))
+	assert.False(t, a.ContainsPrefix(unsafeParsePrefix("10.0.0.128/25")))
+	assert.False(t, a.ContainsPrefix(unsafeParsePrefix("10.0.0.0/24")))
+}

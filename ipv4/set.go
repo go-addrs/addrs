@@ -34,14 +34,29 @@ func (me Set) InsertPrefix(prefix Prefix) {
 	me.s.trie = me.s.trie.Insert(prefix)
 }
 
-// Remove inserts the given address into the set
+// InsertSet set inserts all IPs from the given set into this one. It is
+// effectively a Union with the other set in place.
+func (me Set) InsertSet(other Set) {
+	me.s.trie = me.s.trie.Union(other.s.trie)
+}
+
+// Remove removes the given address from the set. If the address was not
+// already in the set, it does nothing.
 func (me Set) Remove(addr Address) {
 	me.RemovePrefix(addr.HostPrefix())
 }
 
-// RemovePrefix inserts the given prefix (all of its addreses) into the set
+// RemovePrefix removes the given prefix (all of its addreses) from the set. It
+// ignores any addresses in the prefix which were not already in the set.
 func (me Set) RemovePrefix(prefix Prefix) {
 	me.s.trie = me.s.trie.Remove(prefix)
+}
+
+// RemoveSet removes the given set (all of its addreses) from the set. It
+// ignores any addresses in the other set which were not already in the set. It
+// is effectively a Difference with the other set in place.
+func (me Set) RemoveSet(other Set) {
+	me.s.trie = me.s.trie.Difference(other.s.trie)
 }
 
 // Size returns the number of IP addresses
