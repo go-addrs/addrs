@@ -5,6 +5,11 @@ type ImmutableSet struct {
 	trie *setNode
 }
 
+// NewImmutableSet returns an initialized but empty ImmutableSet
+func NewImmutableSet() ImmutableSet {
+	return ImmutableSet{}
+}
+
 // Set returns a Set initialized with the contents of the immutable set
 func (me ImmutableSet) Set() Set {
 	return Set{

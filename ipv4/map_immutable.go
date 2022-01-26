@@ -5,6 +5,11 @@ type ImmutableMap struct {
 	trie *trieNode
 }
 
+// NewImmutableMap returns an initialized but empty ImmutableMap
+func NewImmutableMap() ImmutableMap {
+	return ImmutableMap{}
+}
+
 // Map returns a mutable map initialized with the contents of this one. Due to
 // the COW nature of the underlying datastructure, it is very cheap to copy
 // these -- effectively a pointer copy.
