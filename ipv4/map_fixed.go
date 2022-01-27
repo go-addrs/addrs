@@ -31,7 +31,7 @@ func (me FixedMap) Size() int64 {
 // exact match is not found, found is false and value is nil and should be
 // ignored.
 func (me FixedMap) Get(prefix PrefixI) (interface{}, bool) {
-	match, _, value := me.LongestMatch(prefix)
+	value, match, _ := me.LongestMatch(prefix)
 
 	if match == MatchExact {
 		return value, true
@@ -44,21 +44,21 @@ func (me FixedMap) Get(prefix PrefixI) (interface{}, bool) {
 // prefix using a longest prefix match. If a match is found, it returns a
 // Prefix representing the longest prefix matched. If a match is *not* found,
 // matched is MatchNone and the other fields should be ignored
-func (me FixedMap) LongestMatch(searchPrefix PrefixI) (matched Match, prefix Prefix, value interface{}) {
+func (me FixedMap) LongestMatch(searchPrefix PrefixI) (value interface{}, matched Match, prefix Prefix) {
 	sp := searchPrefix.Prefix()
 	var node *trieNode
 	node = me.trie.Match(sp)
 	if node == nil {
-		return MatchNone, Prefix{}, nil
+		return nil, MatchNone, Prefix{}
 	}
 
 	var resultKey Prefix
 	resultKey = node.Prefix
 
 	if node.Prefix.length == sp.length {
-		return MatchExact, resultKey, node.Data
+		return node.Data, MatchExact, resultKey
 	}
-	return MatchContains, resultKey, node.Data
+	return node.Data, MatchContains, resultKey
 }
 
 // MapCallback is the signature of the callback functions that can be passed to

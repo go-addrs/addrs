@@ -100,7 +100,7 @@ func (me Map) GetOrInsert(p PrefixI, value interface{}) interface{} {
 // prefix using a longest prefix match. If a match is found, it returns a
 // Prefix representing the longest prefix matched. If a match is *not* found,
 // matched is MatchNone and the other fields should be ignored
-func (me Map) LongestMatch(searchPrefix PrefixI) (matched Match, prefix Prefix, value interface{}) {
+func (me Map) LongestMatch(searchPrefix PrefixI) (value interface{}, matched Match, prefix Prefix) {
 	return me.m.LongestMatch(searchPrefix)
 }
 
