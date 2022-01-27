@@ -15,6 +15,11 @@ type Prefix struct {
 	length  uint32
 }
 
+// Prefixish is something that can be converted to a prefix
+type Prefixish interface {
+	Prefix() Prefix
+}
+
 // PrefixFromNetIPNet converts the given *net.IPNet to a Prefix
 func PrefixFromNetIPNet(net *net.IPNet) (Prefix, error) {
 	if net == nil {
@@ -64,6 +69,11 @@ func ParsePrefix(prefix string) (Prefix, error) {
 		return Prefix{}, err
 	}
 	return PrefixFromNetIPNet(ipNet)
+}
+
+// Prefix implements Prefixish
+func (me Prefix) Prefix() Prefix {
+	return me
 }
 
 // ToNetIPNet returns a *net.IPNet representation of this prefix

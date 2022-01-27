@@ -26,12 +26,12 @@ func (me ImmutableMap) Size() int64 {
 	return me.trie.NumNodes()
 }
 
-// GetPrefix returns the value in the map associated with the given network prefix
+// Get returns the value in the map associated with the given network prefix
 // with an exact match: both the IP and the prefix length must match. If an
 // exact match is not found, found is false and value is nil and should be
 // ignored.
-func (me ImmutableMap) GetPrefix(prefix Prefix) (interface{}, bool) {
-	match, _, value := me.LongestMatchPrefix(prefix)
+func (me ImmutableMap) Get(prefix Prefixish) (interface{}, bool) {
+	match, _, value := me.LongestMatch(prefix)
 
 	if match == MatchExact {
 		return value, true
@@ -40,19 +40,14 @@ func (me ImmutableMap) GetPrefix(prefix Prefix) (interface{}, bool) {
 	return nil, false
 }
 
-// Get is a convenient alternative to GetPrefix that treats the given IP address
-// as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (me ImmutableMap) Get(ip Address) (value interface{}, found bool) {
-	return me.GetPrefix(ip.Prefix())
-}
-
-// LongestMatchPrefix returns the value in the map associated with the given
-// network prefix using a longest prefix match. If a match is found, it returns
-// a Prefix representing the longest prefix matched. If a match is *not* found,
+// LongestMatch returns the value in the map associated with the given network
+// prefix using a longest prefix match. If a match is found, it returns a
+// Prefix representing the longest prefix matched. If a match is *not* found,
 // matched is MatchNone and the other fields should be ignored
-func (me ImmutableMap) LongestMatchPrefix(searchPrefix Prefix) (matched Match, prefix Prefix, value interface{}) {
+func (me ImmutableMap) LongestMatch(searchPrefix Prefixish) (matched Match, prefix Prefix, value interface{}) {
+	sp := searchPrefix.Prefix()
 	var node *trieNode
-	node = me.trie.Match(searchPrefix)
+	node = me.trie.Match(sp)
 	if node == nil {
 		return MatchNone, Prefix{}, nil
 	}
@@ -60,16 +55,10 @@ func (me ImmutableMap) LongestMatchPrefix(searchPrefix Prefix) (matched Match, p
 	var resultKey Prefix
 	resultKey = node.Prefix
 
-	if node.Prefix.length == searchPrefix.length {
+	if node.Prefix.length == sp.length {
 		return MatchExact, resultKey, node.Data
 	}
 	return MatchContains, resultKey, node.Data
-}
-
-// LongestMatch is a convenient alternative to MatchPrefix that treats the
-// given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
-func (me ImmutableMap) LongestMatch(ip Address) (matched Match, prefix Prefix, value interface{}) {
-	return me.LongestMatchPrefix(ip.Prefix())
 }
 
 // MapCallback is the signature of the callback functions that can be passed to
