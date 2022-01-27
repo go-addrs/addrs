@@ -10,7 +10,7 @@ type Set struct {
 }
 
 // NewSet returns a new fully-initialized Set
-func NewSet(initial ...Settish) Set {
+func NewSet(initial ...SetI) Set {
 	im := NewFixedSet(initial...)
 	return Set{
 		s: &im,
@@ -27,20 +27,20 @@ func (me Set) FixedSet() FixedSet {
 
 // Insert set inserts all IPs from the given set into this one. It is
 // effectively a Union with the other set in place.
-func (me Set) Insert(other Settish) {
+func (me Set) Insert(other SetI) {
 	me.s.trie = me.s.trie.Union(other.FixedSet().trie)
 }
 
 // Remove removes the given prefix (all of its addreses) from the set. It
 // ignores any addresses in the prefix which were not already in the set.
-func (me Set) Remove(p Prefixish) {
+func (me Set) Remove(p PrefixI) {
 	me.s.trie = me.s.trie.Remove(p.Prefix())
 }
 
 // RemoveSet removes the given set (all of its addreses) from the set. It
 // ignores any addresses in the other set which were not already in the set. It
 // is effectively a Difference with the other set in place.
-func (me Set) RemoveSet(other Settish) {
+func (me Set) RemoveSet(other SetI) {
 	me.s.trie = me.s.trie.Difference(other.FixedSet().trie)
 }
 
@@ -50,19 +50,19 @@ func (me Set) Size() int64 {
 }
 
 // Contains tests if the given prefix is entirely contained in the set
-func (me Set) Contains(p Prefixish) bool {
+func (me Set) Contains(p PrefixI) bool {
 	return me.s.Contains(p)
 }
 
 // Equal returns true if this set is equal to other
-func (me Set) Equal(other Settish) bool {
+func (me Set) Equal(other SetI) bool {
 	return me.s.Equal(other.FixedSet())
 }
 
 // EqualInterface returns true if this set is equal to other
 func (me Set) EqualInterface(other interface{}) bool {
 	switch o := other.(type) {
-	case Settish:
+	case SetI:
 		return me.Equal(o)
 	default:
 		return false
@@ -74,7 +74,7 @@ func (me Set) isValid() bool {
 }
 
 // Union returns a new set with all addresses from both sets
-func (me Set) Union(other Settish) Set {
+func (me Set) Union(other SetI) Set {
 	is := me.s.Union(other)
 	return Set{
 		s: &is,
@@ -82,7 +82,7 @@ func (me Set) Union(other Settish) Set {
 }
 
 // Intersection returns a new set with all addresses that appear in both sets
-func (me Set) Intersection(other Settish) Set {
+func (me Set) Intersection(other SetI) Set {
 	is := me.s.Intersection(other)
 	return Set{
 		s: &is,
@@ -91,7 +91,7 @@ func (me Set) Intersection(other Settish) Set {
 
 // Difference returns a new set with all addresses that appear in this set
 // excluding any that also appear in the other set
-func (me Set) Difference(other Settish) Set {
+func (me Set) Difference(other SetI) Set {
 	is := me.s.Difference(other)
 	return Set{
 		s: &is,

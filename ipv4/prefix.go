@@ -15,8 +15,9 @@ type Prefix struct {
 	length  uint32
 }
 
-// Prefixish is something that can be converted to a prefix
-type Prefixish interface {
+// PrefixI is something that can be treated as a Prefix by calling .Prefix().
+// This includes the following types: Address and Prefix
+type PrefixI interface {
 	Prefix() Prefix
 }
 
@@ -71,7 +72,7 @@ func ParsePrefix(prefix string) (Prefix, error) {
 	return PrefixFromNetIPNet(ipNet)
 }
 
-// Prefix implements Prefixish
+// Prefix implements PrefixI
 func (me Prefix) Prefix() Prefix {
 	return me
 }
@@ -157,7 +158,7 @@ func (me Prefix) Host() Prefix {
 // Contains returns true if the given containee is wholly contained within this
 // Prefix. If the two Prefixes are equal, true is returned. The host bits in
 // the address are ignored when testing containership.
-func (me Prefix) Contains(other Prefixish) bool {
+func (me Prefix) Contains(other PrefixI) bool {
 	prefix := other.Prefix()
 	if prefix.length < me.length {
 		return false

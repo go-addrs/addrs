@@ -30,7 +30,7 @@ func (me FixedMap) Size() int64 {
 // with an exact match: both the IP and the prefix length must match. If an
 // exact match is not found, found is false and value is nil and should be
 // ignored.
-func (me FixedMap) Get(prefix Prefixish) (interface{}, bool) {
+func (me FixedMap) Get(prefix PrefixI) (interface{}, bool) {
 	match, _, value := me.LongestMatch(prefix)
 
 	if match == MatchExact {
@@ -44,7 +44,7 @@ func (me FixedMap) Get(prefix Prefixish) (interface{}, bool) {
 // prefix using a longest prefix match. If a match is found, it returns a
 // Prefix representing the longest prefix matched. If a match is *not* found,
 // matched is MatchNone and the other fields should be ignored
-func (me FixedMap) LongestMatch(searchPrefix Prefixish) (matched Match, prefix Prefix, value interface{}) {
+func (me FixedMap) LongestMatch(searchPrefix PrefixI) (matched Match, prefix Prefix, value interface{}) {
 	sp := searchPrefix.Prefix()
 	var node *trieNode
 	node = me.trie.Match(sp)

@@ -5,16 +5,17 @@ type FixedSet struct {
 	trie *setNode
 }
 
-// Settish represents something that can be treated as an FixedSet. It
-// includes Address, Prefix, Range, Set, and FixedSet
-type Settish interface {
+// SetI represents something that can be treated as a FixedSet by calling
+// .FixedSet(). This includes the following types: Address, Prefix, Range, Set,
+// and FixedSet
+type SetI interface {
 	FixedSet() FixedSet
 }
 
 // NewFixedSet returns an initialized FixedSet containing the given
 // initial contents. These can be any combination of Address, FixedSet,
 // Prefix, Range, and Set. The result will be the union of all of them.
-func NewFixedSet(initial ...Settish) FixedSet {
+func NewFixedSet(initial ...SetI) FixedSet {
 	set := Set{
 		s: &FixedSet{},
 	}
@@ -33,7 +34,7 @@ func (me FixedSet) Set() Set {
 	}
 }
 
-// FixedSet implements Settish
+// FixedSet implements SetI
 func (me FixedSet) FixedSet() FixedSet {
 	return me
 }
@@ -78,7 +79,7 @@ func (me FixedSet) Iterate(callback AddressCallback) bool {
 // EqualInterface returns true if this set is equal to other
 func (me FixedSet) EqualInterface(other interface{}) bool {
 	switch o := other.(type) {
-	case Settish:
+	case SetI:
 		return me.Equal(o)
 	default:
 		return false
@@ -86,24 +87,24 @@ func (me FixedSet) EqualInterface(other interface{}) bool {
 }
 
 // Equal returns true if this set is equal to other
-func (me FixedSet) Equal(other Settish) bool {
+func (me FixedSet) Equal(other SetI) bool {
 	return me.trie.Equal(other.FixedSet().trie)
 }
 
 // Contains tests if the given prefix is entirely contained in the set
-func (me FixedSet) Contains(p Prefixish) bool {
+func (me FixedSet) Contains(p PrefixI) bool {
 	return nil != me.trie.Match(p.Prefix())
 }
 
 // Union returns a new set with all addresses from both sets
-func (me FixedSet) Union(other Settish) FixedSet {
+func (me FixedSet) Union(other SetI) FixedSet {
 	return FixedSet{
 		trie: me.trie.Union(other.FixedSet().trie),
 	}
 }
 
 // Intersection returns a new set with all addresses that appear in both sets
-func (me FixedSet) Intersection(other Settish) FixedSet {
+func (me FixedSet) Intersection(other SetI) FixedSet {
 	return FixedSet{
 		trie: me.trie.Intersect(other.FixedSet().trie),
 	}
@@ -111,7 +112,7 @@ func (me FixedSet) Intersection(other Settish) FixedSet {
 
 // Difference returns a new set with all addresses that appear in this set
 // excluding any that also appear in the other set
-func (me FixedSet) Difference(other Settish) FixedSet {
+func (me FixedSet) Difference(other SetI) FixedSet {
 	return FixedSet{
 		trie: me.trie.Difference(other.FixedSet().trie),
 	}
