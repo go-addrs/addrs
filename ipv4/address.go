@@ -94,6 +94,11 @@ func (me Address) Prefix() Prefix {
 	return Prefix{me, uint32(addressSize)}
 }
 
+// ImmutableSet returns a set with only this address in it
+func (me Address) ImmutableSet() ImmutableSet {
+	return me.Prefix().ImmutableSet()
+}
+
 // String returns a string representing the address in dotted-quad notation
 func (me Address) String() string {
 	a, b, c, d := me.toBytes()

@@ -69,12 +69,10 @@ func (me Range) Minus(other Range) []Range {
 	return result
 }
 
-// Set returns a Set containing the same ips as this range
-func (me Range) Set() Set {
-	return Set{
-		s: &ImmutableSet{
-			trie: setNodeFromRange(me),
-		},
+// ImmutableSet returns a Set containing the same ips as this range
+func (me Range) ImmutableSet() ImmutableSet {
+	return ImmutableSet{
+		trie: setNodeFromRange(me),
 	}
 }
 

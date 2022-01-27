@@ -5,6 +5,12 @@ type ImmutableSet struct {
 	trie *setNode
 }
 
+// Settish represents something that can be treated as an ImmutableSet. It
+// includes Address, Prefix, Range, Set, and ImmutableSet
+type Settish interface {
+	ImmutableSet() ImmutableSet
+}
+
 // NewImmutableSet returns an initialized but empty ImmutableSet
 func NewImmutableSet() ImmutableSet {
 	return ImmutableSet{}
@@ -17,6 +23,11 @@ func (me ImmutableSet) Set() Set {
 			trie: me.trie,
 		},
 	}
+}
+
+// ImmutableSet implements Settish
+func (me ImmutableSet) ImmutableSet() ImmutableSet {
+	return me
 }
 
 // Size returns the number of IP addresses
@@ -59,7 +70,7 @@ func (me ImmutableSet) Iterate(callback AddressCallback) bool {
 // EqualInterface returns true if this set is equal to other
 func (me ImmutableSet) EqualInterface(other interface{}) bool {
 	switch o := other.(type) {
-	case ImmutableSet:
+	case Settish:
 		return me.Equal(o)
 	default:
 		return false
@@ -67,8 +78,8 @@ func (me ImmutableSet) EqualInterface(other interface{}) bool {
 }
 
 // Equal returns true if this set is equal to other
-func (me ImmutableSet) Equal(other ImmutableSet) bool {
-	return me.trie.Equal(other.trie)
+func (me ImmutableSet) Equal(other Settish) bool {
+	return me.trie.Equal(other.ImmutableSet().trie)
 }
 
 // Contains tests if the given prefix is entirely contained in the set
@@ -77,24 +88,24 @@ func (me ImmutableSet) Contains(p Prefixish) bool {
 }
 
 // Union returns a new set with all addresses from both sets
-func (me ImmutableSet) Union(other ImmutableSet) ImmutableSet {
+func (me ImmutableSet) Union(other Settish) ImmutableSet {
 	return ImmutableSet{
-		trie: me.trie.Union(other.trie),
+		trie: me.trie.Union(other.ImmutableSet().trie),
 	}
 }
 
 // Intersection returns a new set with all addresses that appear in both sets
-func (me ImmutableSet) Intersection(other ImmutableSet) ImmutableSet {
+func (me ImmutableSet) Intersection(other Settish) ImmutableSet {
 	return ImmutableSet{
-		trie: me.trie.Intersect(other.trie),
+		trie: me.trie.Intersect(other.ImmutableSet().trie),
 	}
 }
 
 // Difference returns a new set with all addresses that appear in this set
 // excluding any that also appear in the other set
-func (me ImmutableSet) Difference(other ImmutableSet) ImmutableSet {
+func (me ImmutableSet) Difference(other Settish) ImmutableSet {
 	return ImmutableSet{
-		trie: me.trie.Difference(other.trie),
+		trie: me.trie.Difference(other.ImmutableSet().trie),
 	}
 }
 

@@ -56,7 +56,7 @@ func TestSetInsertSet(t *testing.T) {
 	a.Insert(_p("10.0.0.0/25"))
 	b.Insert(_p("10.0.0.128/25"))
 
-	a.InsertSet(b)
+	a.Insert(b)
 	assert.True(t, a.isValid())
 	assert.True(t, a.Contains(_p("10.0.0.0/25")))
 	assert.True(t, a.Contains(_p("10.0.0.128/25")))
