@@ -202,6 +202,9 @@ func (me *setNode) Difference(other *setNode) (rc *setNode) {
 	result, _, _, child := compare(me.Prefix, other.Prefix)
 	switch result {
 	case compareIsContained:
+		if other.isActive {
+			return nil
+		}
 		return me.Difference((*setNode)(other.children[child]))
 	case compareDisjoint:
 		return me

@@ -1342,6 +1342,10 @@ type pair32 struct {
 }
 
 func printTrie(trie *trieNode) {
+	if trie == nil {
+		fmt.Println("<nil>")
+		return
+	}
 	var recurse func(trie *trieNode, level int)
 
 	recurse = func(trie *trieNode, level int) {

@@ -68,7 +68,7 @@ func TestSetRemoveSet(t *testing.T) {
 	a.Insert(_p("10.0.0.0/24"))
 	b.Insert(_p("10.0.0.128/25"))
 
-	a.RemoveSet(b)
+	a.Remove(b)
 	assert.True(t, a.isValid())
 	assert.True(t, a.Contains(_p("10.0.0.0/25")))
 	assert.False(t, a.Contains(_p("10.0.0.128/25")))

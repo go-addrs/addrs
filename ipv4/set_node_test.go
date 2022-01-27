@@ -437,7 +437,7 @@ func TestSetDifference(t *testing.T) {
 		assert.NotNil(t, result.Match(_p("203.0.113.117/32")))
 		assert.Nil(t, result.Match(_p("203.0.113.217/32")))
 
-		assert.Equal(t, int64(128), two.Difference(one).Size())
+		assert.Equal(t, int64(0), two.Difference(one).Size())
 	})
 	t.Run("recursive", func(t *testing.T) {
 		var one, two *setNode
@@ -452,10 +452,10 @@ func TestSetDifference(t *testing.T) {
 		assert.Nil(t, result.Match(_p("203.0.113.128/25")))
 
 		result = two.Difference(one)
-		assert.Equal(t, int64(128), result.Size())
+		assert.Equal(t, int64(0), result.Size())
 		assert.Nil(t, result.Match(_p("198.51.100.0/24")))
 		assert.Nil(t, result.Match(_p("203.0.113.0/25")))
-		assert.NotNil(t, result.Match(_p("203.0.113.128/25")))
+		assert.Nil(t, result.Match(_p("203.0.113.128/25")))
 	})
 	t.Run("no difference", func(t *testing.T) {
 		var one, two *setNode

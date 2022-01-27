@@ -31,16 +31,10 @@ func (me Set) Insert(other SetI) {
 	me.s.trie = me.s.trie.Union(other.FixedSet().trie)
 }
 
-// Remove removes the given prefix (all of its addreses) from the set. It
-// ignores any addresses in the prefix which were not already in the set.
-func (me Set) Remove(p PrefixI) {
-	me.s.trie = me.s.trie.Remove(p.Prefix())
-}
-
-// RemoveSet removes the given set (all of its addreses) from the set. It
-// ignores any addresses in the other set which were not already in the set. It
-// is effectively a Difference with the other set in place.
-func (me Set) RemoveSet(other SetI) {
+// Remove removes the given set (all of its addreses) from the set. It ignores
+// any addresses in the other set which were not already in the set. It is
+// effectively a Difference with the other set in place.
+func (me Set) Remove(other SetI) {
 	me.s.trie = me.s.trie.Difference(other.FixedSet().trie)
 }
 
