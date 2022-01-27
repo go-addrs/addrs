@@ -140,10 +140,10 @@ func (me Map) IterateAggregates(callback MapCallback) bool {
 	return me.m.IterateAggregates(callback)
 }
 
-// Immutable returns an immutable snapshot of this Map. Due to the COW nature
-// of the underlying datastructure, it is very cheap to create these --
+// ImmutableMap returns an immutable snapshot of this Map. Due to the COW
+// nature of the underlying datastructure, it is very cheap to create these --
 // effectively a pointer copy.
-func (me Map) Immutable() ImmutableMap {
+func (me Map) ImmutableMap() ImmutableMap {
 	return ImmutableMap{
 		trie: me.m.trie,
 	}

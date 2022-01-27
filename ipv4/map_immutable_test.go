@@ -15,7 +15,7 @@ func TestImmutableMapMap(t *testing.T) {
 	err := m.Insert(addrOne, nil)
 	assert.Nil(t, err)
 
-	im := m.Immutable()
+	im := m.ImmutableMap()
 	err = m.Insert(addrTwo, nil)
 	assert.Nil(t, err)
 
