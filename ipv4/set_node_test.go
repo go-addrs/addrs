@@ -185,12 +185,12 @@ func TestTrieNodeSet32Union(t *testing.T) {
 					}
 					for _, addr := range tt.in {
 						t.Run(addr.String(), func(t *testing.T) {
-							assert.NotNil(t, s.Match(addr.HostPrefix()))
+							assert.NotNil(t, s.Match(addr.Prefix()))
 						})
 					}
 					for _, addr := range tt.out {
 						t.Run(addr.String(), func(t *testing.T) {
-							assert.Nil(t, s.Match(addr.HostPrefix()))
+							assert.Nil(t, s.Match(addr.Prefix()))
 						})
 					}
 				}

@@ -89,8 +89,8 @@ func (me Address) DefaultMask() Mask {
 	return lengthToMask(ones)
 }
 
-// HostPrefix returns a host prefix (/32) with the address
-func (me Address) HostPrefix() Prefix {
+// Prefix returns a host prefix (/32) with the address
+func (me Address) Prefix() Prefix {
 	return Prefix{me, uint32(addressSize)}
 }
 

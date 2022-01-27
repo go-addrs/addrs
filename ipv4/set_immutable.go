@@ -73,7 +73,7 @@ func (me ImmutableSet) Equal(other ImmutableSet) bool {
 
 // Contains tests if the given address is in the set
 func (me ImmutableSet) Contains(addr Address) bool {
-	return me.ContainsPrefix(addr.HostPrefix())
+	return me.ContainsPrefix(addr.Prefix())
 }
 
 // ContainsPrefix tests if the given prefix is entirely contained in the set

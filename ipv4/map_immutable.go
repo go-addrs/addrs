@@ -43,7 +43,7 @@ func (me ImmutableMap) GetPrefix(prefix Prefix) (interface{}, bool) {
 // Get is a convenient alternative to GetPrefix that treats the given IP address
 // as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
 func (me ImmutableMap) Get(ip Address) (value interface{}, found bool) {
-	return me.GetPrefix(ip.HostPrefix())
+	return me.GetPrefix(ip.Prefix())
 }
 
 // LongestMatchPrefix returns the value in the map associated with the given
@@ -69,7 +69,7 @@ func (me ImmutableMap) LongestMatchPrefix(searchPrefix Prefix) (matched Match, p
 // LongestMatch is a convenient alternative to MatchPrefix that treats the
 // given IP address as a host prefix (i.e. /32 for IPv4 and /128 for IPv6)
 func (me ImmutableMap) LongestMatch(ip Address) (matched Match, prefix Prefix, value interface{}) {
-	return me.LongestMatchPrefix(ip.HostPrefix())
+	return me.LongestMatchPrefix(ip.Prefix())
 }
 
 // MapCallback is the signature of the callback functions that can be passed to

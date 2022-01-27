@@ -26,7 +26,7 @@ func (me Set) Immutable() ImmutableSet {
 
 // Insert inserts the given address into the set
 func (me Set) Insert(addr Address) {
-	me.InsertPrefix(addr.HostPrefix())
+	me.InsertPrefix(addr.Prefix())
 }
 
 // InsertPrefix inserts the given prefix (all of its addreses) into the set
@@ -43,7 +43,7 @@ func (me Set) InsertSet(other Set) {
 // Remove removes the given address from the set. If the address was not
 // already in the set, it does nothing.
 func (me Set) Remove(addr Address) {
-	me.RemovePrefix(addr.HostPrefix())
+	me.RemovePrefix(addr.Prefix())
 }
 
 // RemovePrefix removes the given prefix (all of its addreses) from the set. It
