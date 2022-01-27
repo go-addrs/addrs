@@ -92,7 +92,7 @@ func TestAddressString(t *testing.T) {
 
 	for _, ip := range ips {
 		t.Run(ip, func(t *testing.T) {
-			assert.Equal(t, ip, unsafeParseAddress(ip).String())
+			assert.Equal(t, ip, _a(ip).String())
 		})
 	}
 }

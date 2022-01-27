@@ -264,7 +264,7 @@ func TestMatchZeroLength(t *testing.T) {
 	assert.Equal(t, 1, trie.height())
 
 	assert.Equal(t, trie, trie.Match(Prefix{
-		unsafeParseAddress("10.0.0.0"),
+		_a("10.0.0.0"),
 		0,
 	}))
 }
@@ -301,12 +301,12 @@ func TestGetOrInsertExists(t *testing.T) {
 func TestGetOrInsertBroader(t *testing.T) {
 	var trie *trieNode
 
-	existingKey := Prefix{unsafeParseAddress("10.224.0.0"), 16}
+	existingKey := Prefix{_a("10.224.0.0"), 16}
 	trie, err := trie.Insert(existingKey, true)
 	assert.Nil(t, err)
 	assert.True(t, trie.isValid())
 
-	broaderKey := Prefix{unsafeParseAddress("10.0.0.0"), 8}
+	broaderKey := Prefix{_a("10.0.0.0"), 8}
 	trie, node := trie.GetOrInsert(broaderKey, false)
 
 	assert.True(t, trie.isValid())
@@ -320,12 +320,12 @@ func TestGetOrInsertBroader(t *testing.T) {
 func TestGetOrInsertNarrower(t *testing.T) {
 	var trie *trieNode
 
-	existingKey := Prefix{unsafeParseAddress("10.224.0.0"), 16}
+	existingKey := Prefix{_a("10.224.0.0"), 16}
 	trie, err := trie.Insert(existingKey, true)
 	assert.Nil(t, err)
 	assert.True(t, trie.isValid())
 
-	narrowerKey := Prefix{unsafeParseAddress("10.224.24.0"), 24}
+	narrowerKey := Prefix{_a("10.224.24.0"), 24}
 	trie, node := trie.GetOrInsert(narrowerKey, false)
 
 	assert.True(t, trie.isValid())
@@ -339,12 +339,12 @@ func TestGetOrInsertNarrower(t *testing.T) {
 func TestGetOrInsertDisjoint(t *testing.T) {
 	var trie *trieNode
 
-	existingKey := Prefix{unsafeParseAddress("10.224.0.0"), 16}
+	existingKey := Prefix{_a("10.224.0.0"), 16}
 	trie, err := trie.Insert(existingKey, true)
 	assert.Nil(t, err)
 	assert.True(t, trie.isValid())
 
-	disjointKey := Prefix{unsafeParseAddress("10.225.0.0"), 16}
+	disjointKey := Prefix{_a("10.225.0.0"), 16}
 	trie, node := trie.GetOrInsert(disjointKey, false)
 
 	assert.True(t, trie.isValid())
@@ -357,11 +357,11 @@ func TestGetOrInsertDisjoint(t *testing.T) {
 func TestGetOrInsertInActive(t *testing.T) {
 	var trie *trieNode
 
-	trie, _ = trie.Insert(Prefix{unsafeParseAddress("10.224.0.0"), 16}, true)
-	trie, _ = trie.Insert(Prefix{unsafeParseAddress("10.225.0.0"), 16}, true)
+	trie, _ = trie.Insert(Prefix{_a("10.224.0.0"), 16}, true)
+	trie, _ = trie.Insert(Prefix{_a("10.225.0.0"), 16}, true)
 	assert.True(t, trie.isValid())
 
-	trie, node := trie.GetOrInsert(Prefix{unsafeParseAddress("10.224.0.0"), 15}, false)
+	trie, node := trie.GetOrInsert(Prefix{_a("10.224.0.0"), 15}, false)
 	assert.True(t, trie.isValid())
 	assert.Equal(t, trie, node)
 	assert.False(t, node.Data.(bool))
@@ -371,7 +371,7 @@ func TestNoMatchTooBroad(t *testing.T) {
 	var trie *trieNode
 
 	trie, err := trie.Insert(Prefix{
-		unsafeParseAddress("10.0.0.0"),
+		_a("10.0.0.0"),
 		24,
 	}, nil)
 	assert.Nil(t, err)
@@ -380,7 +380,7 @@ func TestNoMatchTooBroad(t *testing.T) {
 	assert.Equal(t, 1, trie.height())
 
 	assert.Nil(t, trie.Match(Prefix{
-		unsafeParseAddress("10.0.0.0"),
+		_a("10.0.0.0"),
 		23,
 	}))
 }
@@ -395,44 +395,44 @@ func TestNoMatchPrefixMisMatch(t *testing.T) {
 	}{
 		{
 			desc:          "full bytes, mismatch in last byte",
-			nodeAddress:   unsafeParseAddress("10.0.0.0"),
+			nodeAddress:   _a("10.0.0.0"),
 			nodeLength:    24,
-			searchAddress: unsafeParseAddress("10.0.1.0"),
+			searchAddress: _a("10.0.1.0"),
 			searchLength:  32,
 		},
 		{
 			desc:          "full bytes, mismatch in earlier byte",
-			nodeAddress:   unsafeParseAddress("10.0.0.0"),
+			nodeAddress:   _a("10.0.0.0"),
 			nodeLength:    24,
-			searchAddress: unsafeParseAddress("10.1.0.0"),
+			searchAddress: _a("10.1.0.0"),
 			searchLength:  32,
 		},
 		{
 			desc:          "full bytes, mismatch in first byte",
-			nodeAddress:   unsafeParseAddress("10.0.0.0"),
+			nodeAddress:   _a("10.0.0.0"),
 			nodeLength:    24,
-			searchAddress: unsafeParseAddress("11.0.0.0"),
+			searchAddress: _a("11.0.0.0"),
 			searchLength:  32,
 		},
 		{
 			desc:          "mismatch in partial byte",
-			nodeAddress:   unsafeParseAddress("10.0.0.0"),
+			nodeAddress:   _a("10.0.0.0"),
 			nodeLength:    27,
-			searchAddress: unsafeParseAddress("10.0.0.128"),
+			searchAddress: _a("10.0.0.128"),
 			searchLength:  32,
 		},
 		{
 			desc:          "only one partial byte",
 			nodeAddress:   Address{},
 			nodeLength:    7,
-			searchAddress: unsafeParseAddress("2.0.0.0"),
+			searchAddress: _a("2.0.0.0"),
 			searchLength:  8,
 		},
 		{
 			desc:          "only one full byte",
 			nodeAddress:   Address{},
 			nodeLength:    8,
-			searchAddress: unsafeParseAddress("10.0.0.0"),
+			searchAddress: _a("10.0.0.0"),
 			searchLength:  16,
 		},
 	}
@@ -466,22 +466,22 @@ func TestMatchSimplePrefixMatch(t *testing.T) {
 	}{
 		{
 			desc:        "full bytes, mismatch in last byte",
-			nodeAddress: unsafeParseAddress("10.0.0.0"),
+			nodeAddress: _a("10.0.0.0"),
 			nodeLength:  24,
 		},
 		{
 			desc:        "full bytes, mismatch in earlier byte",
-			nodeAddress: unsafeParseAddress("10.0.0.0"),
+			nodeAddress: _a("10.0.0.0"),
 			nodeLength:  24,
 		},
 		{
 			desc:        "full bytes, mismatch in first byte",
-			nodeAddress: unsafeParseAddress("10.0.0.0"),
+			nodeAddress: _a("10.0.0.0"),
 			nodeLength:  24,
 		},
 		{
 			desc:        "mismatch in partial byte",
-			nodeAddress: unsafeParseAddress("10.0.0.0"),
+			nodeAddress: _a("10.0.0.0"),
 			nodeLength:  27,
 		},
 		{
@@ -595,21 +595,21 @@ func TestInsertOverlapping(t *testing.T) {
 	}{
 		{
 			desc: "16 and 24",
-			a:    Prefix{unsafeParseAddress("10.200.0.0"), 16},
-			b:    Prefix{unsafeParseAddress("10.200.20.0"), 24},
-			c:    Prefix{unsafeParseAddress("10.200.20.0"), 32},
+			a:    Prefix{_a("10.200.0.0"), 16},
+			b:    Prefix{_a("10.200.20.0"), 24},
+			c:    Prefix{_a("10.200.20.0"), 32},
 		},
 		{
 			desc: "17 and 27",
-			a:    Prefix{unsafeParseAddress("10.200.0.0"), 17},
+			a:    Prefix{_a("10.200.0.0"), 17},
 			b:    Prefix{Address{0x0ac800e0}, 27},
 			c:    Prefix{Address{0x0ac800f8}, 31},
 		},
 		{
 			desc: "0 and 8",
 			a:    Prefix{Address{0}, 0},
-			b:    Prefix{unsafeParseAddress("10.0.0.0"), 8},
-			c:    Prefix{unsafeParseAddress("10.10.0.0"), 16},
+			b:    Prefix{_a("10.0.0.0"), 8},
+			c:    Prefix{_a("10.10.0.0"), 16},
 		},
 	}
 
@@ -677,20 +677,20 @@ func TestInsertDisjoint(t *testing.T) {
 		{
 			desc:  "first bit",
 			a:     Prefix{Address{0}, 1},
-			b:     Prefix{unsafeParseAddress("128.0.0.0"), 1},
+			b:     Prefix{_a("128.0.0.0"), 1},
 			super: Prefix{Address{0}, 0},
 		},
 		{
 			desc:  "seventeenth bit",
-			a:     Prefix{unsafeParseAddress("10.224.0.0"), 17},
-			b:     Prefix{unsafeParseAddress("10.224.128.0"), 17},
-			super: Prefix{unsafeParseAddress("10.224.0.0"), 16},
+			a:     Prefix{_a("10.224.0.0"), 17},
+			b:     Prefix{_a("10.224.128.0"), 17},
+			super: Prefix{_a("10.224.0.0"), 16},
 		},
 		{
 			desc:  "partial b bit",
-			a:     Prefix{unsafeParseAddress("10.224.0.0"), 23},
-			b:     Prefix{unsafeParseAddress("10.224.8.0"), 23},
-			super: Prefix{unsafeParseAddress("10.224.0.0"), 20},
+			a:     Prefix{_a("10.224.0.0"), 23},
+			b:     Prefix{_a("10.224.8.0"), 23},
+			super: Prefix{_a("10.224.0.0"), 20},
 		},
 	}
 
@@ -803,15 +803,15 @@ func TestContains(t *testing.T) {
 		},
 		{
 			desc:    "exact",
-			a:       Prefix{unsafeParseAddress("10.0.0.0"), 16},
-			b:       Prefix{unsafeParseAddress("10.0.0.0"), 16},
+			a:       Prefix{_a("10.0.0.0"), 16},
+			b:       Prefix{_a("10.0.0.0"), 16},
 			matches: true,
 			exact:   true,
 			common:  16,
 		},
 		{
 			desc:    "exact partial",
-			a:       Prefix{unsafeParseAddress("10.0.0.0"), 19},
+			a:       Prefix{_a("10.0.0.0"), 19},
 			b:       Prefix{Address{0x0a001f00}, 19},
 			matches: true,
 			exact:   true,
@@ -820,7 +820,7 @@ func TestContains(t *testing.T) {
 		{
 			desc:    "empty prefix match",
 			a:       Prefix{Address{0}, 0},
-			b:       Prefix{unsafeParseAddress("10.10.0.0"), 16},
+			b:       Prefix{_a("10.10.0.0"), 16},
 			matches: true,
 			exact:   false,
 			common:  0,
@@ -829,7 +829,7 @@ func TestContains(t *testing.T) {
 		{
 			desc:    "empty prefix match backwards",
 			a:       Prefix{Address{0}, 0},
-			b:       Prefix{unsafeParseAddress("130.10.0.0"), 16},
+			b:       Prefix{_a("130.10.0.0"), 16},
 			matches: true,
 			exact:   false,
 			common:  0,
@@ -837,8 +837,8 @@ func TestContains(t *testing.T) {
 		},
 		{
 			desc:    "matches",
-			a:       Prefix{unsafeParseAddress("10.0.0.0"), 8},
-			b:       Prefix{unsafeParseAddress("10.10.0.0"), 16},
+			a:       Prefix{_a("10.0.0.0"), 8},
+			b:       Prefix{_a("10.10.0.0"), 16},
 			matches: true,
 			exact:   false,
 			common:  8,
@@ -846,8 +846,8 @@ func TestContains(t *testing.T) {
 		},
 		{
 			desc:    "matches partial",
-			a:       Prefix{unsafeParseAddress("10.200.0.0"), 9},
-			b:       Prefix{unsafeParseAddress("10.129.0.0"), 16},
+			a:       Prefix{_a("10.200.0.0"), 9},
+			b:       Prefix{_a("10.129.0.0"), 16},
 			matches: true,
 			exact:   false,
 			common:  9,
@@ -855,8 +855,8 @@ func TestContains(t *testing.T) {
 		},
 		{
 			desc:    "matches backwards",
-			a:       Prefix{unsafeParseAddress("10.0.0.0"), 8},
-			b:       Prefix{unsafeParseAddress("10.200.0.0"), 16},
+			a:       Prefix{_a("10.0.0.0"), 8},
+			b:       Prefix{_a("10.200.0.0"), 16},
 			matches: true,
 			exact:   false,
 			common:  8,
@@ -864,8 +864,8 @@ func TestContains(t *testing.T) {
 		},
 		{
 			desc:    "matches backwards partial",
-			a:       Prefix{unsafeParseAddress("10.240.0.0"), 9},
-			b:       Prefix{unsafeParseAddress("10.200.0.0"), 16},
+			a:       Prefix{_a("10.240.0.0"), 9},
+			b:       Prefix{_a("10.200.0.0"), 16},
 			matches: true,
 			exact:   false,
 			common:  9,
@@ -874,30 +874,30 @@ func TestContains(t *testing.T) {
 		{
 			desc:    "disjoint",
 			a:       Prefix{Address{0}, 1},
-			b:       Prefix{unsafeParseAddress("128.0.0.0"), 1},
+			b:       Prefix{_a("128.0.0.0"), 1},
 			matches: false,
 			common:  0,
 			child:   1,
 		},
 		{
 			desc:    "disjoint longer",
-			a:       Prefix{unsafeParseAddress("0.0.0.0"), 17},
-			b:       Prefix{unsafeParseAddress("0.0.128.0"), 17},
+			a:       Prefix{_a("0.0.0.0"), 17},
+			b:       Prefix{_a("0.0.128.0"), 17},
 			matches: false,
 			common:  16,
 			child:   1,
 		},
 		{
 			desc:    "disjoint longer partial",
-			a:       Prefix{unsafeParseAddress("0.0.0.0"), 17},
-			b:       Prefix{unsafeParseAddress("0.1.0.0"), 17},
+			a:       Prefix{_a("0.0.0.0"), 17},
+			b:       Prefix{_a("0.1.0.0"), 17},
 			matches: false,
 			common:  15,
 			child:   1,
 		},
 		{
 			desc:    "disjoint backwards",
-			a:       Prefix{unsafeParseAddress("128.0.0.0"), 1},
+			a:       Prefix{_a("128.0.0.0"), 1},
 			b:       Prefix{Address{0}, 1},
 			matches: false,
 			common:  0,
@@ -905,32 +905,32 @@ func TestContains(t *testing.T) {
 		},
 		{
 			desc:    "disjoint backwards longer",
-			a:       Prefix{unsafeParseAddress("0.0.128.0"), 19},
-			b:       Prefix{unsafeParseAddress("0.0.0.0"), 19},
+			a:       Prefix{_a("0.0.128.0"), 19},
+			b:       Prefix{_a("0.0.0.0"), 19},
 			matches: false,
 			common:  16,
 			child:   0,
 		},
 		{
 			desc:    "disjoint backwards longer partial",
-			a:       Prefix{unsafeParseAddress("0.1.0.0"), 19},
-			b:       Prefix{unsafeParseAddress("0.0.0.0"), 19},
+			a:       Prefix{_a("0.1.0.0"), 19},
+			b:       Prefix{_a("0.0.0.0"), 19},
 			matches: false,
 			common:  15,
 			child:   0,
 		},
 		{
 			desc:    "disjoint with common",
-			a:       Prefix{unsafeParseAddress("10.0.0.0"), 16},
-			b:       Prefix{unsafeParseAddress("10.10.0.0"), 16},
+			a:       Prefix{_a("10.0.0.0"), 16},
+			b:       Prefix{_a("10.10.0.0"), 16},
 			matches: false,
 			common:  12,
 			child:   1,
 		},
 		{
 			desc:    "disjoint with more disjoint bytes",
-			a:       Prefix{unsafeParseAddress("0.255.255.0"), 24},
-			b:       Prefix{unsafeParseAddress("128.0.0.0"), 24},
+			a:       Prefix{_a("0.255.255.0"), 24},
+			b:       Prefix{_a("128.0.0.0"), 24},
 			matches: false,
 			common:  0,
 			child:   1,
@@ -1010,7 +1010,7 @@ func TestDeleteSimple(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		24,
 	}
 	trie, err := trie.Insert(key, nil)
@@ -1023,12 +1023,12 @@ func TestDeleteLeftChild(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		24,
 	}
 	trie, err := trie.Insert(key, nil)
 	childKey := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		25,
 	}
 	trie, err = trie.Insert(childKey, nil)
@@ -1044,12 +1044,12 @@ func TestDeleteRightChild(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		24,
 	}
 	trie, err := trie.Insert(key, nil)
 	childKey := Prefix{
-		unsafeParseAddress("172.16.200.128"),
+		_a("172.16.200.128"),
 		25,
 	}
 	trie, err = trie.Insert(childKey, nil)
@@ -1065,17 +1065,17 @@ func TestDeleteBothChildren(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		24,
 	}
 	trie, err := trie.Insert(key, nil)
 	leftChild := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		25,
 	}
 	trie, err = trie.Insert(leftChild, nil)
 	rightChild := Prefix{
-		unsafeParseAddress("172.16.200.128"),
+		_a("172.16.200.128"),
 		25,
 	}
 	trie, err = trie.Insert(rightChild, nil)
@@ -1092,12 +1092,12 @@ func TestDeleteRecursiveNil(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		24,
 	}
 	trie, err := trie.Insert(key, nil)
 	childKey := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		25,
 	}
 	trie, err = trie.Delete(childKey)
@@ -1115,12 +1115,12 @@ func TestDeleteRecursiveLeftChild(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		24,
 	}
 	trie, err := trie.Insert(key, nil)
 	childKey := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		25,
 	}
 	trie, err = trie.Insert(childKey, nil)
@@ -1139,12 +1139,12 @@ func TestDeleteRecursiveLeftChild32Promote(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.128"),
+		_a("172.16.200.128"),
 		25,
 	}
 	trie, err := trie.Insert(key, nil)
 	childKey := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		25,
 	}
 	trie, err = trie.Insert(childKey, nil)
@@ -1163,13 +1163,13 @@ func TestDeleteKeyTooBroad(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		25,
 	}
 	trie, err := trie.Insert(key, nil)
 
 	broadKey := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		24,
 	}
 	trie, err = trie.Delete(broadKey)
@@ -1184,13 +1184,13 @@ func TestDeleteKeyDisjoint(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		25,
 	}
 	trie, err := trie.Insert(key, nil)
 
 	disjointKey := Prefix{
-		unsafeParseAddress("172.16.200.128"),
+		_a("172.16.200.128"),
 		25,
 	}
 	trie, err = trie.Delete(disjointKey)
@@ -1205,19 +1205,19 @@ func TestSuccessivelyBetter(t *testing.T) {
 	var trie *trieNode
 
 	keys := []Prefix{
-		Prefix{unsafeParseAddress("10.224.24.0"), 0},
-		Prefix{unsafeParseAddress("10.224.24.0"), 1},
-		Prefix{unsafeParseAddress("10.224.24.0"), 8},
-		Prefix{unsafeParseAddress("10.224.24.0"), 12},
-		Prefix{unsafeParseAddress("10.224.24.0"), 16},
-		Prefix{unsafeParseAddress("10.224.24.0"), 18},
-		Prefix{unsafeParseAddress("10.224.24.0"), 20},
-		Prefix{unsafeParseAddress("10.224.24.0"), 21},
-		Prefix{unsafeParseAddress("10.224.24.0"), 22},
-		Prefix{unsafeParseAddress("10.224.24.0"), 24},
-		Prefix{unsafeParseAddress("10.224.24.0"), 27},
-		Prefix{unsafeParseAddress("10.224.24.0"), 30},
-		Prefix{unsafeParseAddress("10.224.24.0"), 32},
+		Prefix{_a("10.224.24.0"), 0},
+		Prefix{_a("10.224.24.0"), 1},
+		Prefix{_a("10.224.24.0"), 8},
+		Prefix{_a("10.224.24.0"), 12},
+		Prefix{_a("10.224.24.0"), 16},
+		Prefix{_a("10.224.24.0"), 18},
+		Prefix{_a("10.224.24.0"), 20},
+		Prefix{_a("10.224.24.0"), 21},
+		Prefix{_a("10.224.24.0"), 22},
+		Prefix{_a("10.224.24.0"), 24},
+		Prefix{_a("10.224.24.0"), 27},
+		Prefix{_a("10.224.24.0"), 30},
+		Prefix{_a("10.224.24.0"), 32},
 	}
 
 	// Add successively more specific keys to the trie and assert that exact
@@ -1265,39 +1265,39 @@ func TestSuccessivelyBetter(t *testing.T) {
 
 func TestIterate(t *testing.T) {
 	keys := []Prefix{
-		Prefix{unsafeParseAddress("172.21.0.0"), 20},
-		Prefix{unsafeParseAddress("192.68.27.0"), 25},
-		Prefix{unsafeParseAddress("192.168.26.128"), 25},
-		Prefix{unsafeParseAddress("10.224.24.0"), 32},
-		Prefix{unsafeParseAddress("192.68.24.0"), 24},
-		Prefix{unsafeParseAddress("172.16.0.0"), 12},
-		Prefix{unsafeParseAddress("192.68.26.0"), 24},
-		Prefix{unsafeParseAddress("10.224.24.0"), 30},
-		Prefix{unsafeParseAddress("192.168.24.0"), 24},
-		Prefix{unsafeParseAddress("192.168.25.0"), 24},
-		Prefix{unsafeParseAddress("192.168.26.0"), 25},
-		Prefix{unsafeParseAddress("192.68.25.0"), 24},
-		Prefix{unsafeParseAddress("192.168.27.0"), 24},
-		Prefix{unsafeParseAddress("172.20.128.0"), 19},
-		Prefix{unsafeParseAddress("192.68.27.128"), 25},
+		Prefix{_a("172.21.0.0"), 20},
+		Prefix{_a("192.68.27.0"), 25},
+		Prefix{_a("192.168.26.128"), 25},
+		Prefix{_a("10.224.24.0"), 32},
+		Prefix{_a("192.68.24.0"), 24},
+		Prefix{_a("172.16.0.0"), 12},
+		Prefix{_a("192.68.26.0"), 24},
+		Prefix{_a("10.224.24.0"), 30},
+		Prefix{_a("192.168.24.0"), 24},
+		Prefix{_a("192.168.25.0"), 24},
+		Prefix{_a("192.168.26.0"), 25},
+		Prefix{_a("192.68.25.0"), 24},
+		Prefix{_a("192.168.27.0"), 24},
+		Prefix{_a("172.20.128.0"), 19},
+		Prefix{_a("192.68.27.128"), 25},
 	}
 
 	golden := []Prefix{
-		Prefix{unsafeParseAddress("10.224.24.0"), 30},
-		Prefix{unsafeParseAddress("10.224.24.0"), 32},
-		Prefix{unsafeParseAddress("172.16.0.0"), 12},
-		Prefix{unsafeParseAddress("172.20.128.0"), 19},
-		Prefix{unsafeParseAddress("172.21.0.0"), 20},
-		Prefix{unsafeParseAddress("192.68.24.0"), 24},
-		Prefix{unsafeParseAddress("192.68.25.0"), 24},
-		Prefix{unsafeParseAddress("192.68.26.0"), 24},
-		Prefix{unsafeParseAddress("192.68.27.0"), 25},
-		Prefix{unsafeParseAddress("192.68.27.128"), 25},
-		Prefix{unsafeParseAddress("192.168.24.0"), 24},
-		Prefix{unsafeParseAddress("192.168.25.0"), 24},
-		Prefix{unsafeParseAddress("192.168.26.0"), 25},
-		Prefix{unsafeParseAddress("192.168.26.128"), 25},
-		Prefix{unsafeParseAddress("192.168.27.0"), 24},
+		Prefix{_a("10.224.24.0"), 30},
+		Prefix{_a("10.224.24.0"), 32},
+		Prefix{_a("172.16.0.0"), 12},
+		Prefix{_a("172.20.128.0"), 19},
+		Prefix{_a("172.21.0.0"), 20},
+		Prefix{_a("192.68.24.0"), 24},
+		Prefix{_a("192.68.25.0"), 24},
+		Prefix{_a("192.68.26.0"), 24},
+		Prefix{_a("192.68.27.0"), 25},
+		Prefix{_a("192.68.27.128"), 25},
+		Prefix{_a("192.168.24.0"), 24},
+		Prefix{_a("192.168.25.0"), 24},
+		Prefix{_a("192.168.26.0"), 25},
+		Prefix{_a("192.168.26.128"), 25},
+		Prefix{_a("192.168.27.0"), 24},
 	}
 
 	var trie *trieNode
@@ -1373,52 +1373,52 @@ func TestAggregate(t *testing.T) {
 		{
 			desc: "simple aggregation",
 			pairs: []pair32{
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.2"), 31}},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.1"), 32}},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 32}},
+				pair32{key: Prefix{_a("10.224.24.2"), 31}},
+				pair32{key: Prefix{_a("10.224.24.1"), 32}},
+				pair32{key: Prefix{_a("10.224.24.0"), 32}},
 			},
 			golden: []pair32{
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 30}},
+				pair32{key: Prefix{_a("10.224.24.0"), 30}},
 			},
 		},
 		{
 			desc: "same as iterate",
 			pairs: []pair32{
-				pair32{key: Prefix{unsafeParseAddress("172.21.0.0"), 20}},
-				pair32{key: Prefix{unsafeParseAddress("192.68.27.0"), 25}},
-				pair32{key: Prefix{unsafeParseAddress("192.168.26.128"), 25}},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 32}},
-				pair32{key: Prefix{unsafeParseAddress("192.68.24.0"), 24}},
-				pair32{key: Prefix{unsafeParseAddress("172.16.0.0"), 12}},
-				pair32{key: Prefix{unsafeParseAddress("192.68.26.0"), 24}},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 30}},
-				pair32{key: Prefix{unsafeParseAddress("192.168.24.0"), 24}},
-				pair32{key: Prefix{unsafeParseAddress("192.168.25.0"), 24}},
-				pair32{key: Prefix{unsafeParseAddress("192.168.26.0"), 25}},
-				pair32{key: Prefix{unsafeParseAddress("192.68.25.0"), 24}},
-				pair32{key: Prefix{unsafeParseAddress("192.168.27.0"), 24}},
-				pair32{key: Prefix{unsafeParseAddress("172.20.128.0"), 19}},
-				pair32{key: Prefix{unsafeParseAddress("192.68.27.128"), 25}},
+				pair32{key: Prefix{_a("172.21.0.0"), 20}},
+				pair32{key: Prefix{_a("192.68.27.0"), 25}},
+				pair32{key: Prefix{_a("192.168.26.128"), 25}},
+				pair32{key: Prefix{_a("10.224.24.0"), 32}},
+				pair32{key: Prefix{_a("192.68.24.0"), 24}},
+				pair32{key: Prefix{_a("172.16.0.0"), 12}},
+				pair32{key: Prefix{_a("192.68.26.0"), 24}},
+				pair32{key: Prefix{_a("10.224.24.0"), 30}},
+				pair32{key: Prefix{_a("192.168.24.0"), 24}},
+				pair32{key: Prefix{_a("192.168.25.0"), 24}},
+				pair32{key: Prefix{_a("192.168.26.0"), 25}},
+				pair32{key: Prefix{_a("192.68.25.0"), 24}},
+				pair32{key: Prefix{_a("192.168.27.0"), 24}},
+				pair32{key: Prefix{_a("172.20.128.0"), 19}},
+				pair32{key: Prefix{_a("192.68.27.128"), 25}},
 			},
 			golden: []pair32{
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 30}},
-				pair32{key: Prefix{unsafeParseAddress("172.16.0.0"), 12}},
-				pair32{key: Prefix{unsafeParseAddress("192.68.24.0"), 22}},
-				pair32{key: Prefix{unsafeParseAddress("192.168.24.0"), 22}},
+				pair32{key: Prefix{_a("10.224.24.0"), 30}},
+				pair32{key: Prefix{_a("172.16.0.0"), 12}},
+				pair32{key: Prefix{_a("192.68.24.0"), 22}},
+				pair32{key: Prefix{_a("192.168.24.0"), 22}},
 			},
 		},
 		{
 			desc: "mixed umbrellas",
 			pairs: []pair32{
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 30}, data: true},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 31}, data: false},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.1"), 32}, data: true},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 32}, data: false},
+				pair32{key: Prefix{_a("10.224.24.0"), 30}, data: true},
+				pair32{key: Prefix{_a("10.224.24.0"), 31}, data: false},
+				pair32{key: Prefix{_a("10.224.24.1"), 32}, data: true},
+				pair32{key: Prefix{_a("10.224.24.0"), 32}, data: false},
 			},
 			golden: []pair32{
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 30}, data: true},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 31}, data: false},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.1"), 32}, data: true},
+				pair32{key: Prefix{_a("10.224.24.0"), 30}, data: true},
+				pair32{key: Prefix{_a("10.224.24.0"), 31}, data: false},
+				pair32{key: Prefix{_a("10.224.24.1"), 32}, data: true},
 			},
 		},
 	}
@@ -1487,15 +1487,15 @@ func TestAggregateEqualComparable(t *testing.T) {
 		{
 			desc: "mixed umbrellas",
 			pairs: []pair32{
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 30}, data: NextHop1},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 31}, data: NextHop2},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.1"), 32}, data: NextHop1},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 32}, data: NextHop2},
+				pair32{key: Prefix{_a("10.224.24.0"), 30}, data: NextHop1},
+				pair32{key: Prefix{_a("10.224.24.0"), 31}, data: NextHop2},
+				pair32{key: Prefix{_a("10.224.24.1"), 32}, data: NextHop1},
+				pair32{key: Prefix{_a("10.224.24.0"), 32}, data: NextHop2},
 			},
 			golden: []pair32{
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 30}, data: NextHop1},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 31}, data: NextHop2},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.1"), 32}, data: NextHop1},
+				pair32{key: Prefix{_a("10.224.24.0"), 30}, data: NextHop1},
+				pair32{key: Prefix{_a("10.224.24.0"), 31}, data: NextHop2},
+				pair32{key: Prefix{_a("10.224.24.1"), 32}, data: NextHop1},
 			},
 		},
 	}
@@ -1603,7 +1603,7 @@ func TestTrieNodeEqual(t *testing.T) {
 
 func TestFlatten(t *testing.T) {
 	t.Run("active node needs no children", func(t *testing.T) {
-		prefix := unsafeParsePrefix("1.2.3.0/24")
+		prefix := _p("1.2.3.0/24")
 		n := trieNode{
 			Prefix:   prefix,
 			isActive: true,
@@ -1619,9 +1619,9 @@ func TestFlatten(t *testing.T) {
 		assert.Nil(t, n.children[1])
 	})
 	t.Run("children of unequal size", func(t *testing.T) {
-		prefix := unsafeParsePrefix("1.2.3.0/24")
-		left := unsafeParsePrefix("1.2.3.0/26")
-		right := unsafeParsePrefix("1.2.3.128/25")
+		prefix := _p("1.2.3.0/24")
+		left := _p("1.2.3.0/26")
+		right := _p("1.2.3.128/25")
 		n := trieNode{
 			Prefix: prefix,
 			children: [2]*trieNode{
@@ -1636,9 +1636,9 @@ func TestFlatten(t *testing.T) {
 		assert.Equal(t, right, n.children[1].Prefix)
 	})
 	t.Run("children smaller than half", func(t *testing.T) {
-		prefix := unsafeParsePrefix("1.2.3.0/24")
-		left := unsafeParsePrefix("1.2.3.0/26")
-		right := unsafeParsePrefix("1.2.3.128/26")
+		prefix := _p("1.2.3.0/24")
+		left := _p("1.2.3.0/26")
+		right := _p("1.2.3.128/26")
 		n := trieNode{
 			Prefix: prefix,
 			children: [2]*trieNode{
@@ -1654,9 +1654,9 @@ func TestFlatten(t *testing.T) {
 	})
 
 	t.Run("children not both active (left)", func(t *testing.T) {
-		prefix := unsafeParsePrefix("1.2.3.0/24")
-		left := unsafeParsePrefix("1.2.3.0/25")
-		right := unsafeParsePrefix("1.2.3.128/25")
+		prefix := _p("1.2.3.0/24")
+		left := _p("1.2.3.0/25")
+		right := _p("1.2.3.128/25")
 		n := trieNode{
 			Prefix: prefix,
 			children: [2]*trieNode{
@@ -1677,9 +1677,9 @@ func TestFlatten(t *testing.T) {
 	})
 
 	t.Run("children not both active (right)", func(t *testing.T) {
-		prefix := unsafeParsePrefix("1.2.3.0/24")
-		left := unsafeParsePrefix("1.2.3.0/25")
-		right := unsafeParsePrefix("1.2.3.128/25")
+		prefix := _p("1.2.3.0/24")
+		left := _p("1.2.3.0/25")
+		right := _p("1.2.3.128/25")
 		n := trieNode{
 			Prefix: prefix,
 			children: [2]*trieNode{
@@ -1699,9 +1699,9 @@ func TestFlatten(t *testing.T) {
 		assert.Equal(t, right, n.children[1].Prefix)
 	})
 	t.Run("children both active", func(t *testing.T) {
-		prefix := unsafeParsePrefix("1.2.3.0/24")
-		left := unsafeParsePrefix("1.2.3.0/25")
-		right := unsafeParsePrefix("1.2.3.128/25")
+		prefix := _p("1.2.3.0/24")
+		left := _p("1.2.3.0/25")
+		right := _p("1.2.3.128/25")
 		n := trieNode{
 			Prefix: prefix,
 			children: [2]*trieNode{

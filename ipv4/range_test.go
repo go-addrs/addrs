@@ -27,12 +27,12 @@ func TestNewRange(t *testing.T) {
 
 func TestRangeString(t *testing.T) {
 	assert.Equal(t, "[18.52.86.120,35.69.103.137]", validRange(t, Address{ui: 0x12345678}, Address{ui: 0x23456789}).String())
-	assert.Equal(t, "[10.224.24.0,10.224.24.255]", unsafeParsePrefix("10.224.24.1/24").Range().String())
+	assert.Equal(t, "[10.224.24.0,10.224.24.255]", _p("10.224.24.1/24").Range().String())
 }
 
 func TestRangeSize(t *testing.T) {
-	assert.Equal(t, int64(0x100), unsafeParsePrefix("10.224.24.1/24").Range().Size())
-	assert.Equal(t, int64(0x20000), unsafeParsePrefix("10.224.24.1/15").Range().Size())
+	assert.Equal(t, int64(0x100), _p("10.224.24.1/24").Range().Size())
+	assert.Equal(t, int64(0x20000), _p("10.224.24.1/15").Range().Size())
 	assert.Equal(t, int64(0x11111112), validRange(t, Address{ui: 0x12345678}, Address{ui: 0x23456789}).Size())
 }
 
@@ -50,9 +50,9 @@ func TestRangeFirstLast(t *testing.T) {
 		},
 		{
 			description: "prefix",
-			r:           unsafeParsePrefix("10.224.24.1/24").Range(),
-			first:       unsafeParseAddress("10.224.24.0"),
-			last:        unsafeParseAddress("10.224.24.255"),
+			r:           _p("10.224.24.1/24").Range(),
+			first:       _a("10.224.24.0"),
+			last:        _a("10.224.24.255"),
 		},
 	}
 	for _, tt := range tests {
@@ -70,13 +70,13 @@ func TestRangeContainsRange(t *testing.T) {
 	}{
 		{
 			description: "larger",
-			a:           unsafeParsePrefix("10.224.24.1/22").Range(),
-			b:           unsafeParsePrefix("10.224.26.1/24").Range(),
+			a:           _p("10.224.24.1/22").Range(),
+			b:           _p("10.224.26.1/24").Range(),
 		},
 		{
 			description: "unaligned",
 			a:           validRange(t, Address{ui: 0x12345678}, Address{ui: 0x23456789}),
-			b:           unsafeParsePrefix("20.224.26.1/24").Range(),
+			b:           _p("20.224.26.1/24").Range(),
 		},
 	}
 	for _, tt := range tests {
@@ -96,10 +96,10 @@ func TestRangeMinus(t *testing.T) {
 	}{
 		{
 			description: "disjoint left",
-			a:           unsafeParsePrefix("10.224.24.0/22").Range(),
-			b:           unsafeParsePrefix("10.224.0.0/22").Range(),
+			a:           _p("10.224.24.0/22").Range(),
+			b:           _p("10.224.0.0/22").Range(),
 			result: []Range{
-				unsafeParsePrefix("10.224.24.0/22").Range(),
+				_p("10.224.24.0/22").Range(),
 			},
 		},
 		{
@@ -112,8 +112,8 @@ func TestRangeMinus(t *testing.T) {
 		},
 		{
 			description: "larger same last",
-			a:           unsafeParsePrefix("10.224.27.0/24").Range(),
-			b:           unsafeParsePrefix("10.224.24.0/22").Range(),
+			a:           _p("10.224.27.0/24").Range(),
+			b:           _p("10.224.24.0/22").Range(),
 			result:      []Range{},
 		},
 		{
@@ -125,22 +125,22 @@ func TestRangeMinus(t *testing.T) {
 
 		{
 			description: "contained same first",
-			a:           unsafeParsePrefix("10.224.24.0/22").Range(),
-			b:           unsafeParsePrefix("10.224.24.0/24").Range(),
+			a:           _p("10.224.24.0/22").Range(),
+			b:           _p("10.224.24.0/24").Range(),
 			result: []Range{
-				validRange(t, unsafeParseAddress("10.224.25.0"), unsafeParseAddress("10.224.27.255")),
+				validRange(t, _a("10.224.25.0"), _a("10.224.27.255")),
 			},
 		},
 		{
 			description: "same range",
-			a:           unsafeParsePrefix("10.224.24.0/22").Range(),
-			b:           unsafeParsePrefix("10.224.24.0/22").Range(),
+			a:           _p("10.224.24.0/22").Range(),
+			b:           _p("10.224.24.0/22").Range(),
 			result:      []Range{},
 		},
 		{
 			description: "larger same first",
-			a:           unsafeParsePrefix("10.224.24.0/24").Range(),
-			b:           unsafeParsePrefix("10.224.24.0/22").Range(),
+			a:           _p("10.224.24.0/24").Range(),
+			b:           _p("10.224.24.0/22").Range(),
 			result:      []Range{},
 		},
 
@@ -155,10 +155,10 @@ func TestRangeMinus(t *testing.T) {
 		},
 		{
 			description: "contained same last",
-			a:           unsafeParsePrefix("10.224.24.0/22").Range(),
-			b:           unsafeParsePrefix("10.224.27.0/24").Range(),
+			a:           _p("10.224.24.0/22").Range(),
+			b:           _p("10.224.27.0/24").Range(),
 			result: []Range{
-				validRange(t, unsafeParseAddress("10.224.24.0"), unsafeParseAddress("10.224.26.255")),
+				validRange(t, _a("10.224.24.0"), _a("10.224.26.255")),
 			},
 		},
 		{
@@ -172,10 +172,10 @@ func TestRangeMinus(t *testing.T) {
 
 		{
 			description: "disjoint right",
-			a:           unsafeParsePrefix("10.224.24.0/22").Range(),
-			b:           unsafeParsePrefix("10.224.200.0/22").Range(),
+			a:           _p("10.224.24.0/22").Range(),
+			b:           _p("10.224.200.0/22").Range(),
 			result: []Range{
-				unsafeParsePrefix("10.224.24.0/22").Range(),
+				_p("10.224.24.0/22").Range(),
 			},
 		},
 	}
@@ -194,43 +194,43 @@ func TestRangeMinus(t *testing.T) {
 }
 
 func TestRangeSet(t *testing.T) {
-	r := Range{unsafeParseAddress("7.0.37.17"), unsafeParseAddress("13.8.222.113")}
+	r := Range{_a("7.0.37.17"), _a("13.8.222.113")}
 
 	// I calculated this manually from the above arbitrarily chosen range.
 	golden := NewSet()
-	golden.InsertPrefix(unsafeParsePrefix("7.0.37.17/32"))
-	golden.InsertPrefix(unsafeParsePrefix("7.0.37.18/31"))
-	golden.InsertPrefix(unsafeParsePrefix("7.0.37.20/30"))
-	golden.InsertPrefix(unsafeParsePrefix("7.0.37.24/29"))
-	golden.InsertPrefix(unsafeParsePrefix("7.0.37.32/27"))
-	golden.InsertPrefix(unsafeParsePrefix("7.0.37.64/26"))
-	golden.InsertPrefix(unsafeParsePrefix("7.0.37.128/25"))
-	golden.InsertPrefix(unsafeParsePrefix("7.0.38.0/23"))
-	golden.InsertPrefix(unsafeParsePrefix("7.0.40.0/21"))
-	golden.InsertPrefix(unsafeParsePrefix("7.0.48.0/20"))
-	golden.InsertPrefix(unsafeParsePrefix("7.0.64.0/18"))
-	golden.InsertPrefix(unsafeParsePrefix("7.0.128.0/17"))
-	golden.InsertPrefix(unsafeParsePrefix("7.1.0.0/16"))
-	golden.InsertPrefix(unsafeParsePrefix("7.2.0.0/15"))
-	golden.InsertPrefix(unsafeParsePrefix("7.4.0.0/14"))
-	golden.InsertPrefix(unsafeParsePrefix("7.8.0.0/13"))
-	golden.InsertPrefix(unsafeParsePrefix("7.16.0.0/12"))
-	golden.InsertPrefix(unsafeParsePrefix("7.32.0.0/11"))
-	golden.InsertPrefix(unsafeParsePrefix("7.64.0.0/10"))
-	golden.InsertPrefix(unsafeParsePrefix("7.128.0.0/9"))
-	golden.InsertPrefix(unsafeParsePrefix("8.0.0.0/6"))
-	golden.InsertPrefix(unsafeParsePrefix("12.0.0.0/8"))
-	golden.InsertPrefix(unsafeParsePrefix("13.0.0.0/13"))
-	golden.InsertPrefix(unsafeParsePrefix("13.8.0.0/17"))
-	golden.InsertPrefix(unsafeParsePrefix("13.8.128.0/18"))
-	golden.InsertPrefix(unsafeParsePrefix("13.8.192.0/20"))
-	golden.InsertPrefix(unsafeParsePrefix("13.8.208.0/21"))
-	golden.InsertPrefix(unsafeParsePrefix("13.8.216.0/22"))
-	golden.InsertPrefix(unsafeParsePrefix("13.8.220.0/23"))
-	golden.InsertPrefix(unsafeParsePrefix("13.8.222.0/26"))
-	golden.InsertPrefix(unsafeParsePrefix("13.8.222.64/27"))
-	golden.InsertPrefix(unsafeParsePrefix("13.8.222.96/28"))
-	golden.InsertPrefix(unsafeParsePrefix("13.8.222.112/31"))
+	golden.InsertPrefix(_p("7.0.37.17/32"))
+	golden.InsertPrefix(_p("7.0.37.18/31"))
+	golden.InsertPrefix(_p("7.0.37.20/30"))
+	golden.InsertPrefix(_p("7.0.37.24/29"))
+	golden.InsertPrefix(_p("7.0.37.32/27"))
+	golden.InsertPrefix(_p("7.0.37.64/26"))
+	golden.InsertPrefix(_p("7.0.37.128/25"))
+	golden.InsertPrefix(_p("7.0.38.0/23"))
+	golden.InsertPrefix(_p("7.0.40.0/21"))
+	golden.InsertPrefix(_p("7.0.48.0/20"))
+	golden.InsertPrefix(_p("7.0.64.0/18"))
+	golden.InsertPrefix(_p("7.0.128.0/17"))
+	golden.InsertPrefix(_p("7.1.0.0/16"))
+	golden.InsertPrefix(_p("7.2.0.0/15"))
+	golden.InsertPrefix(_p("7.4.0.0/14"))
+	golden.InsertPrefix(_p("7.8.0.0/13"))
+	golden.InsertPrefix(_p("7.16.0.0/12"))
+	golden.InsertPrefix(_p("7.32.0.0/11"))
+	golden.InsertPrefix(_p("7.64.0.0/10"))
+	golden.InsertPrefix(_p("7.128.0.0/9"))
+	golden.InsertPrefix(_p("8.0.0.0/6"))
+	golden.InsertPrefix(_p("12.0.0.0/8"))
+	golden.InsertPrefix(_p("13.0.0.0/13"))
+	golden.InsertPrefix(_p("13.8.0.0/17"))
+	golden.InsertPrefix(_p("13.8.128.0/18"))
+	golden.InsertPrefix(_p("13.8.192.0/20"))
+	golden.InsertPrefix(_p("13.8.208.0/21"))
+	golden.InsertPrefix(_p("13.8.216.0/22"))
+	golden.InsertPrefix(_p("13.8.220.0/23"))
+	golden.InsertPrefix(_p("13.8.222.0/26"))
+	golden.InsertPrefix(_p("13.8.222.64/27"))
+	golden.InsertPrefix(_p("13.8.222.96/28"))
+	golden.InsertPrefix(_p("13.8.222.112/31"))
 
 	assert.True(t, golden.Equal(r.Set()))
 }

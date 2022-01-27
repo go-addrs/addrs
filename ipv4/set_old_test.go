@@ -8,15 +8,15 @@ import (
 )
 
 var (
-	Eights = unsafeParseAddress("8.8.8.8")
-	Nines  = unsafeParseAddress("9.9.9.9")
+	Eights = _a("8.8.8.8")
+	Nines  = _a("9.9.9.9")
 
-	Ten24          = unsafeParsePrefix("10.0.0.0/24")
-	TenOne24       = unsafeParsePrefix("10.0.1.0/24")
-	TenTwo24       = unsafeParsePrefix("10.0.2.0/24")
-	Ten24128       = unsafeParsePrefix("10.0.0.128/25")
-	Ten24Router    = unsafeParseAddress("10.0.0.1")
-	Ten24Broadcast = unsafeParseAddress("10.0.0.255")
+	Ten24          = _p("10.0.0.0/24")
+	TenOne24       = _p("10.0.1.0/24")
+	TenTwo24       = _p("10.0.2.0/24")
+	Ten24128       = _p("10.0.0.128/25")
+	Ten24Router    = _a("10.0.0.1")
+	Ten24Broadcast = _a("10.0.0.255")
 )
 
 func TestOldSetInit(t *testing.T) {
@@ -64,40 +64,40 @@ func TestOldSetInsertPrefixwork(t *testing.T) {
 func TestOldSetInsertSequential(t *testing.T) {
 	s := NewSet()
 
-	s.Insert(unsafeParseAddress("192.168.1.0"))
+	s.Insert(_a("192.168.1.0"))
 	assert.Equal(t, int64(1), s.s.trie.NumNodes())
-	s.Insert(unsafeParseAddress("192.168.1.1"))
+	s.Insert(_a("192.168.1.1"))
 	assert.Equal(t, int64(1), s.s.trie.NumNodes())
-	s.Insert(unsafeParseAddress("192.168.1.2"))
+	s.Insert(_a("192.168.1.2"))
 	assert.Equal(t, int64(2), s.s.trie.NumNodes())
-	s.Insert(unsafeParseAddress("192.168.1.3"))
+	s.Insert(_a("192.168.1.3"))
 	assert.Equal(t, int64(1), s.s.trie.NumNodes())
 	assert.Equal(t, int64(4), s.Size())
 
-	cidr := unsafeParsePrefix("192.168.1.0/30")
+	cidr := _p("192.168.1.0/30")
 	assert.True(t, s.ContainsPrefix(cidr))
 
-	cidr = unsafeParsePrefix("192.168.1.4/31")
+	cidr = _p("192.168.1.4/31")
 	s.InsertPrefix(cidr)
 	assert.Equal(t, int64(2), s.s.trie.NumNodes())
 	assert.True(t, s.ContainsPrefix(cidr))
 
-	cidr = unsafeParsePrefix("192.168.1.6/31")
+	cidr = _p("192.168.1.6/31")
 	s.InsertPrefix(cidr)
 	assert.Equal(t, int64(1), s.s.trie.NumNodes())
 	assert.True(t, s.ContainsPrefix(cidr))
 
-	cidr = unsafeParsePrefix("192.168.1.6/31")
+	cidr = _p("192.168.1.6/31")
 	s.InsertPrefix(cidr)
 	assert.Equal(t, int64(1), s.s.trie.NumNodes())
 	assert.True(t, s.ContainsPrefix(cidr))
 
-	cidr = unsafeParsePrefix("192.168.0.240/29")
+	cidr = _p("192.168.0.240/29")
 	s.InsertPrefix(cidr)
 	assert.Equal(t, int64(2), s.s.trie.NumNodes())
 	assert.True(t, s.ContainsPrefix(cidr))
 
-	cidr = unsafeParsePrefix("192.168.0.248/29")
+	cidr = _p("192.168.0.248/29")
 	s.InsertPrefix(cidr)
 	assert.Equal(t, int64(2), s.s.trie.NumNodes())
 	assert.True(t, s.ContainsPrefix(cidr))
@@ -114,7 +114,7 @@ func TestOldSetRemove(t *testing.T) {
 	assert.Equal(t, int64(128), s.Size())
 	assert.False(t, s.ContainsPrefix(Ten24))
 	assert.False(t, s.ContainsPrefix(Ten24128))
-	cidr := unsafeParsePrefix("10.0.0.0/25")
+	cidr := _p("10.0.0.0/25")
 	assert.True(t, s.ContainsPrefix(cidr))
 
 	s.Remove(Ten24Router)
@@ -137,7 +137,7 @@ func TestOldSetRemovePrefixworkBroadcast(t *testing.T) {
 	assert.False(t, s.Contains(Ten24Broadcast))
 	assert.False(t, s.Contains(Ten24.Address))
 
-	cidr := unsafeParsePrefix("10.0.0.128/26")
+	cidr := _p("10.0.0.128/26")
 	assert.True(t, s.ContainsPrefix(cidr))
 	assert.True(t, s.Contains(Ten24Router))
 
@@ -151,11 +151,11 @@ func TestOldSetRemoveAll(t *testing.T) {
 	s := NewSet()
 
 	s.InsertPrefix(Ten24)
-	cidr1 := unsafeParsePrefix("192.168.0.0/25")
+	cidr1 := _p("192.168.0.0/25")
 	s.InsertPrefix(cidr1)
 	assert.Equal(t, int64(2), s.s.trie.NumNodes())
 
-	cidr2 := unsafeParsePrefix("0.0.0.0/0")
+	cidr2 := _p("0.0.0.0/0")
 	s.RemovePrefix(cidr2)
 	assert.Equal(t, int64(0), s.s.trie.NumNodes())
 	assert.False(t, s.ContainsPrefix(Ten24))
@@ -166,8 +166,8 @@ func TestOldSetRemoveAll(t *testing.T) {
 
 func TestOldSet_RemoveTop(t *testing.T) {
 	testSet := NewSet()
-	ip1 := unsafeParseAddress("10.0.0.1")
-	ip2 := unsafeParseAddress("10.0.0.2")
+	ip1 := _a("10.0.0.1")
+	ip2 := _a("10.0.0.2")
 
 	testSet.Insert(ip2) // top
 	testSet.Insert(ip1) // inserted at left
@@ -199,7 +199,7 @@ func TestOldSetUnion(t *testing.T) {
 	set2 := NewSet()
 
 	set1.InsertPrefix(Ten24)
-	cidr := unsafeParsePrefix("192.168.0.248/29")
+	cidr := _p("192.168.0.248/29")
 	set2.InsertPrefix(cidr)
 
 	set := set1.Union(set2)
@@ -214,7 +214,7 @@ func TestOldSetDifference(t *testing.T) {
 	set2 := NewSet()
 
 	set1.InsertPrefix(Ten24)
-	cidr := unsafeParsePrefix("192.168.0.248/29")
+	cidr := _p("192.168.0.248/29")
 	set2.InsertPrefix(cidr)
 
 	set := set1.Difference(set2)
@@ -293,15 +293,15 @@ func testIntersection(t *testing.T, input1 []string, input2 []string, output []s
 	set2 := NewSet()
 	interSect := NewSet()
 	for i := 0; i < len(input1); i++ {
-		cidr := unsafeParsePrefix(input1[i])
+		cidr := _p(input1[i])
 		set1.InsertPrefix(cidr)
 	}
 	for j := 0; j < len(input2); j++ {
-		cidr := unsafeParsePrefix(input2[j])
+		cidr := _p(input2[j])
 		set2.InsertPrefix(cidr)
 	}
 	for k := 0; k < len(output); k++ {
-		cidr := unsafeParsePrefix(output[k])
+		cidr := _p(output[k])
 		interSect.InsertPrefix(cidr)
 	}
 	set := set1.Intersection(set2)
@@ -317,7 +317,7 @@ func TestOldSetAllocateDeallocate(t *testing.T) {
 
 	s := NewSet()
 
-	bigNet := unsafeParsePrefix("15.1.0.0/16")
+	bigNet := _p("15.1.0.0/16")
 	s.InsertPrefix(bigNet)
 
 	assert.Equal(t, int64(65536), s.Size())
@@ -356,7 +356,7 @@ func TestOldEqualTrivial(t *testing.T) {
 	b := NewSet()
 	assert.True(t, a.EqualInterface(b))
 
-	a.InsertPrefix(unsafeParsePrefix("10.0.0.0/24"))
+	a.InsertPrefix(_p("10.0.0.0/24"))
 	assert.False(t, a.EqualInterface(b))
 	assert.False(t, b.EqualInterface(a))
 	assert.True(t, a.EqualInterface(a))
@@ -368,8 +368,8 @@ func TestOldEqualTrivial(t *testing.T) {
 func TestOldEqualSingleNode(t *testing.T) {
 	a := NewSet()
 	b := NewSet()
-	a.InsertPrefix(unsafeParsePrefix("10.0.0.0/24"))
-	b.InsertPrefix(unsafeParsePrefix("10.0.0.0/24"))
+	a.InsertPrefix(_p("10.0.0.0/24"))
+	b.InsertPrefix(_p("10.0.0.0/24"))
 
 	assert.True(t, a.EqualInterface(b))
 	assert.True(t, b.EqualInterface(a))
@@ -382,7 +382,7 @@ func TestOldEqualAllIPv4(t *testing.T) {
 	b := NewSet()
 	c := NewSet()
 	// Insert the entire IPv4 space into set a in one shot
-	a.InsertPrefix(unsafeParsePrefix("0.0.0.0/0"))
+	a.InsertPrefix(_p("0.0.0.0/0"))
 
 	// Insert the entire IPv4 space piece by piece into b and c
 
@@ -390,39 +390,39 @@ func TestOldEqualAllIPv4(t *testing.T) {
 	// then adding 0.0.0.2/31, 0.0.0.4/30, ..., 128.0.0./1, and then
 	// randomizing the list.
 	bNets := []Prefix{
-		unsafeParsePrefix("0.0.0.0/32"),
-		unsafeParsePrefix("0.0.0.1/32"),
-		unsafeParsePrefix("0.0.0.128/25"),
-		unsafeParsePrefix("0.0.0.16/28"),
-		unsafeParsePrefix("0.0.0.2/31"),
-		unsafeParsePrefix("0.0.0.32/27"),
-		unsafeParsePrefix("0.0.0.4/30"),
-		unsafeParsePrefix("0.0.0.64/26"),
-		unsafeParsePrefix("0.0.0.8/29"),
-		unsafeParsePrefix("0.0.1.0/24"),
-		unsafeParsePrefix("0.0.128.0/17"),
-		unsafeParsePrefix("0.0.16.0/20"),
-		unsafeParsePrefix("0.0.2.0/23"),
-		unsafeParsePrefix("0.0.32.0/19"),
-		unsafeParsePrefix("0.0.4.0/22"),
-		unsafeParsePrefix("0.0.64.0/18"),
-		unsafeParsePrefix("0.0.8.0/21"),
-		unsafeParsePrefix("0.1.0.0/16"),
-		unsafeParsePrefix("0.128.0.0/9"),
-		unsafeParsePrefix("0.16.0.0/12"),
-		unsafeParsePrefix("0.2.0.0/15"),
-		unsafeParsePrefix("0.32.0.0/11"),
-		unsafeParsePrefix("0.4.0.0/14"),
-		unsafeParsePrefix("0.64.0.0/10"),
-		unsafeParsePrefix("0.8.0.0/13"),
-		unsafeParsePrefix("1.0.0.0/8"),
-		unsafeParsePrefix("128.0.0.0/1"),
-		unsafeParsePrefix("16.0.0.0/4"),
-		unsafeParsePrefix("2.0.0.0/7"),
-		unsafeParsePrefix("32.0.0.0/3"),
-		unsafeParsePrefix("4.0.0.0/6"),
-		unsafeParsePrefix("64.0.0.0/2"),
-		unsafeParsePrefix("8.0.0.0/5"),
+		_p("0.0.0.0/32"),
+		_p("0.0.0.1/32"),
+		_p("0.0.0.128/25"),
+		_p("0.0.0.16/28"),
+		_p("0.0.0.2/31"),
+		_p("0.0.0.32/27"),
+		_p("0.0.0.4/30"),
+		_p("0.0.0.64/26"),
+		_p("0.0.0.8/29"),
+		_p("0.0.1.0/24"),
+		_p("0.0.128.0/17"),
+		_p("0.0.16.0/20"),
+		_p("0.0.2.0/23"),
+		_p("0.0.32.0/19"),
+		_p("0.0.4.0/22"),
+		_p("0.0.64.0/18"),
+		_p("0.0.8.0/21"),
+		_p("0.1.0.0/16"),
+		_p("0.128.0.0/9"),
+		_p("0.16.0.0/12"),
+		_p("0.2.0.0/15"),
+		_p("0.32.0.0/11"),
+		_p("0.4.0.0/14"),
+		_p("0.64.0.0/10"),
+		_p("0.8.0.0/13"),
+		_p("1.0.0.0/8"),
+		_p("128.0.0.0/1"),
+		_p("16.0.0.0/4"),
+		_p("2.0.0.0/7"),
+		_p("32.0.0.0/3"),
+		_p("4.0.0.0/6"),
+		_p("64.0.0.0/2"),
+		_p("8.0.0.0/5"),
 	}
 
 	for _, n := range bNets {
@@ -435,39 +435,39 @@ func TestOldEqualAllIPv4(t *testing.T) {
 
 	// Constructed a different way
 	cNets := []Prefix{
-		unsafeParsePrefix("255.255.255.240/29"),
-		unsafeParsePrefix("0.0.0.0/1"),
-		unsafeParsePrefix("255.255.128.0/18"),
-		unsafeParsePrefix("255.255.240.0/21"),
-		unsafeParsePrefix("254.0.0.0/8"),
-		unsafeParsePrefix("255.240.0.0/13"),
-		unsafeParsePrefix("255.224.0.0/12"),
-		unsafeParsePrefix("248.0.0.0/6"),
-		unsafeParsePrefix("255.0.0.0/9"),
-		unsafeParsePrefix("255.252.0.0/15"),
-		unsafeParsePrefix("255.255.224.0/20"),
-		unsafeParsePrefix("255.255.255.224/28"),
-		unsafeParsePrefix("255.255.255.0/25"),
-		unsafeParsePrefix("252.0.0.0/7"),
-		unsafeParsePrefix("192.0.0.0/3"),
-		unsafeParsePrefix("255.192.0.0/11"),
-		unsafeParsePrefix("255.255.255.248/30"),
-		unsafeParsePrefix("255.255.252.0/23"),
-		unsafeParsePrefix("255.248.0.0/14"),
-		unsafeParsePrefix("255.255.255.192/27"),
-		unsafeParsePrefix("255.255.0.0/17"),
-		unsafeParsePrefix("255.254.0.0/16"),
-		unsafeParsePrefix("255.255.255.255/32"),
-		unsafeParsePrefix("128.0.0.0/2"),
-		unsafeParsePrefix("255.128.0.0/10"),
-		unsafeParsePrefix("255.255.255.128/26"),
-		unsafeParsePrefix("240.0.0.0/5"),
-		unsafeParsePrefix("255.255.255.252/31"),
-		unsafeParsePrefix("255.255.192.0/19"),
-		unsafeParsePrefix("255.255.254.0/24"),
-		unsafeParsePrefix("255.255.248.0/22"),
-		unsafeParsePrefix("224.0.0.0/4"),
-		unsafeParsePrefix("255.255.255.254/32"),
+		_p("255.255.255.240/29"),
+		_p("0.0.0.0/1"),
+		_p("255.255.128.0/18"),
+		_p("255.255.240.0/21"),
+		_p("254.0.0.0/8"),
+		_p("255.240.0.0/13"),
+		_p("255.224.0.0/12"),
+		_p("248.0.0.0/6"),
+		_p("255.0.0.0/9"),
+		_p("255.252.0.0/15"),
+		_p("255.255.224.0/20"),
+		_p("255.255.255.224/28"),
+		_p("255.255.255.0/25"),
+		_p("252.0.0.0/7"),
+		_p("192.0.0.0/3"),
+		_p("255.192.0.0/11"),
+		_p("255.255.255.248/30"),
+		_p("255.255.252.0/23"),
+		_p("255.248.0.0/14"),
+		_p("255.255.255.192/27"),
+		_p("255.255.0.0/17"),
+		_p("255.254.0.0/16"),
+		_p("255.255.255.255/32"),
+		_p("128.0.0.0/2"),
+		_p("255.128.0.0/10"),
+		_p("255.255.255.128/26"),
+		_p("240.0.0.0/5"),
+		_p("255.255.255.252/31"),
+		_p("255.255.192.0/19"),
+		_p("255.255.254.0/24"),
+		_p("255.255.248.0/22"),
+		_p("224.0.0.0/4"),
+		_p("255.255.255.254/32"),
 	}
 
 	for _, n := range cNets {

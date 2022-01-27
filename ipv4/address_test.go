@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func unsafeParseAddress(str string) Address {
+func _a(str string) Address {
 	addr, err := ParseAddress(str)
 	if err != nil {
 		panic("only use this is happy cases")

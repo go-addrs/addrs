@@ -7,9 +7,9 @@ import (
 )
 
 func TestImmutableMapMap(t *testing.T) {
-	addrOne := unsafeParseAddress("10.224.24.1")
-	addrTwo := unsafeParseAddress("10.224.24.2")
-	addrThree := unsafeParseAddress("10.224.24.3")
+	addrOne := _a("10.224.24.1")
+	addrTwo := _a("10.224.24.2")
+	addrThree := _a("10.224.24.3")
 
 	m := NewMap()
 	err := m.Insert(addrOne, nil)

@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func unsafeParsePrefix(cidr string) Prefix {
+func _p(cidr string) Prefix {
 	prefix, err := ParsePrefix(cidr)
 	if err != nil {
 		panic("only use this is happy cases")
@@ -167,31 +167,31 @@ func TestNetworkHostBroadcast(t *testing.T) {
 	}{
 		{
 			description: "0",
-			prefix:      unsafeParsePrefix("10.224.24.1/0"),
-			network:     unsafeParsePrefix("0.0.0.0/0"),
-			host:        unsafeParsePrefix("10.224.24.1/0"),
-			broadcast:   unsafeParsePrefix("255.255.255.255/0"),
+			prefix:      _p("10.224.24.1/0"),
+			network:     _p("0.0.0.0/0"),
+			host:        _p("10.224.24.1/0"),
+			broadcast:   _p("255.255.255.255/0"),
 		},
 		{
 			description: "8",
-			prefix:      unsafeParsePrefix("10.224.24.1/8"),
-			network:     unsafeParsePrefix("10.0.0.0/8"),
-			host:        unsafeParsePrefix("0.224.24.1/8"),
-			broadcast:   unsafeParsePrefix("10.255.255.255/8"),
+			prefix:      _p("10.224.24.1/8"),
+			network:     _p("10.0.0.0/8"),
+			host:        _p("0.224.24.1/8"),
+			broadcast:   _p("10.255.255.255/8"),
 		},
 		{
 			description: "22",
-			prefix:      unsafeParsePrefix("10.224.24.1/22"),
-			network:     unsafeParsePrefix("10.224.24.0/22"),
-			host:        unsafeParsePrefix("0.0.0.1/22"),
-			broadcast:   unsafeParsePrefix("10.224.27.255/22"),
+			prefix:      _p("10.224.24.1/22"),
+			network:     _p("10.224.24.0/22"),
+			host:        _p("0.0.0.1/22"),
+			broadcast:   _p("10.224.27.255/22"),
 		},
 		{
 			description: "32",
-			prefix:      unsafeParsePrefix("10.224.24.1/32"),
-			network:     unsafeParsePrefix("10.224.24.1/32"),
-			host:        unsafeParsePrefix("0.0.0.0/32"),
-			broadcast:   unsafeParsePrefix("10.224.24.1/32"),
+			prefix:      _p("10.224.24.1/32"),
+			network:     _p("10.224.24.1/32"),
+			host:        _p("0.0.0.0/32"),
+			broadcast:   _p("10.224.24.1/32"),
 		},
 	}
 
@@ -211,33 +211,33 @@ func TestPrefixContainsPrefix(t *testing.T) {
 	}{
 		{
 			description: "all",
-			container:   unsafeParsePrefix("0.0.0.0/0"),
-			containee:   unsafeParsePrefix("1.2.3.4/32"),
+			container:   _p("0.0.0.0/0"),
+			containee:   _p("1.2.3.4/32"),
 		},
 		{
 			description: "same host",
-			container:   unsafeParsePrefix("1.2.3.4/32"),
-			containee:   unsafeParsePrefix("1.2.3.4/32"),
+			container:   _p("1.2.3.4/32"),
+			containee:   _p("1.2.3.4/32"),
 		},
 		{
 			description: "same host route",
-			container:   unsafeParsePrefix("1.2.3.4/32"),
-			containee:   unsafeParsePrefix("1.2.3.4/32"),
+			container:   _p("1.2.3.4/32"),
+			containee:   _p("1.2.3.4/32"),
 		},
 		{
 			description: "same prefix",
-			container:   unsafeParsePrefix("192.168.20.0/24"),
-			containee:   unsafeParsePrefix("192.168.20.0/24"),
+			container:   _p("192.168.20.0/24"),
+			containee:   _p("192.168.20.0/24"),
 		},
 		{
 			description: "contained smaller",
-			container:   unsafeParsePrefix("192.168.0.0/16"),
-			containee:   unsafeParsePrefix("192.168.20.0/24"),
+			container:   _p("192.168.0.0/16"),
+			containee:   _p("192.168.20.0/24"),
 		},
 		{
 			description: "ignore host part",
-			container:   unsafeParsePrefix("1.2.3.4/24"),
-			containee:   unsafeParsePrefix("1.2.3.5/32"),
+			container:   _p("1.2.3.4/24"),
+			containee:   _p("1.2.3.5/32"),
 		},
 	}
 
@@ -261,43 +261,43 @@ func TestPrefixContainsAddress(t *testing.T) {
 	}{
 		{
 			description: "all",
-			container:   unsafeParsePrefix("0.0.0.0/0"),
+			container:   _p("0.0.0.0/0"),
 			containees: []Address{
-				unsafeParseAddress("1.2.3.4"),
-				unsafeParseAddress("192.168.4.2"),
+				_a("1.2.3.4"),
+				_a("192.168.4.2"),
 			},
 		},
 		{
 			description: "host route",
-			container:   unsafeParsePrefix("1.2.3.4/32"),
+			container:   _p("1.2.3.4/32"),
 			containees: []Address{
-				unsafeParseAddress("1.2.3.4"),
+				_a("1.2.3.4"),
 			},
 			not: []Address{
-				unsafeParseAddress("1.2.3.5"),
-				unsafeParseAddress("1.2.3.3"),
+				_a("1.2.3.5"),
+				_a("1.2.3.3"),
 			},
 		},
 		{
 			description: "same prefix",
-			container:   unsafeParsePrefix("192.168.20.0/24"),
+			container:   _p("192.168.20.0/24"),
 			containees: []Address{
-				unsafeParseAddress("192.168.20.0"),
+				_a("192.168.20.0"),
 			},
 		},
 		{
 			description: "contained smaller",
-			container:   unsafeParsePrefix("192.168.0.0/16"),
+			container:   _p("192.168.0.0/16"),
 			containees: []Address{
-				unsafeParseAddress("192.168.20.0"),
+				_a("192.168.20.0"),
 			},
 		},
 		{
 			description: "ignore host part",
-			container:   unsafeParsePrefix("1.2.3.4/24"),
+			container:   _p("1.2.3.4/24"),
 			containees: []Address{
-				unsafeParseAddress("1.2.3.5"),
-				unsafeParseAddress("1.2.3.245"),
+				_a("1.2.3.5"),
+				_a("1.2.3.245"),
 			},
 		},
 	}
@@ -326,17 +326,17 @@ func TestPrefixSize(t *testing.T) {
 	}{
 		{
 			description: "all",
-			prefix:      unsafeParsePrefix("0.0.0.0/0"),
+			prefix:      _p("0.0.0.0/0"),
 			expected:    int64(0x100000000),
 		},
 		{
 			description: "private",
-			prefix:      unsafeParsePrefix("172.16.0.0/12"),
+			prefix:      _p("172.16.0.0/12"),
 			expected:    0x00100000,
 		},
 		{
 			description: "host",
-			prefix:      unsafeParsePrefix("172.16.244.117/32"),
+			prefix:      _p("172.16.244.117/32"),
 			expected:    1,
 		},
 	}
@@ -349,7 +349,7 @@ func TestPrefixSize(t *testing.T) {
 }
 
 func TestPrefixToNetIPNet(t *testing.T) {
-	assert.Equal(t, "10.224.24.1/24", unsafeParsePrefix("10.224.24.1/24").ToNetIPNet().String())
+	assert.Equal(t, "10.224.24.1/24", _p("10.224.24.1/24").ToNetIPNet().String())
 }
 
 func TestPrefixString(t *testing.T) {
@@ -361,13 +361,13 @@ func TestPrefixString(t *testing.T) {
 
 	for _, cidr := range cidrs {
 		t.Run(cidr, func(t *testing.T) {
-			assert.Equal(t, cidr, unsafeParsePrefix(cidr).String())
+			assert.Equal(t, cidr, _p(cidr).String())
 		})
 	}
 }
 
 func TestPrefixUint32(t *testing.T) {
-	address, mask := unsafeParsePrefix("10.224.24.1/24").Uint32()
+	address, mask := _p("10.224.24.1/24").Uint32()
 	assert.Equal(t, uint32(0x0ae01801), address)
 	assert.Equal(t, uint32(0xffffff00), mask)
 }
@@ -384,24 +384,24 @@ func TestPrefixHalves(t *testing.T) {
 		a, b   Prefix
 	}{
 		{
-			prefix: unsafeParsePrefix("0.0.0.0/0"),
-			a:      unsafeParsePrefix("0.0.0.0/1"),
-			b:      unsafeParsePrefix("128.0.0.0/1"),
+			prefix: _p("0.0.0.0/0"),
+			a:      _p("0.0.0.0/1"),
+			b:      _p("128.0.0.0/1"),
 		},
 		{
-			prefix: unsafeParsePrefix("10.224.0.0/16"),
-			a:      unsafeParsePrefix("10.224.0.0/17"),
-			b:      unsafeParsePrefix("10.224.128.0/17"),
+			prefix: _p("10.224.0.0/16"),
+			a:      _p("10.224.0.0/17"),
+			b:      _p("10.224.128.0/17"),
 		},
 		{
-			prefix: unsafeParsePrefix("10.224.24.1/24"),
-			a:      unsafeParsePrefix("10.224.24.0/25"),
-			b:      unsafeParsePrefix("10.224.24.128/25"),
+			prefix: _p("10.224.24.1/24"),
+			a:      _p("10.224.24.0/25"),
+			b:      _p("10.224.24.128/25"),
 		},
 		{
-			prefix: unsafeParsePrefix("10.224.24.117/31"),
-			a:      unsafeParsePrefix("10.224.24.116/32"),
-			b:      unsafeParsePrefix("10.224.24.117/32"),
+			prefix: _p("10.224.24.117/31"),
+			a:      _p("10.224.24.116/32"),
+			b:      _p("10.224.24.117/32"),
 		},
 	}
 
@@ -420,19 +420,19 @@ func TestIterateAddress(t *testing.T) {
 		first, last Address
 	}{
 		{
-			prefix: unsafeParsePrefix("10.224.0.0/24"),
-			first:  unsafeParseAddress("10.224.0.0"),
-			last:   unsafeParseAddress("10.224.0.99"),
+			prefix: _p("10.224.0.0/24"),
+			first:  _a("10.224.0.0"),
+			last:   _a("10.224.0.99"),
 		},
 		{
-			prefix: unsafeParsePrefix("203.0.113.116/31"),
-			first:  unsafeParseAddress("203.0.113.116"),
-			last:   unsafeParseAddress("203.0.113.117"),
+			prefix: _p("203.0.113.116/31"),
+			first:  _a("203.0.113.116"),
+			last:   _a("203.0.113.117"),
 		},
 		{
-			prefix: unsafeParsePrefix("100.64.0.1/32"),
-			first:  unsafeParseAddress("100.64.0.1"),
-			last:   unsafeParseAddress("100.64.0.1"),
+			prefix: _p("100.64.0.1/32"),
+			first:  _a("100.64.0.1"),
+			last:   _a("100.64.0.1"),
 		},
 	}
 
@@ -460,24 +460,24 @@ func TestPrefixSet(t *testing.T) {
 		in, out Address
 	}{
 		{
-			prefix: unsafeParsePrefix("0.0.0.0/1"),
-			in:     unsafeParseAddress("127.0.0.1"),
-			out:    unsafeParseAddress("192.168.0.3"),
+			prefix: _p("0.0.0.0/1"),
+			in:     _a("127.0.0.1"),
+			out:    _a("192.168.0.3"),
 		},
 		{
-			prefix: unsafeParsePrefix("10.224.0.0/16"),
-			in:     unsafeParseAddress("10.224.0.123"),
-			out:    unsafeParseAddress("10.225.128.123"),
+			prefix: _p("10.224.0.0/16"),
+			in:     _a("10.224.0.123"),
+			out:    _a("10.225.128.123"),
 		},
 		{
-			prefix: unsafeParsePrefix("10.224.24.1/24"),
-			in:     unsafeParseAddress("10.224.24.0"),
-			out:    unsafeParseAddress("10.224.25.128"),
+			prefix: _p("10.224.24.1/24"),
+			in:     _a("10.224.24.0"),
+			out:    _a("10.224.25.128"),
 		},
 		{
-			prefix: unsafeParsePrefix("10.224.24.117/31"),
-			in:     unsafeParseAddress("10.224.24.116"),
-			out:    unsafeParseAddress("10.224.24.118"),
+			prefix: _p("10.224.24.117/31"),
+			in:     _a("10.224.24.116"),
+			out:    _a("10.224.24.118"),
 		},
 	}
 
