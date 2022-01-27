@@ -115,41 +115,6 @@ func (me Address) Uint32() uint32 {
 	return me.ui
 }
 
-// IsGlobalUnicast calls the same method from net.IP
-func (me Address) IsGlobalUnicast() bool {
-	return me.ToNetIP().IsGlobalUnicast()
-}
-
-// IsInterfaceLocalMulticast calls the same method from net.IP
-func (me Address) IsInterfaceLocalMulticast() bool {
-	return me.ToNetIP().IsInterfaceLocalMulticast()
-}
-
-// IsLinkLocalMulticast calls the same method from net.IP
-func (me Address) IsLinkLocalMulticast() bool {
-	return me.ToNetIP().IsLinkLocalMulticast()
-}
-
-// IsLinkLocalUnicast calls the same method from net.IP
-func (me Address) IsLinkLocalUnicast() bool {
-	return me.ToNetIP().IsLinkLocalUnicast()
-}
-
-// IsLoopback calls the same method from net.IP
-func (me Address) IsLoopback() bool {
-	return me.ToNetIP().IsLoopback()
-}
-
-// IsMulticast calls the same method from net.IP
-func (me Address) IsMulticast() bool {
-	return me.ToNetIP().IsMulticast()
-}
-
-// IsUnspecified calls the same method from net.IP
-func (me Address) IsUnspecified() bool {
-	return me.ToNetIP().IsUnspecified()
-}
-
 func (me Address) toBytes() (a, b, c, d byte) {
 	a = byte(me.ui & 0xff000000 >> 24)
 	b = byte(me.ui & 0xff0000 >> 16)
