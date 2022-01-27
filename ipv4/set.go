@@ -24,14 +24,9 @@ func (me Set) Immutable() ImmutableSet {
 	}
 }
 
-// Insert inserts the given address into the set
-func (me Set) Insert(addr Address) {
-	me.InsertPrefix(addr.Prefix())
-}
-
-// InsertPrefix inserts the given prefix (all of its addreses) into the set
-func (me Set) InsertPrefix(prefix Prefix) {
-	me.s.trie = me.s.trie.Insert(prefix)
+// Insert inserts the given prefix (all of its addreses) into the set
+func (me Set) Insert(p Prefixish) {
+	me.s.trie = me.s.trie.Insert(p.Prefix())
 }
 
 // InsertSet set inserts all IPs from the given set into this one. It is
@@ -40,16 +35,10 @@ func (me Set) InsertSet(other Set) {
 	me.s.trie = me.s.trie.Union(other.s.trie)
 }
 
-// Remove removes the given address from the set. If the address was not
-// already in the set, it does nothing.
-func (me Set) Remove(addr Address) {
-	me.RemovePrefix(addr.Prefix())
-}
-
-// RemovePrefix removes the given prefix (all of its addreses) from the set. It
+// Remove removes the given prefix (all of its addreses) from the set. It
 // ignores any addresses in the prefix which were not already in the set.
-func (me Set) RemovePrefix(prefix Prefix) {
-	me.s.trie = me.s.trie.Remove(prefix)
+func (me Set) Remove(p Prefixish) {
+	me.s.trie = me.s.trie.Remove(p.Prefix())
 }
 
 // RemoveSet removes the given set (all of its addreses) from the set. It
@@ -64,14 +53,9 @@ func (me Set) Size() int64 {
 	return me.s.Size()
 }
 
-// Contains tests if the given address is in the set
-func (me Set) Contains(a Address) bool {
-	return me.s.Contains(a)
-}
-
-// ContainsPrefix tests if the given prefix is entirely contained in the set
-func (me Set) ContainsPrefix(p Prefix) bool {
-	return me.s.ContainsPrefix(p)
+// Contains tests if the given prefix is entirely contained in the set
+func (me Set) Contains(p Prefixish) bool {
+	return me.s.Contains(p)
 }
 
 // Equal returns true if this set is equal to other

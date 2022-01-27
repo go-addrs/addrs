@@ -46,10 +46,10 @@ func (me Map) Size() int64 {
 }
 
 // Insert inserts the given prefix with the given value into the map
-func (me Map) Insert(prefix Prefixish, value interface{}) error {
+func (me Map) Insert(p Prefixish, value interface{}) error {
 	var err error
 	var newHead *trieNode
-	newHead, err = me.m.trie.Insert(prefix.Prefix(), value)
+	newHead, err = me.m.trie.Insert(p.Prefix(), value)
 	if err != nil {
 		return err
 	}
@@ -60,10 +60,10 @@ func (me Map) Insert(prefix Prefixish, value interface{}) error {
 
 // Update inserts the given prefix with the given value into the map. If the
 // prefix already existed, it updates the associated value in place.
-func (me Map) Update(prefix Prefixish, value interface{}) error {
+func (me Map) Update(p Prefixish, value interface{}) error {
 	var err error
 	var newHead *trieNode
-	newHead, err = me.m.trie.Update(prefix.Prefix(), value)
+	newHead, err = me.m.trie.Update(p.Prefix(), value)
 	if err != nil {
 		return err
 	}
@@ -74,8 +74,8 @@ func (me Map) Update(prefix Prefixish, value interface{}) error {
 
 // InsertOrUpdate inserts the given prefix with the given value into the map.
 // If the prefix already existed, it updates the associated value in place.
-func (me Map) InsertOrUpdate(prefix Prefixish, value interface{}) {
-	me.m.trie = me.m.trie.InsertOrUpdate(prefix.Prefix(), value)
+func (me Map) InsertOrUpdate(p Prefixish, value interface{}) {
+	me.m.trie = me.m.trie.InsertOrUpdate(p.Prefix(), value)
 }
 
 // Get returns the value in the map associated with the given network prefix
@@ -89,9 +89,9 @@ func (me Map) Get(prefix Prefixish) (interface{}, bool) {
 // GetOrInsert returns the value associated with the given prefix if it already
 // exists. If it does not exist, it inserts it with the given value and returns
 // that.
-func (me Map) GetOrInsert(prefix Prefixish, value interface{}) interface{} {
+func (me Map) GetOrInsert(p Prefixish, value interface{}) interface{} {
 	var newHead, node *trieNode
-	newHead, node = me.m.trie.GetOrInsert(prefix.Prefix(), value)
+	newHead, node = me.m.trie.GetOrInsert(p.Prefix(), value)
 	me.m.trie = newHead
 	return node.Data
 }
@@ -106,8 +106,8 @@ func (me Map) LongestMatch(searchPrefix Prefixish) (matched Match, prefix Prefix
 
 // Remove removes the given prefix from the map with its associated value. Only
 // a prefix with an exact match will be removed.
-func (me Map) Remove(prefix Prefixish) (err error) {
-	me.m.trie, err = me.m.trie.Delete(prefix.Prefix())
+func (me Map) Remove(p Prefixish) (err error) {
+	me.m.trie, err = me.m.trie.Delete(p.Prefix())
 	return
 }
 

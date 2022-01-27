@@ -154,22 +154,16 @@ func (me Prefix) Host() Prefix {
 	}
 }
 
-// ContainsPrefix returns true if the given containee is wholly contained
-// within this Prefix. If the two Prefixes are equal, true is returned. The
-// host bits in the address are ignored when testing containership.
-func (me Prefix) ContainsPrefix(other Prefix) bool {
-	if other.length < me.length {
+// Contains returns true if the given containee is wholly contained within this
+// Prefix. If the two Prefixes are equal, true is returned. The host bits in
+// the address are ignored when testing containership.
+func (me Prefix) Contains(other Prefixish) bool {
+	prefix := other.Prefix()
+	if prefix.length < me.length {
 		return false
 	}
 	mask := me.Mask().ui
-	return me.Address.ui&mask == other.Address.ui&mask
-}
-
-// Contains returns true if the given address is found in this Prefix. It is
-// equivalent to calling ContainsPrefix with the given address interpreted as a
-// host route.
-func (me Prefix) Contains(other Address) bool {
-	return me.ContainsPrefix(other.Prefix())
+	return me.Address.ui&mask == prefix.Address.ui&mask
 }
 
 // Size returns the number of addresses in the prefix, including network and

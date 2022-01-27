@@ -71,14 +71,9 @@ func (me ImmutableSet) Equal(other ImmutableSet) bool {
 	return me.trie.Equal(other.trie)
 }
 
-// Contains tests if the given address is in the set
-func (me ImmutableSet) Contains(addr Address) bool {
-	return me.ContainsPrefix(addr.Prefix())
-}
-
-// ContainsPrefix tests if the given prefix is entirely contained in the set
-func (me ImmutableSet) ContainsPrefix(prefix Prefix) bool {
-	return nil != me.trie.Match(prefix)
+// Contains tests if the given prefix is entirely contained in the set
+func (me ImmutableSet) Contains(p Prefixish) bool {
+	return nil != me.trie.Match(p.Prefix())
 }
 
 // Union returns a new set with all addresses from both sets

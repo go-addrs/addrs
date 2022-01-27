@@ -243,11 +243,11 @@ func TestPrefixContainsPrefix(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
-			assert.True(t, tt.container.ContainsPrefix(tt.containee))
+			assert.True(t, tt.container.Contains(tt.containee))
 			if tt.container.Equal(tt.containee) {
-				assert.True(t, tt.containee.ContainsPrefix(tt.container))
+				assert.True(t, tt.containee.Contains(tt.container))
 			} else {
-				assert.False(t, tt.containee.ContainsPrefix(tt.container))
+				assert.False(t, tt.containee.Contains(tt.container))
 			}
 		})
 	}
