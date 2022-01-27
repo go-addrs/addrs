@@ -11,9 +11,17 @@ type Settish interface {
 	ImmutableSet() ImmutableSet
 }
 
-// NewImmutableSet returns an initialized but empty ImmutableSet
-func NewImmutableSet() ImmutableSet {
-	return ImmutableSet{}
+// NewImmutableSet returns an initialized ImmutableSet containing the given
+// initial contents. These can be any combination of Address, ImmutableSet,
+// Prefix, Range, and Set. The result will be the union of all of them.
+func NewImmutableSet(initial ...Settish) ImmutableSet {
+	set := Set{
+		s: &ImmutableSet{},
+	}
+	for _, settish := range initial {
+		set.Insert(settish)
+	}
+	return set.ImmutableSet()
 }
 
 // Set returns a Set initialized with the contents of the immutable set

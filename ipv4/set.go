@@ -10,9 +10,10 @@ type Set struct {
 }
 
 // NewSet returns a new fully-initialized Set
-func NewSet() Set {
+func NewSet(initial ...Settish) Set {
+	im := NewImmutableSet(initial...)
 	return Set{
-		s: &ImmutableSet{},
+		s: &im,
 	}
 }
 
