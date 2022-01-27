@@ -1,28 +1,28 @@
 package ipv4
 
-// ImmutableMap is like a Map except this its contents are frozen
-type ImmutableMap struct {
+// FixedMap is like a Map except this its contents are frozen
+type FixedMap struct {
 	trie *trieNode
 }
 
-// NewImmutableMap returns an initialized but empty ImmutableMap
-func NewImmutableMap() ImmutableMap {
-	return ImmutableMap{}
+// NewFixedMap returns an initialized but empty FixedMap
+func NewFixedMap() FixedMap {
+	return FixedMap{}
 }
 
 // Map returns a mutable map initialized with the contents of this one. Due to
 // the COW nature of the underlying datastructure, it is very cheap to copy
 // these -- effectively a pointer copy.
-func (me ImmutableMap) Map() Map {
+func (me FixedMap) Map() Map {
 	return Map{
-		m: &ImmutableMap{
+		m: &FixedMap{
 			trie: me.trie,
 		},
 	}
 }
 
 // Size returns the number of exact prefixes stored in the map
-func (me ImmutableMap) Size() int64 {
+func (me FixedMap) Size() int64 {
 	return me.trie.NumNodes()
 }
 
@@ -30,7 +30,7 @@ func (me ImmutableMap) Size() int64 {
 // with an exact match: both the IP and the prefix length must match. If an
 // exact match is not found, found is false and value is nil and should be
 // ignored.
-func (me ImmutableMap) Get(prefix Prefixish) (interface{}, bool) {
+func (me FixedMap) Get(prefix Prefixish) (interface{}, bool) {
 	match, _, value := me.LongestMatch(prefix)
 
 	if match == MatchExact {
@@ -44,7 +44,7 @@ func (me ImmutableMap) Get(prefix Prefixish) (interface{}, bool) {
 // prefix using a longest prefix match. If a match is found, it returns a
 // Prefix representing the longest prefix matched. If a match is *not* found,
 // matched is MatchNone and the other fields should be ignored
-func (me ImmutableMap) LongestMatch(searchPrefix Prefixish) (matched Match, prefix Prefix, value interface{}) {
+func (me FixedMap) LongestMatch(searchPrefix Prefixish) (matched Match, prefix Prefix, value interface{}) {
 	sp := searchPrefix.Prefix()
 	var node *trieNode
 	node = me.trie.Match(sp)
@@ -75,7 +75,7 @@ type MapCallback func(Prefix, interface{}) bool
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me ImmutableMap) Iterate(callback MapCallback) bool {
+func (me FixedMap) Iterate(callback MapCallback) bool {
 	return me.trie.Iterate(trieCallback(callback))
 }
 
@@ -95,6 +95,6 @@ func (me ImmutableMap) Iterate(callback MapCallback) bool {
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me ImmutableMap) IterateAggregates(callback MapCallback) bool {
+func (me FixedMap) IterateAggregates(callback MapCallback) bool {
 	return me.trie.Aggregate(trieCallback(callback))
 }

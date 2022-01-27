@@ -6,21 +6,21 @@ package ipv4
 // It supports conversion to/and from Ranges and Prefixes
 type Set struct {
 	// See the note on Map
-	s *ImmutableSet
+	s *FixedSet
 }
 
 // NewSet returns a new fully-initialized Set
 func NewSet(initial ...Settish) Set {
-	im := NewImmutableSet(initial...)
+	im := NewFixedSet(initial...)
 	return Set{
 		s: &im,
 	}
 }
 
-// ImmutableSet returns the immutable set initialized with the contents of this
+// FixedSet returns the immutable set initialized with the contents of this
 // set, effectively freezing it.
-func (me Set) ImmutableSet() ImmutableSet {
-	return ImmutableSet{
+func (me Set) FixedSet() FixedSet {
+	return FixedSet{
 		trie: me.s.trie,
 	}
 }
@@ -28,7 +28,7 @@ func (me Set) ImmutableSet() ImmutableSet {
 // Insert set inserts all IPs from the given set into this one. It is
 // effectively a Union with the other set in place.
 func (me Set) Insert(other Settish) {
-	me.s.trie = me.s.trie.Union(other.ImmutableSet().trie)
+	me.s.trie = me.s.trie.Union(other.FixedSet().trie)
 }
 
 // Remove removes the given prefix (all of its addreses) from the set. It
@@ -41,7 +41,7 @@ func (me Set) Remove(p Prefixish) {
 // ignores any addresses in the other set which were not already in the set. It
 // is effectively a Difference with the other set in place.
 func (me Set) RemoveSet(other Settish) {
-	me.s.trie = me.s.trie.Difference(other.ImmutableSet().trie)
+	me.s.trie = me.s.trie.Difference(other.FixedSet().trie)
 }
 
 // Size returns the number of IP addresses
@@ -56,7 +56,7 @@ func (me Set) Contains(p Prefixish) bool {
 
 // Equal returns true if this set is equal to other
 func (me Set) Equal(other Settish) bool {
-	return me.s.Equal(other.ImmutableSet())
+	return me.s.Equal(other.FixedSet())
 }
 
 // EqualInterface returns true if this set is equal to other

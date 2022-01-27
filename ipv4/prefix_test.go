@@ -483,7 +483,7 @@ func TestPrefixSet(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.prefix.String(), func(t *testing.T) {
-			set := tt.prefix.ImmutableSet()
+			set := tt.prefix.FixedSet()
 			assert.True(t, set.Contains(tt.in))
 			assert.False(t, set.Contains(tt.out))
 		})

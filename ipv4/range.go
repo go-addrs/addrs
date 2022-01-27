@@ -69,9 +69,9 @@ func (me Range) Minus(other Range) []Range {
 	return result
 }
 
-// ImmutableSet returns a Set containing the same ips as this range
-func (me Range) ImmutableSet() ImmutableSet {
-	return ImmutableSet{
+// FixedSet returns a Set containing the same ips as this range
+func (me Range) FixedSet() FixedSet {
+	return FixedSet{
 		trie: setNodeFromRange(me),
 	}
 }

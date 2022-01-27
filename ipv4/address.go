@@ -94,9 +94,9 @@ func (me Address) Prefix() Prefix {
 	return Prefix{me, uint32(addressSize)}
 }
 
-// ImmutableSet returns a set with only this address in it
-func (me Address) ImmutableSet() ImmutableSet {
-	return me.Prefix().ImmutableSet()
+// FixedSet returns a set with only this address in it
+func (me Address) FixedSet() FixedSet {
+	return me.Prefix().FixedSet()
 }
 
 // String returns a string representing the address in dotted-quad notation

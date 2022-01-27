@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestImmutableMapMap(t *testing.T) {
+func TestFixedMapMap(t *testing.T) {
 	addrOne := _a("10.224.24.1")
 	addrTwo := _a("10.224.24.2")
 	addrThree := _a("10.224.24.3")
@@ -15,7 +15,7 @@ func TestImmutableMapMap(t *testing.T) {
 	err := m.Insert(addrOne, nil)
 	assert.Nil(t, err)
 
-	im := m.ImmutableMap()
+	im := m.FixedMap()
 	err = m.Insert(addrTwo, nil)
 	assert.Nil(t, err)
 

@@ -20,14 +20,14 @@ var (
 )
 
 func TestOldSetInit(t *testing.T) {
-	set := ImmutableSet{}
+	set := FixedSet{}
 
 	assert.Equal(t, int64(0), set.Size())
 	assert.True(t, set.isValid())
 }
 
 func TestOldSetContains(t *testing.T) {
-	set := ImmutableSet{}
+	set := FixedSet{}
 
 	assert.Equal(t, int64(0), set.Size())
 	assert.False(t, set.Contains(Eights))

@@ -12,19 +12,19 @@ package ipv4
 // supports efficient aggregation of prefix/value pairs based on equality of
 // values. See the README.md file for a more detailed discussion..
 type Map struct {
-	// This is an abuse of ImmutableMap because it uses its package privileges
+	// This is an abuse of FixedMap because it uses its package privileges
 	// to turn it into a mutable one. This could be refactored to be cleaner
 	// without changing the interface.
 
-	// Be careful not to take an ImmutableMap from outside the package and turn
+	// Be careful not to take an FixedMap from outside the package and turn
 	// it into a mutable one. That would break the contract.
-	m *ImmutableMap
+	m *FixedMap
 }
 
 // NewMap returns a new fully-initialized Map
 func NewMap() Map {
 	return Map{
-		m: &ImmutableMap{},
+		m: &FixedMap{},
 	}
 }
 
@@ -140,11 +140,11 @@ func (me Map) IterateAggregates(callback MapCallback) bool {
 	return me.m.IterateAggregates(callback)
 }
 
-// ImmutableMap returns an immutable snapshot of this Map. Due to the COW
+// FixedMap returns an immutable snapshot of this Map. Due to the COW
 // nature of the underlying datastructure, it is very cheap to create these --
 // effectively a pointer copy.
-func (me Map) ImmutableMap() ImmutableMap {
-	return ImmutableMap{
+func (me Map) FixedMap() FixedMap {
+	return FixedMap{
 		trie: me.m.trie,
 	}
 }

@@ -231,10 +231,10 @@ func (me Prefix) Halves() (a, b Prefix) {
 	return
 }
 
-// ImmutableSet returns the set that includes the same addresses as the prefix
+// FixedSet returns the set that includes the same addresses as the prefix
 // It ignores any bits set in the host part of the address.
-func (me Prefix) ImmutableSet() ImmutableSet {
-	return ImmutableSet{
+func (me Prefix) FixedSet() FixedSet {
+	return FixedSet{
 		trie: setNodeFromPrefix(me),
 	}
 }

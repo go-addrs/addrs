@@ -20,7 +20,7 @@ func TestSetInsertPrefix(t *testing.T) {
 }
 
 func TestSetRemovePrefix(t *testing.T) {
-	s := ImmutableSet{}.Set()
+	s := FixedSet{}.Set()
 	s.Insert(_p("10.0.0.0/16"))
 
 	assert.True(t, s.Contains(_p("10.0.0.0/24")))

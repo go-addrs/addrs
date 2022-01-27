@@ -1,45 +1,45 @@
 package ipv4
 
-// ImmutableSet is like a Set except that its contents are frozen
-type ImmutableSet struct {
+// FixedSet is like a Set except that its contents are frozen
+type FixedSet struct {
 	trie *setNode
 }
 
-// Settish represents something that can be treated as an ImmutableSet. It
-// includes Address, Prefix, Range, Set, and ImmutableSet
+// Settish represents something that can be treated as an FixedSet. It
+// includes Address, Prefix, Range, Set, and FixedSet
 type Settish interface {
-	ImmutableSet() ImmutableSet
+	FixedSet() FixedSet
 }
 
-// NewImmutableSet returns an initialized ImmutableSet containing the given
-// initial contents. These can be any combination of Address, ImmutableSet,
+// NewFixedSet returns an initialized FixedSet containing the given
+// initial contents. These can be any combination of Address, FixedSet,
 // Prefix, Range, and Set. The result will be the union of all of them.
-func NewImmutableSet(initial ...Settish) ImmutableSet {
+func NewFixedSet(initial ...Settish) FixedSet {
 	set := Set{
-		s: &ImmutableSet{},
+		s: &FixedSet{},
 	}
 	for _, settish := range initial {
 		set.Insert(settish)
 	}
-	return set.ImmutableSet()
+	return set.FixedSet()
 }
 
-// Set returns a Set initialized with the contents of the immutable set
-func (me ImmutableSet) Set() Set {
+// Set returns a Set initialized with the contents of the fixed set
+func (me FixedSet) Set() Set {
 	return Set{
-		s: &ImmutableSet{
+		s: &FixedSet{
 			trie: me.trie,
 		},
 	}
 }
 
-// ImmutableSet implements Settish
-func (me ImmutableSet) ImmutableSet() ImmutableSet {
+// FixedSet implements Settish
+func (me FixedSet) FixedSet() FixedSet {
 	return me
 }
 
 // Size returns the number of IP addresses
-func (me ImmutableSet) Size() int64 {
+func (me FixedSet) Size() int64 {
 	return me.trie.Size()
 }
 
@@ -58,7 +58,7 @@ type PrefixCallback func(Prefix) bool
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me ImmutableSet) IteratePrefixes(callback PrefixCallback) bool {
+func (me FixedSet) IteratePrefixes(callback PrefixCallback) bool {
 	return me.trie.Iterate(func(prefix Prefix, data interface{}) bool {
 		return callback(prefix)
 	})
@@ -69,14 +69,14 @@ func (me ImmutableSet) IteratePrefixes(callback PrefixCallback) bool {
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me ImmutableSet) Iterate(callback AddressCallback) bool {
+func (me FixedSet) Iterate(callback AddressCallback) bool {
 	return me.IteratePrefixes(func(prefix Prefix) bool {
 		return prefix.Iterate(callback)
 	})
 }
 
 // EqualInterface returns true if this set is equal to other
-func (me ImmutableSet) EqualInterface(other interface{}) bool {
+func (me FixedSet) EqualInterface(other interface{}) bool {
 	switch o := other.(type) {
 	case Settish:
 		return me.Equal(o)
@@ -86,37 +86,37 @@ func (me ImmutableSet) EqualInterface(other interface{}) bool {
 }
 
 // Equal returns true if this set is equal to other
-func (me ImmutableSet) Equal(other Settish) bool {
-	return me.trie.Equal(other.ImmutableSet().trie)
+func (me FixedSet) Equal(other Settish) bool {
+	return me.trie.Equal(other.FixedSet().trie)
 }
 
 // Contains tests if the given prefix is entirely contained in the set
-func (me ImmutableSet) Contains(p Prefixish) bool {
+func (me FixedSet) Contains(p Prefixish) bool {
 	return nil != me.trie.Match(p.Prefix())
 }
 
 // Union returns a new set with all addresses from both sets
-func (me ImmutableSet) Union(other Settish) ImmutableSet {
-	return ImmutableSet{
-		trie: me.trie.Union(other.ImmutableSet().trie),
+func (me FixedSet) Union(other Settish) FixedSet {
+	return FixedSet{
+		trie: me.trie.Union(other.FixedSet().trie),
 	}
 }
 
 // Intersection returns a new set with all addresses that appear in both sets
-func (me ImmutableSet) Intersection(other Settish) ImmutableSet {
-	return ImmutableSet{
-		trie: me.trie.Intersect(other.ImmutableSet().trie),
+func (me FixedSet) Intersection(other Settish) FixedSet {
+	return FixedSet{
+		trie: me.trie.Intersect(other.FixedSet().trie),
 	}
 }
 
 // Difference returns a new set with all addresses that appear in this set
 // excluding any that also appear in the other set
-func (me ImmutableSet) Difference(other Settish) ImmutableSet {
-	return ImmutableSet{
-		trie: me.trie.Difference(other.ImmutableSet().trie),
+func (me FixedSet) Difference(other Settish) FixedSet {
+	return FixedSet{
+		trie: me.trie.Difference(other.FixedSet().trie),
 	}
 }
 
-func (me ImmutableSet) isValid() bool {
+func (me FixedSet) isValid() bool {
 	return me.trie.isValid()
 }
