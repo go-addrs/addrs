@@ -1,6 +1,7 @@
 package ipv4
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -73,4 +74,39 @@ func TestSetRemoveSet(t *testing.T) {
 	assert.True(t, a.Contains(_p("10.0.0.0/25")))
 	assert.False(t, a.Contains(_p("10.0.0.128/25")))
 	assert.False(t, a.Contains(_p("10.0.0.0/24")))
+}
+
+func TestSetConcurrentModification(t *testing.T) {
+	set := NewSet()
+
+	wg := new(sync.WaitGroup)
+	wg.Add(2)
+
+	var panicked int
+	wrap := func() {
+		if r := recover(); r != nil {
+			panicked++
+		}
+		wg.Done()
+	}
+
+	// Simulate two goroutines modifying at the same time using a channel to
+	// freeze one in the middle and start the other.
+	ch := make(chan bool)
+	go func() {
+		defer wrap()
+		set.mutate(func() (bool, *setNode) {
+			ch <- true
+			return true, set.s.trie.Union(NewFixedSet(_a("10.0.0.1")).trie)
+		})
+	}()
+	go func() {
+		defer wrap()
+		set.mutate(func() (bool, *setNode) {
+			<-ch
+			return true, set.s.trie.Union(NewFixedSet(_a("10.0.0.2")).trie)
+		})
+	}()
+	wg.Wait()
+	assert.Equal(t, 1, panicked)
 }

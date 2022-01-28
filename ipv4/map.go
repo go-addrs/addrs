@@ -1,5 +1,10 @@
 package ipv4
 
+import (
+	"sync/atomic"
+	"unsafe"
+)
+
 // Map is a structure that maps IP prefixes to values. For example, you can
 // insert the following values and they will all exist as distinct prefix/value
 // pairs in the map.
@@ -47,9 +52,19 @@ func (me Map) Size() int64 {
 
 // mutate should be called by any method that modifies the map in any way
 func (me Map) mutate(mutator func() (ok bool, node *trieNode)) {
-	ok, node := mutator()
-	if ok {
-		me.m.trie = node
+	oldNode := me.m.trie
+	ok, newNode := mutator()
+	if ok && oldNode != newNode {
+		swapped := atomic.CompareAndSwapPointer(
+			(*unsafe.Pointer)(
+				unsafe.Pointer(&me.m.trie),
+			),
+			unsafe.Pointer(oldNode),
+			unsafe.Pointer(newNode),
+		)
+		if !swapped {
+			panic("concurrent modification of Map detected")
+		}
 	}
 }
 

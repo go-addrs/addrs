@@ -1,6 +1,7 @@
 package ipv4
 
 import (
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -573,4 +574,42 @@ func TestMapAsReferenceType(t *testing.T) {
 	data, ok := m.Get(_a("10.224.24.1"))
 	assert.True(t, ok)
 	assert.Equal(t, 3, data)
+}
+
+func TestMapConcurrentModification(t *testing.T) {
+	m := NewMap()
+
+	wg := new(sync.WaitGroup)
+	wg.Add(2)
+
+	var panicked int
+	wrap := func() {
+		if r := recover(); r != nil {
+			panicked++
+		}
+		wg.Done()
+	}
+
+	// Simulate two goroutines modifying at the same time using a channel to
+	// freeze one in the middle and start the other.
+	ch := make(chan bool)
+	go func() {
+		defer wrap()
+		m.mutate(func() (bool, *trieNode) {
+			ch <- true
+
+			newHead, _ := m.m.trie.Insert(_p("10.0.0.0/24"), nil)
+			return true, newHead
+		})
+	}()
+	go func() {
+		defer wrap()
+		m.mutate(func() (bool, *trieNode) {
+			<-ch
+			newHead, _ := m.m.trie.Insert(_p("10.0.1.0/24"), nil)
+			return true, newHead
+		})
+	}()
+	wg.Wait()
+	assert.Equal(t, 1, panicked)
 }

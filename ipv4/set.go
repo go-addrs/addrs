@@ -1,5 +1,10 @@
 package ipv4
 
+import (
+	"sync/atomic"
+	"unsafe"
+)
+
 // Set is a structure that efficiently stores sets of IPv4 addresses and
 // supports testing if an address or prefix is contained (entirely) in it. It
 // supports the standard set operations: union, intersection, and difference.
@@ -26,10 +31,20 @@ func (me Set) FixedSet() FixedSet {
 }
 
 // mutate should be called by any method that modifies the set in any way
-func (me Set) mutate(mutator func() (ok bool, node *setNode)) {
-	ok, node := mutator()
-	if ok {
-		me.s.trie = node
+func (me Set) mutate(mutator func() (ok bool, newNode *setNode)) {
+	oldNode := me.s.trie
+	ok, newNode := mutator()
+	if ok && oldNode != newNode {
+		swapped := atomic.CompareAndSwapPointer(
+			(*unsafe.Pointer)(
+				unsafe.Pointer(&me.s.trie),
+			),
+			unsafe.Pointer(oldNode),
+			unsafe.Pointer(newNode),
+		)
+		if !swapped {
+			panic("concurrent modification of Set detected")
+		}
 	}
 }
 
