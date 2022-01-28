@@ -130,11 +130,11 @@ func (me Set) IteratePrefixes(callback PrefixCallback) bool {
 	return me.s.IteratePrefixes(callback)
 }
 
-// Iterate calls `callback` for each address stored in lexographical order. It
-// stops iteration immediately if callback returns false.
+// IterateAddresses calls `callback` for each address stored in lexographical
+// order. It stops iteration immediately if callback returns false.
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me Set) Iterate(callback AddressCallback) bool {
-	return me.s.Iterate(callback)
+func (me Set) IterateAddresses(callback AddressCallback) bool {
+	return me.s.IterateAddresses(callback)
 }

@@ -323,7 +323,7 @@ func TestOldSetAllocateDeallocate(t *testing.T) {
 	assert.Equal(t, int64(65536), s.Size())
 
 	ips := make([]Address, 0, s.Size())
-	s.Iterate(func(ip Address) bool {
+	s.IterateAddresses(func(ip Address) bool {
 		ips = append(ips, ip)
 		return true
 	})
@@ -333,14 +333,14 @@ func TestOldSetAllocateDeallocate(t *testing.T) {
 		allocated.Insert(ips[rand.Intn(65536)])
 	}
 	assert.Equal(t, int64(14500), allocated.Size())
-	allocated.Iterate(func(ip Address) bool {
+	allocated.IterateAddresses(func(ip Address) bool {
 		assert.True(t, s.Contains(ip))
 		return true
 	})
 
 	available := s.Difference(allocated)
 	assert.Equal(t, int64(51036), available.Size())
-	available.Iterate(func(ip Address) bool {
+	available.IterateAddresses(func(ip Address) bool {
 		assert.True(t, s.Contains(ip))
 		assert.False(t, allocated.Contains(ip))
 		return true

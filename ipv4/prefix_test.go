@@ -440,7 +440,7 @@ func TestIterateAddress(t *testing.T) {
 		t.Run(tt.prefix.String(), func(t *testing.T) {
 			count := 0
 			ips := []Address{}
-			tt.prefix.Iterate(func(ip Address) bool {
+			tt.prefix.IterateAddresses(func(ip Address) bool {
 				count++
 				ips = append(ips, ip)
 				if count == 100 {
