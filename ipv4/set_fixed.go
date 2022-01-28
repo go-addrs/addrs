@@ -12,6 +12,12 @@ type SetI interface {
 	FixedSet() FixedSet
 }
 
+var _ SetI = Address{}
+var _ SetI = Prefix{}
+var _ SetI = Range{}
+var _ SetI = Set{}
+var _ SetI = FixedSet{}
+
 // NewFixedSet returns an initialized FixedSet containing the given
 // initial contents. These can be any combination of Address, FixedSet,
 // Prefix, Range, and Set. The result will be the union of all of them.

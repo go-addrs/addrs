@@ -21,6 +21,9 @@ type PrefixI interface {
 	Prefix() Prefix
 }
 
+var _ PrefixI = Address{}
+var _ PrefixI = Prefix{}
+
 // PrefixFromNetIPNet converts the given *net.IPNet to a Prefix
 func PrefixFromNetIPNet(net *net.IPNet) (Prefix, error) {
 	if net == nil {
