@@ -45,37 +45,49 @@ func (me Map) Size() int64 {
 	return me.m.Size()
 }
 
+// mutate should be called by any method that modifies the map in any way
+func (me Map) mutate(mutator func() (ok bool, node *trieNode)) {
+	ok, node := mutator()
+	if ok {
+		me.m.trie = node
+	}
+}
+
 // Insert inserts the given prefix with the given value into the map
 func (me Map) Insert(p PrefixI, value interface{}) error {
 	var err error
-	var newHead *trieNode
-	newHead, err = me.m.trie.Insert(p.Prefix(), value)
-	if err != nil {
-		return err
-	}
-
-	me.m.trie = newHead
-	return nil
+	me.mutate(func() (bool, *trieNode) {
+		var newHead *trieNode
+		newHead, err = me.m.trie.Insert(p.Prefix(), value)
+		if err != nil {
+			return false, nil
+		}
+		return true, newHead
+	})
+	return err
 }
 
 // Update inserts the given prefix with the given value into the map. If the
 // prefix already existed, it updates the associated value in place.
 func (me Map) Update(p PrefixI, value interface{}) error {
 	var err error
-	var newHead *trieNode
-	newHead, err = me.m.trie.Update(p.Prefix(), value)
-	if err != nil {
-		return err
-	}
-
-	me.m.trie = newHead
-	return nil
+	me.mutate(func() (bool, *trieNode) {
+		var newHead *trieNode
+		newHead, err = me.m.trie.Update(p.Prefix(), value)
+		if err != nil {
+			return false, nil
+		}
+		return true, newHead
+	})
+	return err
 }
 
 // InsertOrUpdate inserts the given prefix with the given value into the map.
 // If the prefix already existed, it updates the associated value in place.
 func (me Map) InsertOrUpdate(p PrefixI, value interface{}) {
-	me.m.trie = me.m.trie.InsertOrUpdate(p.Prefix(), value)
+	me.mutate(func() (bool, *trieNode) {
+		return true, me.m.trie.InsertOrUpdate(p.Prefix(), value)
+	})
 }
 
 // Get returns the value in the map associated with the given network prefix
@@ -91,8 +103,10 @@ func (me Map) Get(prefix PrefixI) (interface{}, bool) {
 // that.
 func (me Map) GetOrInsert(p PrefixI, value interface{}) interface{} {
 	var newHead, node *trieNode
-	newHead, node = me.m.trie.GetOrInsert(p.Prefix(), value)
-	me.m.trie = newHead
+	me.mutate(func() (bool, *trieNode) {
+		newHead, node = me.m.trie.GetOrInsert(p.Prefix(), value)
+		return true, newHead
+	})
 	return node.Data
 }
 

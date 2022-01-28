@@ -25,17 +25,29 @@ func (me Set) FixedSet() FixedSet {
 	}
 }
 
-// Insert set inserts all IPs from the given set into this one. It is
+// mutate should be called by any method that modifies the set in any way
+func (me Set) mutate(mutator func() (ok bool, node *setNode)) {
+	ok, node := mutator()
+	if ok {
+		me.s.trie = node
+	}
+}
+
+// Insert inserts all IPs from the given set into this one. It is
 // effectively a Union with the other set in place.
 func (me Set) Insert(other SetI) {
-	me.s.trie = me.s.trie.Union(other.FixedSet().trie)
+	me.mutate(func() (bool, *setNode) {
+		return true, me.s.trie.Union(other.FixedSet().trie)
+	})
 }
 
 // Remove removes the given set (all of its addreses) from the set. It ignores
 // any addresses in the other set which were not already in the set. It is
 // effectively a Difference with the other set in place.
 func (me Set) Remove(other SetI) {
-	me.s.trie = me.s.trie.Difference(other.FixedSet().trie)
+	me.mutate(func() (bool, *setNode) {
+		return true, me.s.trie.Difference(other.FixedSet().trie)
+	})
 }
 
 // Size returns the number of IP addresses
