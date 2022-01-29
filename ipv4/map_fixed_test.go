@@ -12,16 +12,16 @@ func TestFixedMapMap(t *testing.T) {
 	addrThree := _a("10.224.24.3")
 
 	m := NewMap()
-	err := m.Insert(addrOne, nil)
-	assert.Nil(t, err)
+	succeeded := m.Insert(addrOne, nil)
+	assert.True(t, succeeded)
 
 	im := m.FixedMap()
-	err = m.Insert(addrTwo, nil)
-	assert.Nil(t, err)
+	succeeded = m.Insert(addrTwo, nil)
+	assert.True(t, succeeded)
 
 	m2 := im.Map()
-	err = m2.Insert(addrThree, nil)
-	assert.Nil(t, err)
+	succeeded = m2.Insert(addrThree, nil)
+	assert.True(t, succeeded)
 
 	var found bool
 

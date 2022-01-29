@@ -68,8 +68,10 @@ func (me Map) mutate(mutator func() (ok bool, node *trieNode)) {
 	}
 }
 
-// Insert inserts the given prefix with the given value into the map
-func (me Map) Insert(p PrefixI, value interface{}) error {
+// Insert inserts the given prefix with the given value into the map.
+// If an entry with the same prefix already exists, it will not overwrite it
+// and return false.
+func (me Map) Insert(p PrefixI, value interface{}) (succeeded bool) {
 	var err error
 	me.mutate(func() (bool, *trieNode) {
 		var newHead *trieNode
@@ -79,12 +81,13 @@ func (me Map) Insert(p PrefixI, value interface{}) error {
 		}
 		return true, newHead
 	})
-	return err
+	return err == nil
 }
 
 // Update inserts the given prefix with the given value into the map. If the
-// prefix already existed, it updates the associated value in place.
-func (me Map) Update(p PrefixI, value interface{}) error {
+// prefix already existed, it updates the associated value in place and return
+// true. Otherwise, it returns false.
+func (me Map) Update(p PrefixI, value interface{}) (succeeded bool) {
 	var err error
 	me.mutate(func() (bool, *trieNode) {
 		var newHead *trieNode
@@ -94,7 +97,7 @@ func (me Map) Update(p PrefixI, value interface{}) error {
 		}
 		return true, newHead
 	})
-	return err
+	return err == nil
 }
 
 // InsertOrUpdate inserts the given prefix with the given value into the map.
@@ -133,11 +136,14 @@ func (me Map) LongestMatch(searchPrefix PrefixI) (value interface{}, matched Mat
 	return me.m.LongestMatch(searchPrefix)
 }
 
-// Remove removes the given prefix from the map with its associated value. Only
-// a prefix with an exact match will be removed.
-func (me Map) Remove(p PrefixI) (err error) {
+// Remove removes the given prefix from the map with its associated value and
+// returns true if it was found. Only a prefix with an exact match will be
+// removed. If no entry with the given prefix exists, it will do nothing and
+// return false.
+func (me Map) Remove(p PrefixI) (succeeded bool) {
+	var err error
 	me.m.trie, err = me.m.trie.Delete(p.Prefix())
-	return
+	return err == nil
 }
 
 // Iterate invokes the given callback function for each prefix/value pair in
