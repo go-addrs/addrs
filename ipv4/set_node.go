@@ -295,6 +295,6 @@ func (me *setNode) active() bool {
 	return (*trieNode)(me).active()
 }
 
-func (me *setNode) Iterate(callback trieCallback) bool {
-	return (*trieNode)(me).Iterate(callback)
+func (me *setNode) Walk(callback trieCallback) bool {
+	return (*trieNode)(me).Walk(callback)
 }

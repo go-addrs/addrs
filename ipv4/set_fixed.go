@@ -58,27 +58,27 @@ func (me FixedSet) Size() int64 {
 // again).
 type PrefixCallback func(Prefix) bool
 
-// IteratePrefixes calls `callback` for each prefix stored in lexographical
+// WalkPrefixes calls `callback` for each prefix stored in lexographical
 // order. It stops iteration immediately if callback returns false. It always
 // uses the largest prefixes possible so if two prefixes are adjacent and can
 // be combined, they will be.
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me FixedSet) IteratePrefixes(callback PrefixCallback) bool {
-	return me.trie.Iterate(func(prefix Prefix, data interface{}) bool {
+func (me FixedSet) WalkPrefixes(callback PrefixCallback) bool {
+	return me.trie.Walk(func(prefix Prefix, data interface{}) bool {
 		return callback(prefix)
 	})
 }
 
-// IterateAddresses calls `callback` for each address stored in lexographical
+// WalkAddresses calls `callback` for each address stored in lexographical
 // order. It stops iteration immediately if callback returns false.
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me FixedSet) IterateAddresses(callback AddressCallback) bool {
-	return me.IteratePrefixes(func(prefix Prefix) bool {
-		return prefix.IterateAddresses(callback)
+func (me FixedSet) WalkAddresses(callback AddressCallback) bool {
+	return me.WalkPrefixes(func(prefix Prefix) bool {
+		return prefix.WalkAddresses(callback)
 	})
 }
 

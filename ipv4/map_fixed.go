@@ -62,7 +62,7 @@ func (me FixedMap) LongestMatch(searchPrefix PrefixI) (value interface{}, matche
 }
 
 // MapCallback is the signature of the callback functions that can be passed to
-// Iterate or IterateAggregates to handle each prefix/value combination.
+// Walk or WalkAggregates to handle each prefix/value combination.
 //
 // Each invocation of your callback should return true if iteration should
 // continue (as long as another key / value pair exists) or false to stop
@@ -70,16 +70,16 @@ func (me FixedMap) LongestMatch(searchPrefix PrefixI) (value interface{}, matche
 // again).
 type MapCallback func(Prefix, interface{}) bool
 
-// Iterate invokes the given callback function for each prefix/value pair in
+// Walk invokes the given callback function for each prefix/value pair in
 // the map in lexigraphical order.
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me FixedMap) Iterate(callback MapCallback) bool {
-	return me.trie.Iterate(trieCallback(callback))
+func (me FixedMap) Walk(callback MapCallback) bool {
+	return me.trie.Walk(trieCallback(callback))
 }
 
-// IterateAggregates invokes then given callback function for each prefix/value
+// WalkAggregates invokes then given callback function for each prefix/value
 // pair in the map, aggregated by value, in lexigraphical order.
 //
 // If two prefixes map to the same value, one contains the other, and there is
@@ -95,6 +95,6 @@ func (me FixedMap) Iterate(callback MapCallback) bool {
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me FixedMap) IterateAggregates(callback MapCallback) bool {
+func (me FixedMap) WalkAggregates(callback MapCallback) bool {
 	return me.trie.Aggregate(trieCallback(callback))
 }

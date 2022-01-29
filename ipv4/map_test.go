@@ -212,7 +212,7 @@ func TestExample1(t *testing.T) {
 	m.Insert(_p("10.224.24.0/32"), true)
 
 	var result []string
-	m.Iterate(func(prefix Prefix, value interface{}) bool {
+	m.Walk(func(prefix Prefix, value interface{}) bool {
 		result = append(result, prefix.String())
 		return true
 	})
@@ -227,7 +227,7 @@ func TestExample1(t *testing.T) {
 	)
 
 	result = []string{}
-	m.IterateAggregates(func(prefix Prefix, value interface{}) bool {
+	m.WalkAggregates(func(prefix Prefix, value interface{}) bool {
 		result = append(result, prefix.String())
 		return true
 	})
@@ -253,7 +253,7 @@ func TestExample2(t *testing.T) {
 	m.Insert(_p("10.224.24.0/32"), false)
 
 	var result []pair
-	m.Iterate(func(prefix Prefix, value interface{}) bool {
+	m.Walk(func(prefix Prefix, value interface{}) bool {
 		result = append(
 			result,
 			pair{
@@ -275,7 +275,7 @@ func TestExample2(t *testing.T) {
 	)
 
 	result = []pair{}
-	m.IterateAggregates(func(prefix Prefix, value interface{}) bool {
+	m.WalkAggregates(func(prefix Prefix, value interface{}) bool {
 		result = append(
 			result,
 			pair{
@@ -315,7 +315,7 @@ func TestExample3(t *testing.T) {
 	m.Insert(_p("192.68.27.128/25"), nil)
 
 	var result []string
-	m.Iterate(func(prefix Prefix, value interface{}) bool {
+	m.Walk(func(prefix Prefix, value interface{}) bool {
 		result = append(result, prefix.String())
 		return true
 	})
@@ -341,14 +341,14 @@ func TestExample3(t *testing.T) {
 		result,
 	)
 	iterations := 0
-	m.Iterate(func(prefix Prefix, value interface{}) bool {
+	m.Walk(func(prefix Prefix, value interface{}) bool {
 		iterations++
 		return false
 	})
 	assert.Equal(t, 1, iterations)
 
 	result = []string{}
-	m.IterateAggregates(func(prefix Prefix, value interface{}) bool {
+	m.WalkAggregates(func(prefix Prefix, value interface{}) bool {
 		result = append(result, prefix.String())
 		return true
 	})
@@ -363,7 +363,7 @@ func TestExample3(t *testing.T) {
 		result,
 	)
 	iterations = 0
-	m.IterateAggregates(func(prefix Prefix, value interface{}) bool {
+	m.WalkAggregates(func(prefix Prefix, value interface{}) bool {
 		iterations++
 		return false
 	})
@@ -508,14 +508,14 @@ func TestMapRemovePrefix(t *testing.T) {
 	})
 }
 
-func TestMapIterate(t *testing.T) {
+func TestMapWalk(t *testing.T) {
 	m := NewMap()
 
 	insertKey := Prefix{Address{0x0ae01800}, 24}
 	m.Insert(insertKey, true)
 
 	found := false
-	m.Iterate(func(key Prefix, value interface{}) bool {
+	m.Walk(func(key Prefix, value interface{}) bool {
 		assert.Equal(t, insertKey, key)
 		assert.True(t, value.(bool))
 		found = true
@@ -525,7 +525,7 @@ func TestMapIterate(t *testing.T) {
 	assert.True(t, m.m.trie.isValid())
 }
 
-func TestMapIterateAggregates(t *testing.T) {
+func TestMapWalkAggregates(t *testing.T) {
 	m := NewMap()
 
 	insertKey := Prefix{Address{0x0ae01800}, 24}
@@ -535,7 +535,7 @@ func TestMapIterateAggregates(t *testing.T) {
 	m.Insert(secondKey, true)
 
 	found := false
-	m.IterateAggregates(func(key Prefix, value interface{}) bool {
+	m.WalkAggregates(func(key Prefix, value interface{}) bool {
 		assert.Equal(t, insertKey, key)
 		assert.True(t, value.(bool))
 		found = true

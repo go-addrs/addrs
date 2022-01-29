@@ -1263,7 +1263,7 @@ func TestSuccessivelyBetter(t *testing.T) {
 	}
 }
 
-func TestIterate(t *testing.T) {
+func TestWalk(t *testing.T) {
 	keys := []Prefix{
 		Prefix{_a("172.21.0.0"), 20},
 		Prefix{_a("192.68.27.0"), 25},
@@ -1303,21 +1303,21 @@ func TestIterate(t *testing.T) {
 	var trie *trieNode
 	check := func(t *testing.T) {
 		result := []Prefix{}
-		trie.Iterate(func(key Prefix, _ interface{}) bool {
+		trie.Walk(func(key Prefix, _ interface{}) bool {
 			result = append(result, key)
 			return true
 		})
 		assert.Equal(t, golden, result)
 
 		iterations := 0
-		trie.Iterate(func(key Prefix, _ interface{}) bool {
+		trie.Walk(func(key Prefix, _ interface{}) bool {
 			iterations++
 			return false
 		})
 		assert.Equal(t, 1, iterations)
 
 		// Just ensure that iterating with a nil callback doesn't crash
-		trie.Iterate(nil)
+		trie.Walk(nil)
 	}
 
 	t.Run("normal insert", func(t *testing.T) {

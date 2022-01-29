@@ -414,7 +414,7 @@ func TestPrefixHalves(t *testing.T) {
 	}
 }
 
-func TestIterateAddress(t *testing.T) {
+func TestWalkAddress(t *testing.T) {
 	tests := []struct {
 		prefix      Prefix
 		first, last Address
@@ -440,7 +440,7 @@ func TestIterateAddress(t *testing.T) {
 		t.Run(tt.prefix.String(), func(t *testing.T) {
 			count := 0
 			ips := []Address{}
-			tt.prefix.IterateAddresses(func(ip Address) bool {
+			tt.prefix.WalkAddresses(func(ip Address) bool {
 				count++
 				ips = append(ips, ip)
 				if count == 100 {

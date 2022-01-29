@@ -146,16 +146,16 @@ func (me Map) Remove(p PrefixI) (succeeded bool) {
 	return err == nil
 }
 
-// Iterate invokes the given callback function for each prefix/value pair in
+// Walk invokes the given callback function for each prefix/value pair in
 // the map in lexigraphical order.
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me Map) Iterate(callback MapCallback) bool {
-	return me.m.Iterate(callback)
+func (me Map) Walk(callback MapCallback) bool {
+	return me.m.Walk(callback)
 }
 
-// IterateAggregates invokes then given callback function for each prefix/value
+// WalkAggregates invokes then given callback function for each prefix/value
 // pair in the map, aggregated by value, in lexigraphical order.
 //
 // If two prefixes map to the same value, one contains the other, and there is
@@ -171,8 +171,8 @@ func (me Map) Iterate(callback MapCallback) bool {
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me Map) IterateAggregates(callback MapCallback) bool {
-	return me.m.IterateAggregates(callback)
+func (me Map) WalkAggregates(callback MapCallback) bool {
+	return me.m.WalkAggregates(callback)
 }
 
 // FixedMap returns an immutable snapshot of this Map. Due to the COW

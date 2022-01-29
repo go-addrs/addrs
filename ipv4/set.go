@@ -119,22 +119,22 @@ func (me Set) Difference(other SetI) Set {
 	}
 }
 
-// IteratePrefixes calls `callback` for each prefix stored in lexographical
+// WalkPrefixes calls `callback` for each prefix stored in lexographical
 // order. It stops iteration immediately if callback returns false. It always
 // uses the largest prefixes possible so if two prefixes are adjacent and can
 // be combined, they will be.
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me Set) IteratePrefixes(callback PrefixCallback) bool {
-	return me.s.IteratePrefixes(callback)
+func (me Set) WalkPrefixes(callback PrefixCallback) bool {
+	return me.s.WalkPrefixes(callback)
 }
 
-// IterateAddresses calls `callback` for each address stored in lexographical
+// WalkAddresses calls `callback` for each address stored in lexographical
 // order. It stops iteration immediately if callback returns false.
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me Set) IterateAddresses(callback AddressCallback) bool {
-	return me.s.IterateAddresses(callback)
+func (me Set) WalkAddresses(callback AddressCallback) bool {
+	return me.s.WalkAddresses(callback)
 }
