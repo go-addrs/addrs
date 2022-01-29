@@ -94,29 +94,20 @@ func (me Set) isValid() bool {
 	return me.s.isValid()
 }
 
-// Union returns a new set with all addresses from both sets
-func (me Set) Union(other SetI) Set {
-	is := me.s.Union(other)
-	return Set{
-		s: &is,
-	}
+// Union returns a new fixed set with all addresses from both sets
+func (me Set) Union(other SetI) FixedSet {
+	return me.s.Union(other)
 }
 
-// Intersection returns a new set with all addresses that appear in both sets
-func (me Set) Intersection(other SetI) Set {
-	is := me.s.Intersection(other)
-	return Set{
-		s: &is,
-	}
+// Intersection returns a new fixed set with all addresses that appear in both sets
+func (me Set) Intersection(other SetI) FixedSet {
+	return me.s.Intersection(other)
 }
 
-// Difference returns a new set with all addresses that appear in this set
+// Difference returns a new fixed set with all addresses that appear in this set
 // excluding any that also appear in the other set
-func (me Set) Difference(other SetI) Set {
-	is := me.s.Difference(other)
-	return Set{
-		s: &is,
-	}
+func (me Set) Difference(other SetI) FixedSet {
+	return me.s.Difference(other)
 }
 
 // WalkPrefixes calls `callback` for each prefix stored in lexographical
