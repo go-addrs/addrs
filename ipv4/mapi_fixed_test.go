@@ -11,7 +11,7 @@ func TestFixedMapMap(t *testing.T) {
 	addrTwo := _a("10.224.24.2")
 	addrThree := _a("10.224.24.3")
 
-	m := NewMap()
+	m := NewMapI()
 	succeeded := m.Insert(addrOne, nil)
 	assert.True(t, succeeded)
 
