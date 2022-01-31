@@ -83,11 +83,11 @@ func (me Set) Size() int64 {
 }
 
 // Contains tests if the given prefix is entirely contained in the set
-func (me Set) Contains(p PrefixI) bool {
+func (me Set) Contains(s SetI) bool {
 	if me.s == nil {
 		return false
 	}
-	return me.s.Contains(p)
+	return me.s.Contains(s)
 }
 
 // Equal returns true if this set is equal to other

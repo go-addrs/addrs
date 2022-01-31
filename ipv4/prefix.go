@@ -166,13 +166,8 @@ func (me Prefix) Host() Prefix {
 // Contains returns true if the given containee is wholly contained within this
 // Prefix. If the two Prefixes are equal, true is returned. The host bits in
 // the address are ignored when testing containership.
-func (me Prefix) Contains(other PrefixI) bool {
-	prefix := other.Prefix()
-	if prefix.length < me.length {
-		return false
-	}
-	mask := me.Mask().ui
-	return me.addr.ui&mask == prefix.addr.ui&mask
+func (me Prefix) Contains(other SetI) bool {
+	return me.FixedSet().Contains(other)
 }
 
 // Size returns the number of addresses in the prefix, including network and

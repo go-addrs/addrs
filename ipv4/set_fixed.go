@@ -138,8 +138,9 @@ func (me FixedSet) Equal(other SetI) bool {
 }
 
 // Contains tests if the given prefix is entirely contained in the set
-func (me FixedSet) Contains(p PrefixI) bool {
-	return nil != me.trie.Match(p.Prefix())
+func (me FixedSet) Contains(s SetI) bool {
+	// NOTE This is the not the most efficient way to do this
+	return s.FixedSet().Difference(me).Size() == 0
 }
 
 // Union returns a new set with all addresses from both sets

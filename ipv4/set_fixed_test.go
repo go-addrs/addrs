@@ -131,3 +131,22 @@ func TestWalkRanges(t *testing.T) {
 		})
 	}
 }
+
+func TestFixedSetContainsSet(t *testing.T) {
+	s := NewSet()
+	s.Insert(_p("10.0.0.0/16"))
+
+	other := NewSet()
+	other.Insert(_p("10.0.0.0/24"))
+	other.Insert(_p("10.0.30.0/27"))
+	other.Insert(_p("10.0.128.0/17"))
+
+	assert.True(t, s.Contains(other))
+
+	other.Insert(_p("10.224.0.0/24"))
+	other.Insert(_p("10.1.30.0/27"))
+	other.Insert(_p("10.0.128.0/15"))
+
+	assert.False(t, s.Contains(other))
+
+}
