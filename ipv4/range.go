@@ -11,15 +11,16 @@ type Range struct {
 }
 
 // NewRange returns a new range from the given first and last addresses. If
-// first > last, then an empty range is returned
-func NewRange(first, last Address) (Range, error) {
+// first > last, then empty is set to true and the returned range must be
+// ignored. There is no valid instantiation of an empty range.
+func NewRange(first, last Address) (r Range, empty bool) {
 	if last.LessThan(first) {
-		return Range{}, fmt.Errorf("failed to create invalid range: [%s,%s]", first, last)
+		return Range{}, true
 	}
 	return Range{
 		first: first,
 		last:  last,
-	}, nil
+	}, false
 }
 
 // Size returns the number of addresses in the range
@@ -43,10 +44,6 @@ func (me Range) String() string {
 
 // ContainsRange returns true iff this range entirely contains the given other range
 func (me Range) ContainsRange(other Range) bool {
-	if me.Size() == 0 {
-		return other.Size() == 0
-	}
-
 	return me.first.ui <= other.first.ui && other.last.ui <= me.last.ui
 }
 
@@ -67,6 +64,25 @@ func (me Range) Minus(other Range) []Range {
 		})
 	}
 	return result
+}
+
+// Plus returns a slice of ranges resulting from adding the given range to this
+// one. The slice will contain 1 or 2 new ranges depending on how/if they
+// overlap. If two ranges are returned, they will be returned sorted
+// lexigraphically by their first address.
+func (me Range) Plus(other Range) []Range {
+	plus := func(a, b Range) []Range {
+		if a.next().LessThan(b.first) {
+			return []Range{a, b}
+		}
+		return []Range{
+			Range{a.first, MaxAddress(a.last, b.last)},
+		}
+	}
+	if me.first.LessThan(other.first) {
+		return plus(me, other)
+	}
+	return plus(other, me)
 }
 
 // FixedSet returns a Set containing the same ips as this range

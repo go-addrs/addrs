@@ -6,16 +6,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func validRange(t *testing.T, first, last Address) Range {
-	r, err := NewRange(first, last)
-	assert.Nil(t, err)
-	return r
-}
-
 func _r(first, last Address) Range {
-	r, err := NewRange(first, last)
-	if err != nil {
-		panic("only use this is happy cases")
+	r, empty := NewRange(first, last)
+	if empty {
+		panic("only use this is non-empty cases")
 	}
 	return r
 }
@@ -53,27 +47,27 @@ func TestRangeComparable(t *testing.T) {
 }
 
 func TestNewRange(t *testing.T) {
-	rangeError := func(first, last Address) error {
-		_, err := NewRange(first, last)
-		return err
+	rangeEmpty := func(first, last Address) bool {
+		_, empty := NewRange(first, last)
+		return empty
 	}
 
-	assert.Nil(t, rangeError(Address{100}, Address{200}))
-	assert.Nil(t, rangeError(Address{100}, Address{100}))
-	assert.NotNil(t, rangeError(Address{200}, Address{100}))
-	assert.NotNil(t, rangeError(Address{200}, Address{199}))
-	assert.NotNil(t, rangeError(Address{0xffffffff}, Address{0}))
+	assert.False(t, rangeEmpty(Address{100}, Address{200}))
+	assert.False(t, rangeEmpty(Address{100}, Address{100}))
+	assert.True(t, rangeEmpty(Address{200}, Address{100}))
+	assert.True(t, rangeEmpty(Address{200}, Address{199}))
+	assert.True(t, rangeEmpty(Address{0xffffffff}, Address{0}))
 }
 
 func TestRangeString(t *testing.T) {
-	assert.Equal(t, "[18.52.86.120,35.69.103.137]", validRange(t, Address{ui: 0x12345678}, Address{ui: 0x23456789}).String())
+	assert.Equal(t, "[18.52.86.120,35.69.103.137]", _r(Address{ui: 0x12345678}, Address{ui: 0x23456789}).String())
 	assert.Equal(t, "[10.224.24.0,10.224.24.255]", _p("10.224.24.1/24").Range().String())
 }
 
 func TestRangeSize(t *testing.T) {
 	assert.Equal(t, int64(0x100), _p("10.224.24.1/24").Range().Size())
 	assert.Equal(t, int64(0x20000), _p("10.224.24.1/15").Range().Size())
-	assert.Equal(t, int64(0x11111112), validRange(t, Address{ui: 0x12345678}, Address{ui: 0x23456789}).Size())
+	assert.Equal(t, int64(0x11111112), _r(Address{ui: 0x12345678}, Address{ui: 0x23456789}).Size())
 }
 
 func TestRangeFirstLast(t *testing.T) {
@@ -84,7 +78,7 @@ func TestRangeFirstLast(t *testing.T) {
 	}{
 		{
 			description: "unaligned",
-			r:           validRange(t, Address{ui: 0x12345678}, Address{ui: 0x23456789}),
+			r:           _r(Address{ui: 0x12345678}, Address{ui: 0x23456789}),
 			first:       Address{ui: 0x12345678},
 			last:        Address{ui: 0x23456789},
 		},
@@ -115,7 +109,7 @@ func TestRangeContainsRange(t *testing.T) {
 		},
 		{
 			description: "unaligned",
-			a:           validRange(t, Address{ui: 0x12345678}, Address{ui: 0x23456789}),
+			a:           _r(Address{ui: 0x12345678}, Address{ui: 0x23456789}),
 			b:           _p("20.224.26.1/24").Range(),
 		},
 	}
@@ -133,6 +127,7 @@ func TestRangeMinus(t *testing.T) {
 		description string
 		a, b        Range
 		result      []Range
+		backwards   []Range
 	}{
 		{
 			description: "disjoint left",
@@ -140,6 +135,9 @@ func TestRangeMinus(t *testing.T) {
 			b:           _p("10.224.0.0/22").Range(),
 			result: []Range{
 				_p("10.224.24.0/22").Range(),
+			},
+			backwards: []Range{
+				_p("10.224.0.0/22").Range(),
 			},
 		},
 		{
@@ -149,18 +147,28 @@ func TestRangeMinus(t *testing.T) {
 			result: []Range{
 				Range{Address{151}, Address{200}},
 			},
+			backwards: []Range{
+				Range{Address{50}, Address{99}},
+			},
 		},
 		{
 			description: "larger same last",
 			a:           _p("10.224.27.0/24").Range(),
 			b:           _p("10.224.24.0/22").Range(),
 			result:      []Range{},
+			backwards: []Range{
+				_r(_a("10.224.24.0"), _a("10.224.26.255")),
+			},
 		},
 		{
 			description: "overlap all",
 			a:           Range{Address{100}, Address{200}},
 			b:           Range{Address{50}, Address{250}},
 			result:      []Range{},
+			backwards: []Range{
+				Range{Address{50}, Address{99}},
+				Range{Address{201}, Address{250}},
+			},
 		},
 
 		{
@@ -168,22 +176,17 @@ func TestRangeMinus(t *testing.T) {
 			a:           _p("10.224.24.0/22").Range(),
 			b:           _p("10.224.24.0/24").Range(),
 			result: []Range{
-				validRange(t, _a("10.224.25.0"), _a("10.224.27.255")),
+				_r(_a("10.224.25.0"), _a("10.224.27.255")),
 			},
+			backwards: []Range{},
 		},
 		{
 			description: "same range",
 			a:           _p("10.224.24.0/22").Range(),
 			b:           _p("10.224.24.0/22").Range(),
 			result:      []Range{},
+			backwards:   []Range{},
 		},
-		{
-			description: "larger same first",
-			a:           _p("10.224.24.0/24").Range(),
-			b:           _p("10.224.24.0/22").Range(),
-			result:      []Range{},
-		},
-
 		{
 			description: "wholly contained",
 			a:           Range{Address{100}, Address{200}},
@@ -192,14 +195,16 @@ func TestRangeMinus(t *testing.T) {
 				Range{Address{100}, Address{109}},
 				Range{Address{191}, Address{200}},
 			},
+			backwards: []Range{},
 		},
 		{
 			description: "contained same last",
 			a:           _p("10.224.24.0/22").Range(),
 			b:           _p("10.224.27.0/24").Range(),
 			result: []Range{
-				validRange(t, _a("10.224.24.0"), _a("10.224.26.255")),
+				_r(_a("10.224.24.0"), _a("10.224.26.255")),
 			},
+			backwards: []Range{},
 		},
 		{
 			description: "overlap left",
@@ -208,8 +213,43 @@ func TestRangeMinus(t *testing.T) {
 			result: []Range{
 				Range{Address{100}, Address{149}},
 			},
+			backwards: []Range{
+				Range{Address{201}, Address{250}},
+			},
 		},
-
+		{
+			description: "first equals last",
+			a:           Range{Address{100}, Address{200}},
+			b:           Range{Address{200}, Address{250}},
+			result: []Range{
+				Range{Address{100}, Address{199}},
+			},
+			backwards: []Range{
+				Range{Address{201}, Address{250}},
+			},
+		},
+		{
+			description: "first + 1 equals last",
+			a:           Range{Address{100}, Address{200}},
+			b:           Range{Address{199}, Address{250}},
+			result: []Range{
+				Range{Address{100}, Address{198}},
+			},
+			backwards: []Range{
+				Range{Address{201}, Address{250}},
+			},
+		},
+		{
+			description: "first equals last + 1",
+			a:           Range{Address{100}, Address{200}},
+			b:           Range{Address{201}, Address{250}},
+			result: []Range{
+				Range{Address{100}, Address{200}},
+			},
+			backwards: []Range{
+				Range{Address{201}, Address{250}},
+			},
+		},
 		{
 			description: "disjoint right",
 			a:           _p("10.224.24.0/22").Range(),
@@ -217,18 +257,25 @@ func TestRangeMinus(t *testing.T) {
 			result: []Range{
 				_p("10.224.24.0/22").Range(),
 			},
+			backwards: []Range{
+				_p("10.224.200.0/22").Range(),
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
-			result := tt.a.Minus(tt.b)
+			run := func(a, b Range, r []Range) {
+				result := a.Minus(b)
 
-			// A trick to compare the results as arrays
-			var expected, actual [2]Range
-			copy(expected[:], tt.result)
-			copy(actual[:], result)
-			assert.Equal(t, len(tt.result), len(result))
-			assert.Equal(t, expected, actual)
+				// A trick to compare the results as arrays
+				var expected, actual [2]Range
+				copy(expected[:], r)
+				copy(actual[:], result)
+				assert.Equal(t, len(r), len(result))
+				assert.Equal(t, expected, actual)
+			}
+			t.Run("forward", func(t *testing.T) { run(tt.a, tt.b, tt.result) })
+			t.Run("forward", func(t *testing.T) { run(tt.b, tt.a, tt.backwards) })
 		})
 	}
 }
@@ -273,4 +320,73 @@ func TestRangeSet(t *testing.T) {
 	golden.Insert(_p("13.8.222.112/31"))
 
 	assert.True(t, golden.Equal(r.FixedSet()))
+}
+
+func TestRangePlus(t *testing.T) {
+	tests := []struct {
+		description string
+		a, b        Range
+		result      []Range
+	}{
+		{
+			description: "disjoint",
+			a:           _p("10.224.24.0/22").Range(),
+			b:           _p("10.224.0.0/22").Range(),
+			result: []Range{
+				_p("10.224.0.0/22").Range(),
+				_p("10.224.24.0/22").Range(),
+			},
+		}, {
+			description: "adjacent",
+			a:           _p("10.224.4.0/22").Range(),
+			b:           _p("10.224.0.0/22").Range(),
+			result: []Range{
+				_p("10.224.0.0/21").Range(),
+			},
+		}, {
+			description: "containing prefix",
+			a:           _p("10.224.4.0/22").Range(),
+			b:           _p("10.224.0.0/21").Range(),
+			result: []Range{
+				_p("10.224.0.0/21").Range(),
+			},
+		}, {
+			description: "same",
+			a:           _p("10.224.0.0/21").Range(),
+			b:           _p("10.224.0.0/21").Range(),
+			result: []Range{
+				_p("10.224.0.0/21").Range(),
+			},
+		}, {
+			description: "subset",
+			a:           _r(_a("10.224.0.99"), _a("10.224.0.247")),
+			b:           _r(_a("10.224.0.90"), _a("10.224.0.248")),
+			result: []Range{
+				_r(_a("10.224.0.90"), _a("10.224.0.248")),
+			},
+		}, {
+			description: "overlapping",
+			a:           _r(_a("10.224.0.90"), _a("10.224.0.247")),
+			b:           _r(_a("10.224.0.99"), _a("10.224.0.248")),
+			result: []Range{
+				_r(_a("10.224.0.90"), _a("10.224.0.248")),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			run := func(first, second Range) {
+				result := first.Plus(second)
+
+				// A trick to compare the results as arrays
+				var expected, actual [2]Range
+				copy(expected[:], tt.result)
+				copy(actual[:], result)
+				assert.Equal(t, len(tt.result), len(result))
+				assert.Equal(t, expected, actual)
+			}
+			t.Run("forward", func(t *testing.T) { run(tt.a, tt.b) })
+			t.Run("backward", func(t *testing.T) { run(tt.b, tt.a) })
+		})
+	}
 }
