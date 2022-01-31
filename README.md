@@ -23,7 +23,7 @@ both is the wrong thing to do in the long run.
 
 Beyond that, since this package creates an all new IP address type, it tries to
 learn from other examples such as [inet.af/netaddr] to make a type that is
-opaque, immutable, comparable, small, allocation free, usable as a table key, and
+opaque, immutable, comparable, small, allocation free, usable as a map key, and
 is as interoperable as possible.
 
 // TODO address ipv6 scopes
@@ -31,10 +31,10 @@ is as interoperable as possible.
 
 ## IP Tables
 
-This is a data structure that tables IP addresses to arbitrary `interface{}`
-values. It supports the constant-time basic table operations: insert, get, and
-remove. It also supports O(n) iteration over all prefix/value pairs in
-lexigraphical order of prefixes.
+This is a data structure that maps IP addresses to arbitrary `interface{}`
+values. It supports the constant-time basic operations: insert, get, and remove.
+It also supports O(n) iteration over all prefix/value pairs in lexigraphical
+order of prefixes.
 
 When a table is created, you choose whether the prefixes will be IPv4 (4-byte
 representation only) or IPv6 (16-byte) addresses. The two families cannot be
