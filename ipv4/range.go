@@ -14,7 +14,7 @@ type Range struct {
 // first > last, then empty is set to true and the returned range must be
 // ignored. There is no valid instantiation of an empty range.
 func NewRange(first, last Address) (r Range, empty bool) {
-	if last.LessThan(first) {
+	if last.lessThan(first) {
 		return Range{}, true
 	}
 	return Range{
@@ -51,13 +51,13 @@ func (me Range) ContainsRange(other Range) bool {
 // The slice will contain from 0 to 2 new ranges depending on how they overlap
 func (me Range) Minus(other Range) []Range {
 	result := []Range{}
-	if me.first.LessThan(other.first) {
+	if me.first.lessThan(other.first) {
 		result = append(result, Range{
 			me.first,
 			minAddress(other.prev(), me.last),
 		})
 	}
-	if other.last.LessThan(me.last) {
+	if other.last.lessThan(me.last) {
 		result = append(result, Range{
 			maxAddress(me.first, other.next()),
 			me.last,
@@ -72,14 +72,14 @@ func (me Range) Minus(other Range) []Range {
 // lexigraphically by their first address.
 func (me Range) Plus(other Range) []Range {
 	plus := func(a, b Range) []Range {
-		if a.next().LessThan(b.first) {
+		if a.next().lessThan(b.first) {
 			return []Range{a, b}
 		}
 		return []Range{
 			Range{a.first, maxAddress(a.last, b.last)},
 		}
 	}
-	if me.first.LessThan(other.first) {
+	if me.first.lessThan(other.first) {
 		return plus(me, other)
 	}
 	return plus(other, me)

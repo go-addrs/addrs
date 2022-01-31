@@ -51,7 +51,7 @@ func ParseAddress(address string) (Address, error) {
 
 // minAddress returns the address, a or b, which comes first in lexigraphical order
 func minAddress(a, b Address) Address {
-	if a.LessThan(b) {
+	if a.lessThan(b) {
 		return a
 	}
 	return b
@@ -59,7 +59,7 @@ func minAddress(a, b Address) Address {
 
 // maxAddress returns the address, a or b, which comes last in lexigraphical order
 func maxAddress(a, b Address) Address {
-	if a.LessThan(b) {
+	if a.lessThan(b) {
 		return b
 	}
 	return a
@@ -76,9 +76,9 @@ func (me Address) Equal(other Address) bool {
 	return me == other
 }
 
-// LessThan reports whether this IPv4 address comes strictly before `other`
+// lessThan reports whether this IPv4 address comes strictly before `other`
 // lexigraphically.
-func (me Address) LessThan(other Address) bool {
+func (me Address) lessThan(other Address) bool {
 	return me.ui < other.ui
 }
 

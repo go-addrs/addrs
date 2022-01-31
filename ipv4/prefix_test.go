@@ -191,11 +191,11 @@ func TestPrefixLessThan(t *testing.T) {
 		for b := a; b < len(prefixes); b++ {
 			t.Run(fmt.Sprintf("%d < %d", a, b), func(t *testing.T) {
 				if a == b {
-					assert.False(t, prefixes[a].LessThan(prefixes[b]))
+					assert.False(t, prefixes[a].lessThan(prefixes[b]))
 				} else {
-					assert.True(t, prefixes[a].LessThan(prefixes[b]))
+					assert.True(t, prefixes[a].lessThan(prefixes[b]))
 				}
-				assert.False(t, prefixes[b].LessThan(prefixes[a]))
+				assert.False(t, prefixes[b].lessThan(prefixes[a]))
 			})
 		}
 	}

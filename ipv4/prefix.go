@@ -98,15 +98,15 @@ func (me Prefix) Equal(other Prefix) bool {
 	return me == other
 }
 
-// LessThan reports whether this IPv4 prefix comes strictly before `other`
+// lessThan reports whether this IPv4 prefix comes strictly before `other`
 // lexigraphically.
-func (me Prefix) LessThan(other Prefix) bool {
+func (me Prefix) lessThan(other Prefix) bool {
 	meNet, otherNet := me.Network(), other.Network()
 	if !meNet.addr.Equal(otherNet.addr) {
-		return meNet.addr.LessThan(otherNet.addr)
+		return meNet.addr.lessThan(otherNet.addr)
 	}
 	if me.length == other.length {
-		return me.Host().addr.LessThan(other.Host().addr)
+		return me.Host().addr.lessThan(other.Host().addr)
 	}
 	return me.length < other.length
 }
