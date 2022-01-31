@@ -129,13 +129,13 @@ func TestAddressLessThan(t *testing.T) {
 func TestAddressMinAddress(t *testing.T) {
 	first, second := AddressFromUint32(0x0ae01701), AddressFromUint32(0x0ae01801)
 
-	assert.Equal(t, MinAddress(first, second), first)
-	assert.Equal(t, MinAddress(second, first), first)
+	assert.Equal(t, minAddress(first, second), first)
+	assert.Equal(t, minAddress(second, first), first)
 }
 
 func TestAddressMaxAddress(t *testing.T) {
 	first, second := AddressFromUint32(0x0ae01701), AddressFromUint32(0x0ae01801)
 
-	assert.Equal(t, MaxAddress(first, second), second)
-	assert.Equal(t, MaxAddress(second, first), second)
+	assert.Equal(t, maxAddress(first, second), second)
+	assert.Equal(t, maxAddress(second, first), second)
 }
