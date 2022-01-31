@@ -613,3 +613,62 @@ func TestTableConcurrentModification(t *testing.T) {
 	wg.Wait()
 	assert.Equal(t, 1, panicked)
 }
+
+func TestNilTableI(t *testing.T) {
+	var table TableI
+
+	// On-offs
+	assert.Equal(t, int64(0), table.Size())
+	assert.Equal(t, int64(0), table.FixedTable().Size())
+	_, found := table.Get(_a("203.0.113.0"))
+	assert.False(t, found)
+	_, matched, _ := table.LongestMatch(_a("203.0.113.0"))
+	assert.Equal(t, MatchNone, matched)
+
+	// Walk
+	assert.True(t, table.Walk(func(Prefix, interface{}) bool {
+		panic("should not be called")
+	}))
+	assert.True(t, table.WalkAggregates(func(Prefix, interface{}) bool {
+		panic("should not be called")
+	}))
+
+	testPanic := func(run func()) {
+		var panicked bool
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					panicked = true
+				}
+			}()
+			run()
+		}()
+		assert.True(t, panicked)
+	}
+
+	t.Run("insert panics", func(t *testing.T) {
+		testPanic(func() {
+			table.Insert(_a("203.0.113.0"), nil)
+		})
+	})
+	t.Run("update panics", func(t *testing.T) {
+		testPanic(func() {
+			table.Update(_a("203.0.113.0"), nil)
+		})
+	})
+	t.Run("insert or update panics", func(t *testing.T) {
+		testPanic(func() {
+			table.InsertOrUpdate(_a("203.0.113.0"), nil)
+		})
+	})
+	t.Run("get or insert panics", func(t *testing.T) {
+		testPanic(func() {
+			table.GetOrInsert(_a("203.0.113.0"), nil)
+		})
+	})
+	t.Run("remove panics", func(t *testing.T) {
+		testPanic(func() {
+			table.Remove(_a("203.0.113.0"))
+		})
+	})
+}

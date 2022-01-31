@@ -47,6 +47,9 @@ const (
 
 // Size returns the number of exact prefixes stored in the table
 func (me TableI) Size() int64 {
+	if me.m == nil {
+		return 0
+	}
 	return me.m.Size()
 }
 
@@ -72,6 +75,9 @@ func (me TableI) mutate(mutator func() (ok bool, node *trieNode)) {
 // If an entry with the same prefix already exists, it will not overwrite it
 // and return false.
 func (me TableI) Insert(p PrefixI, value interface{}) (succeeded bool) {
+	if me.m == nil {
+		panic("cannot modify an unitialized Set")
+	}
 	var err error
 	me.mutate(func() (bool, *trieNode) {
 		var newHead *trieNode
@@ -88,6 +94,9 @@ func (me TableI) Insert(p PrefixI, value interface{}) (succeeded bool) {
 // prefix already existed, it updates the associated value in place and return
 // true. Otherwise, it returns false.
 func (me TableI) Update(p PrefixI, value interface{}) (succeeded bool) {
+	if me.m == nil {
+		panic("cannot modify an unitialized Set")
+	}
 	var err error
 	me.mutate(func() (bool, *trieNode) {
 		var newHead *trieNode
@@ -103,6 +112,9 @@ func (me TableI) Update(p PrefixI, value interface{}) (succeeded bool) {
 // InsertOrUpdate inserts the given prefix with the given value into the table.
 // If the prefix already existed, it updates the associated value in place.
 func (me TableI) InsertOrUpdate(p PrefixI, value interface{}) {
+	if me.m == nil {
+		panic("cannot modify an unitialized Set")
+	}
 	me.mutate(func() (bool, *trieNode) {
 		return true, me.m.trie.InsertOrUpdate(p.Prefix(), value)
 	})
@@ -113,6 +125,9 @@ func (me TableI) InsertOrUpdate(p PrefixI, value interface{}) {
 // exact match is not found, found is false and value is nil and should be
 // ignored.
 func (me TableI) Get(prefix PrefixI) (interface{}, bool) {
+	if me.m == nil {
+		return nil, false
+	}
 	return me.m.Get(prefix)
 }
 
@@ -120,8 +135,12 @@ func (me TableI) Get(prefix PrefixI) (interface{}, bool) {
 // exists. If it does not exist, it inserts it with the given value and returns
 // that.
 func (me TableI) GetOrInsert(p PrefixI, value interface{}) interface{} {
-	var newHead, node *trieNode
+	if me.m == nil {
+		panic("cannot modify an unitialized Set")
+	}
+	var node *trieNode
 	me.mutate(func() (bool, *trieNode) {
+		var newHead *trieNode
 		newHead, node = me.m.trie.GetOrInsert(p.Prefix(), value)
 		return true, newHead
 	})
@@ -133,6 +152,9 @@ func (me TableI) GetOrInsert(p PrefixI, value interface{}) interface{} {
 // Prefix representing the longest prefix matched. If a match is *not* found,
 // matched is MatchNone and the other fields should be ignored
 func (me TableI) LongestMatch(searchPrefix PrefixI) (value interface{}, matched Match, prefix Prefix) {
+	if me.m == nil {
+		return nil, MatchNone, Prefix{}
+	}
 	return me.m.LongestMatch(searchPrefix)
 }
 
@@ -141,8 +163,15 @@ func (me TableI) LongestMatch(searchPrefix PrefixI) (value interface{}, matched 
 // removed. If no entry with the given prefix exists, it will do nothing and
 // return false.
 func (me TableI) Remove(p PrefixI) (succeeded bool) {
+	if me.m == nil {
+		panic("cannot modify an unitialized Set")
+	}
 	var err error
-	me.m.trie, err = me.m.trie.Delete(p.Prefix())
+	me.mutate(func() (bool, *trieNode) {
+		var newHead *trieNode
+		newHead, err = me.m.trie.Delete(p.Prefix())
+		return true, newHead
+	})
 	return err == nil
 }
 
@@ -152,6 +181,9 @@ func (me TableI) Remove(p PrefixI) (succeeded bool) {
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
 func (me TableI) Walk(callback TableICallback) bool {
+	if me.m == nil {
+		return true
+	}
 	return me.m.Walk(callback)
 }
 
@@ -172,6 +204,9 @@ func (me TableI) Walk(callback TableICallback) bool {
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
 func (me TableI) WalkAggregates(callback TableICallback) bool {
+	if me.m == nil {
+		return true
+	}
 	return me.m.WalkAggregates(callback)
 }
 
@@ -179,6 +214,9 @@ func (me TableI) WalkAggregates(callback TableICallback) bool {
 // nature of the underlying datastructure, it is very cheap to create these --
 // effectively a pointer copy.
 func (me TableI) FixedTable() FixedTableI {
+	if me.m == nil {
+		return FixedTableI{}
+	}
 	return FixedTableI{
 		trie: me.m.trie,
 	}
