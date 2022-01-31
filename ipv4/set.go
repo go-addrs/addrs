@@ -25,6 +25,9 @@ func NewSet(initial ...SetI) Set {
 // FixedSet returns the immutable set initialized with the contents of this
 // set, effectively freezing it.
 func (me Set) FixedSet() FixedSet {
+	if me.s == nil {
+		return FixedSet{}
+	}
 	return FixedSet{
 		trie: me.s.trie,
 	}
@@ -51,6 +54,9 @@ func (me Set) mutate(mutator func() (ok bool, newNode *setNode)) {
 // Insert inserts all IPs from the given set into this one. It is
 // effectively a Union with the other set in place.
 func (me Set) Insert(other SetI) {
+	if me.s == nil {
+		panic("cannot modify an unitialized Set")
+	}
 	me.mutate(func() (bool, *setNode) {
 		return true, me.s.trie.Union(other.FixedSet().trie)
 	})
@@ -60,6 +66,9 @@ func (me Set) Insert(other SetI) {
 // any addresses in the other set which were not already in the set. It is
 // effectively a Difference with the other set in place.
 func (me Set) Remove(other SetI) {
+	if me.s == nil {
+		panic("cannot modify an unitialized Set")
+	}
 	me.mutate(func() (bool, *setNode) {
 		return true, me.s.trie.Difference(other.FixedSet().trie)
 	})
@@ -67,16 +76,25 @@ func (me Set) Remove(other SetI) {
 
 // Size returns the number of IP addresses
 func (me Set) Size() int64 {
+	if me.s == nil {
+		return 0
+	}
 	return me.s.Size()
 }
 
 // Contains tests if the given prefix is entirely contained in the set
 func (me Set) Contains(p PrefixI) bool {
+	if me.s == nil {
+		return false
+	}
 	return me.s.Contains(p)
 }
 
 // Equal returns true if this set is equal to other
 func (me Set) Equal(other SetI) bool {
+	if me.s == nil {
+		return other.FixedSet().Size() == 0
+	}
 	return me.s.Equal(other.FixedSet())
 }
 
@@ -96,17 +114,26 @@ func (me Set) isValid() bool {
 
 // Union returns a new fixed set with all addresses from both sets
 func (me Set) Union(other SetI) FixedSet {
+	if me.s == nil {
+		return other.FixedSet()
+	}
 	return me.s.Union(other)
 }
 
 // Intersection returns a new fixed set with all addresses that appear in both sets
 func (me Set) Intersection(other SetI) FixedSet {
+	if me.s == nil {
+		return FixedSet{}
+	}
 	return me.s.Intersection(other)
 }
 
 // Difference returns a new fixed set with all addresses that appear in this set
 // excluding any that also appear in the other set
 func (me Set) Difference(other SetI) FixedSet {
+	if me.s == nil {
+		return FixedSet{}
+	}
 	return me.s.Difference(other)
 }
 
@@ -118,6 +145,9 @@ func (me Set) Difference(other SetI) FixedSet {
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
 func (me Set) WalkPrefixes(callback PrefixCallback) bool {
+	if me.s == nil {
+		return true
+	}
 	return me.s.WalkPrefixes(callback)
 }
 
@@ -127,5 +157,8 @@ func (me Set) WalkPrefixes(callback PrefixCallback) bool {
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
 func (me Set) WalkAddresses(callback AddressCallback) bool {
+	if me.s == nil {
+		return true
+	}
 	return me.s.WalkAddresses(callback)
 }

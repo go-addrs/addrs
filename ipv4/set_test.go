@@ -110,3 +110,73 @@ func TestSetConcurrentModification(t *testing.T) {
 	wg.Wait()
 	assert.Equal(t, 1, panicked)
 }
+
+func TestNilSet(t *testing.T) {
+	var set Set
+
+	nonEmptySet := _p("203.0.113.0/24").FixedSet().Set()
+
+	// On-offs
+	assert.Equal(t, int64(0), set.Size())
+	assert.Equal(t, int64(0), set.FixedSet().Size())
+	assert.False(t, set.Contains(_p("203.0.113.0/24")))
+
+	// Equal
+	assert.True(t, set.Equal(set))
+	assert.True(t, set.Equal(NewSet()))
+	assert.True(t, NewSet().Equal(set))
+	assert.False(t, set.Equal(nonEmptySet))
+	assert.False(t, nonEmptySet.Equal(set))
+
+	// EqualInterface
+	assert.True(t, set.EqualInterface(set))
+	assert.True(t, set.EqualInterface(NewSet()))
+	assert.True(t, NewSet().EqualInterface(set))
+	assert.False(t, set.EqualInterface(_p("203.0.113.0/24")))
+	assert.False(t, _p("203.0.113.0/24").FixedSet().Set().EqualInterface(set))
+
+	// Union
+	assert.True(t, set.Union(nonEmptySet).Equal(nonEmptySet))
+	assert.True(t, nonEmptySet.Union(set).Equal(nonEmptySet))
+
+	// Intersection
+	assert.Equal(t, int64(0), set.Intersection(nonEmptySet).Size())
+	assert.Equal(t, int64(0), nonEmptySet.Intersection(set).Size())
+
+	// Difference
+	assert.Equal(t, int64(0), set.Difference(nonEmptySet).Size())
+	assert.Equal(t, int64(256), nonEmptySet.Difference(set).Size())
+
+	// Walk
+	assert.True(t, set.WalkPrefixes(func(Prefix) bool {
+		panic("should not be called")
+	}))
+	assert.True(t, set.WalkAddresses(func(Address) bool {
+		panic("should not be called")
+	}))
+
+	t.Run("insert panics", func(t *testing.T) {
+		var panicked bool
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					panicked = true
+				}
+			}()
+			set.Insert(nonEmptySet)
+		}()
+		assert.True(t, panicked)
+	})
+	t.Run("remove panics", func(t *testing.T) {
+		var panicked bool
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					panicked = true
+				}
+			}()
+			set.Remove(nonEmptySet)
+		}()
+		assert.True(t, panicked)
+	})
+}
