@@ -7,6 +7,33 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestMaskComparable(t *testing.T) {
+	tests := []struct {
+		description string
+		a, b        Mask
+		equal       bool
+	}{
+		{
+			description: "equal",
+			a:           Mask{ui: 0xff000000},
+			b:           Mask{ui: 0xff000000},
+			equal:       true,
+		}, {
+			description: "not equal",
+			a:           Mask{ui: 0xff000000},
+			b:           Mask{ui: 0xffffff00},
+			equal:       false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			assert.Equal(t, tt.equal, tt.a == tt.b)
+			assert.Equal(t, !tt.equal, tt.a != tt.b)
+		})
+	}
+}
+
 func TestDefaultMask(t *testing.T) {
 	ip, _ := ParseAddress("192.0.2.1")
 	assert.Equal(t, Mask{ui: 0xffffff00}, ip.DefaultMask())

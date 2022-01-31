@@ -12,6 +12,46 @@ func validRange(t *testing.T, first, last Address) Range {
 	return r
 }
 
+func _r(first, last Address) Range {
+	r, err := NewRange(first, last)
+	if err != nil {
+		panic("only use this is happy cases")
+	}
+	return r
+}
+
+func TestRangeComparable(t *testing.T) {
+	tests := []struct {
+		description string
+		a, b        Range
+		equal       bool
+	}{
+		{
+			description: "equal",
+			a:           _r(_a("10.0.0.0"), _a("10.1.0.0")),
+			b:           _r(_a("10.0.0.0"), _a("10.1.0.0")),
+			equal:       true,
+		}, {
+			description: "first not equal",
+			a:           _r(_a("10.0.0.0"), _a("10.1.0.0")),
+			b:           _r(_a("10.0.0.1"), _a("10.1.0.0")),
+			equal:       false,
+		}, {
+			description: "last not equal",
+			a:           _r(_a("10.0.0.0"), _a("10.0.1.0")),
+			b:           _r(_a("10.0.0.0"), _a("10.1.0.0")),
+			equal:       false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			assert.Equal(t, tt.equal, tt.a == tt.b)
+			assert.Equal(t, !tt.equal, tt.a != tt.b)
+		})
+	}
+}
+
 func TestNewRange(t *testing.T) {
 	rangeError := func(first, last Address) error {
 		_, err := NewRange(first, last)

@@ -33,6 +33,48 @@ func unsafeParseNet(prefix string) *net.IPNet {
 	return ipNet
 }
 
+func TestPrefixComparable(t *testing.T) {
+	tests := []struct {
+		description string
+		a, b        Prefix
+		equal       bool
+	}{
+		{
+			description: "equal",
+			a:           _p("10.0.0.1/24"),
+			b:           _p("10.0.0.1/24"),
+			equal:       true,
+		}, {
+			description: "lengths not equal",
+			a:           _p("10.0.0.1/24"),
+			b:           _p("10.0.0.1/25"),
+			equal:       false,
+		}, {
+			description: "host bits not equal",
+			a:           _p("10.0.0.1/24"),
+			b:           _p("10.0.0.2/24"),
+			equal:       false,
+		}, {
+			description: "prefix bits not equal",
+			a:           _p("10.0.0.1/24"),
+			b:           _p("11.0.0.1/24"),
+			equal:       false,
+		}, {
+			description: "extremes",
+			a:           _p("0.0.0.0/0"),
+			b:           _p("255.255.255.255/32"),
+			equal:       false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			assert.Equal(t, tt.equal, tt.a == tt.b)
+			assert.Equal(t, !tt.equal, tt.a != tt.b)
+		})
+	}
+}
+
 func TestParsePrefix(t *testing.T) {
 	tests := []struct {
 		description string
