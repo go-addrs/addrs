@@ -82,6 +82,46 @@ func (me FixedSet) WalkAddresses(callback AddressCallback) bool {
 	})
 }
 
+// RangeCallback is the type of function passed to walk individual ranges
+//
+// Each invocation of your callback should return true if iteration should
+// continue (as long as another key / value pair exists) or false to stop
+// iterating and return immediately (meaning your callback will not be called
+// again).
+type RangeCallback func(Range) bool
+
+// WalkRanges calls `callback` for each address stored in lexographical
+// order. It stops iteration immediately if callback returns false.
+//
+// It returns false if iteration was stopped due to a callback return false or
+// true if it iterated all items.
+func (me FixedSet) WalkRanges(callback RangeCallback) bool {
+	ranges := []Range{}
+	finished := me.WalkPrefixes(func(p Prefix) bool {
+		if len(ranges) != 0 {
+			ranges = p.Range().Plus(ranges[0])
+		} else {
+			ranges = []Range{p.Range()}
+		}
+		if len(ranges) == 2 {
+			if !callback(ranges[0]) {
+				return false
+			}
+			ranges = ranges[1:]
+		}
+		return true
+	})
+	if !finished {
+		return false
+	}
+	if len(ranges) == 1 {
+		if !callback(ranges[0]) {
+			return false
+		}
+	}
+	return true
+}
+
 // EqualInterface returns true if this set is equal to other
 func (me FixedSet) EqualInterface(other interface{}) bool {
 	switch o := other.(type) {
