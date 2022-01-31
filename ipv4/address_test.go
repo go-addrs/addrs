@@ -16,6 +16,38 @@ func _a(str string) Address {
 	return addr
 }
 
+func TestAddressComparable(t *testing.T) {
+	tests := []struct {
+		description string
+		a, b        Address
+		equal       bool
+	}{
+		{
+			description: "equal",
+			a:           _a("10.0.0.1"),
+			b:           _a("10.0.0.1"),
+			equal:       true,
+		}, {
+			description: "not equal",
+			a:           _a("10.0.0.1"),
+			b:           _a("10.0.0.2"),
+			equal:       false,
+		}, {
+			description: "extremes",
+			a:           _a("0.0.0.0"),
+			b:           _a("255.255.255.255"),
+			equal:       false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			assert.Equal(t, tt.equal, tt.a == tt.b)
+			assert.Equal(t, !tt.equal, tt.a != tt.b)
+		})
+	}
+}
+
 func TestAddressSize(t *testing.T) {
 	assert.Equal(t, 32, Address{}.Size())
 }
