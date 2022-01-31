@@ -57,17 +57,17 @@ func intMax(a, b int) int {
 func contains(shorter, longer Prefix) (matches, exact bool, common, child uint32) {
 	mask := uint32(0xffffffff) << (32 - shorter.length)
 
-	matches = shorter.Address.ui&mask == longer.Address.ui&mask
+	matches = shorter.addr.ui&mask == longer.addr.ui&mask
 	if matches {
 		exact = shorter.length == longer.length
 		common = shorter.length
 	} else {
-		common = uint32(bits.LeadingZeros32(shorter.Address.ui ^ longer.Address.ui))
+		common = uint32(bits.LeadingZeros32(shorter.addr.ui ^ longer.addr.ui))
 	}
 	if !exact {
 		// Whether `longer` goes on the left (0) or right (1)
 		pivotMask := uint32(0x80000000) >> common
-		if longer.Address.ui&pivotMask != 0 {
+		if longer.addr.ui&pivotMask != 0 {
 			child = 1
 		}
 	}
@@ -447,8 +447,8 @@ func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, 
 
 		newNode := &trieNode{
 			Prefix: Prefix{
-				Address: Address{
-					ui: me.Prefix.Address.ui & ^(uint32(0xffffffff) >> common), // zero out bits not in common
+				addr: Address{
+					ui: me.Prefix.addr.ui & ^(uint32(0xffffffff) >> common), // zero out bits not in common
 				},
 				length: common,
 			},

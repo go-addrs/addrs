@@ -112,8 +112,8 @@ func (me *setNode) Union(other *setNode) (rc *setNode) {
 		}
 		newHead := &setNode{
 			Prefix: Prefix{
-				Address: Address{
-					ui: me.Prefix.Address.ui,
+				addr: Address{
+					ui: me.Prefix.addr.ui,
 				},
 				length: me.Prefix.length,
 			},
@@ -144,8 +144,8 @@ func (me *setNode) Union(other *setNode) (rc *setNode) {
 		}
 		newHead := &setNode{
 			Prefix: Prefix{
-				Address: Address{
-					ui: super.Prefix.Address.ui,
+				addr: Address{
+					ui: super.Prefix.addr.ui,
 				},
 				length: super.Prefix.length,
 			},
@@ -169,8 +169,8 @@ func (me *setNode) Union(other *setNode) (rc *setNode) {
 
 		newHead := &setNode{
 			Prefix: Prefix{
-				Address: Address{
-					ui: me.Prefix.Address.ui & ^(uint32(0xffffffff) >> common), // zero out bits not in common
+				addr: Address{
+					ui: me.Prefix.addr.ui & ^(uint32(0xffffffff) >> common), // zero out bits not in common
 				},
 				length: common,
 			},
