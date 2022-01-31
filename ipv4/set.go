@@ -10,7 +10,7 @@ import (
 // supports the standard set operations: union, intersection, and difference.
 // It supports conversion to/and from Ranges and Prefixes
 type Set struct {
-	// See the note on Map
+	// See the note on Table
 	s *FixedSet
 }
 

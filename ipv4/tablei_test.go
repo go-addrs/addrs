@@ -8,7 +8,7 @@ import (
 )
 
 func TestInsertOrUpdate(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	m.Insert(_a("10.224.24.1"), nil)
 	m.InsertOrUpdate(_a("10.224.24.1"), 3)
 	assert.Equal(t, int64(1), m.Size())
@@ -19,7 +19,7 @@ func TestInsertOrUpdate(t *testing.T) {
 }
 
 func TestInsertOrUpdateDuplicate(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	m.InsertOrUpdate(_a("10.224.24.1"), 3)
 	assert.Equal(t, int64(1), m.Size())
 	data, ok := m.Get(_a("10.224.24.1"))
@@ -34,7 +34,7 @@ func TestInsertOrUpdateDuplicate(t *testing.T) {
 }
 
 func TestGetOnlyExactMatch(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	m.Insert(_p("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
 
@@ -43,7 +43,7 @@ func TestGetOnlyExactMatch(t *testing.T) {
 }
 
 func TestGetNotFound(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	succeeded := m.Insert(_a("10.224.24.1"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.Size())
@@ -53,7 +53,7 @@ func TestGetNotFound(t *testing.T) {
 }
 
 func TestGetOrInsertOnlyExactMatch(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	m.Insert(_p("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
 
@@ -63,7 +63,7 @@ func TestGetOrInsertOnlyExactMatch(t *testing.T) {
 }
 
 func TestGetOrInsertNotFound(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	succeeded := m.Insert(_a("10.224.24.1"), 3)
 	assert.True(t, succeeded)
 
@@ -73,7 +73,7 @@ func TestGetOrInsertNotFound(t *testing.T) {
 }
 
 func TestGetOrInsertPrefixOnlyExactMatch(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	m.Insert(_p("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
 
@@ -83,7 +83,7 @@ func TestGetOrInsertPrefixOnlyExactMatch(t *testing.T) {
 }
 
 func TestGetOrInsertPrefixNotFound(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	succeeded := m.Insert(_a("10.224.24.1"), 3)
 	assert.True(t, succeeded)
 
@@ -93,7 +93,7 @@ func TestGetOrInsertPrefixNotFound(t *testing.T) {
 }
 
 func TestMatchLongestPrefixMatch(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	m.Insert(_p("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
 	m.Insert(_p("10.224.0.0/16"), 4)
@@ -106,7 +106,7 @@ func TestMatchLongestPrefixMatch(t *testing.T) {
 }
 
 func TestMatchNotFound(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	succeeded := m.Insert(_a("10.224.24.1"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.Size())
@@ -116,7 +116,7 @@ func TestMatchNotFound(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	succeeded := m.Insert(_a("10.224.24.1"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.Size())
@@ -126,7 +126,7 @@ func TestRemove(t *testing.T) {
 }
 
 func TestRemoveNotFound(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	succeeded := m.Insert(_a("10.224.24.1"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.Size())
@@ -136,7 +136,7 @@ func TestRemoveNotFound(t *testing.T) {
 }
 
 func TestInsert(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	succeeded := m.Insert(_p("10.224.24.0/24"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.Size())
@@ -150,7 +150,7 @@ func TestInsert(t *testing.T) {
 }
 
 func TestInsertOrUpdatePrefix(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	m.Insert(_p("10.224.24.0/24"), nil)
 	m.InsertOrUpdate(_p("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
@@ -164,7 +164,7 @@ func TestInsertOrUpdatePrefix(t *testing.T) {
 }
 
 func TestRemovePrefix(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	succeeded := m.Insert(_p("10.224.24.0/24"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.Size())
@@ -174,7 +174,7 @@ func TestRemovePrefix(t *testing.T) {
 }
 
 func TestRemovePrefixNotFound(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	succeeded := m.Insert(_p("10.224.24.0/24"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.Size())
@@ -184,7 +184,7 @@ func TestRemovePrefixNotFound(t *testing.T) {
 }
 
 func TestMatchPrefixLongestPrefixMatch(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	m.Insert(_p("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
 	m.Insert(_p("10.224.0.0/16"), 4)
@@ -197,7 +197,7 @@ func TestMatchPrefixLongestPrefixMatch(t *testing.T) {
 }
 
 func TestMatchPrefixNotFound(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	m.Insert(_p("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
 
@@ -206,7 +206,7 @@ func TestMatchPrefixNotFound(t *testing.T) {
 }
 
 func TestExample1(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	m.Insert(_p("10.224.24.2/31"), true)
 	m.Insert(_p("10.224.24.1/32"), true)
 	m.Insert(_p("10.224.24.0/32"), true)
@@ -246,7 +246,7 @@ type pair struct {
 }
 
 func TestExample2(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	m.Insert(_p("10.224.24.0/30"), true)
 	m.Insert(_p("10.224.24.0/31"), false)
 	m.Insert(_p("10.224.24.1/32"), true)
@@ -297,7 +297,7 @@ func TestExample2(t *testing.T) {
 }
 
 func TestExample3(t *testing.T) {
-	m := NewMapI()
+	m := NewTableI()
 	m.Insert(_p("172.21.0.0/20"), nil)
 	m.Insert(_p("192.68.27.0/25"), nil)
 	m.Insert(_p("192.168.26.128/25"), nil)
@@ -370,8 +370,8 @@ func TestExample3(t *testing.T) {
 	assert.Equal(t, 1, iterations)
 }
 
-func TestMapInsert(t *testing.T) {
-	m := NewMapI()
+func TestTableInsert(t *testing.T) {
+	m := NewTableI()
 	assert.Equal(t, int64(0), m.m.trie.NumNodes())
 
 	key := Prefix{Address{0x0ae01800}, 24}
@@ -381,8 +381,8 @@ func TestMapInsert(t *testing.T) {
 	assert.True(t, m.m.trie.isValid())
 }
 
-func TestMapInsertOrUpdate(t *testing.T) {
-	m := NewMapI()
+func TestTableInsertOrUpdate(t *testing.T) {
+	m := NewTableI()
 	assert.Equal(t, int64(0), m.m.trie.NumNodes())
 
 	key := Prefix{Address{0x0ae01800}, 24}
@@ -402,8 +402,8 @@ func TestMapInsertOrUpdate(t *testing.T) {
 	assert.True(t, m.m.trie.isValid())
 }
 
-func TestMapUpdate(t *testing.T) {
-	m := NewMapI()
+func TestTableUpdate(t *testing.T) {
+	m := NewTableI()
 	assert.Equal(t, int64(0), m.m.trie.NumNodes())
 
 	key := Prefix{Address{0x0ae01800}, 24}
@@ -427,8 +427,8 @@ func TestMapUpdate(t *testing.T) {
 	assert.True(t, m.m.trie.isValid())
 }
 
-func TestMapGetOrInsert(t *testing.T) {
-	m := NewMapI()
+func TestTableGetOrInsert(t *testing.T) {
+	m := NewTableI()
 	assert.Equal(t, int64(0), m.m.trie.NumNodes())
 
 	key := Prefix{Address{0x0ae01800}, 24}
@@ -438,8 +438,8 @@ func TestMapGetOrInsert(t *testing.T) {
 	assert.True(t, m.m.trie.isValid())
 }
 
-func TestMapMatch(t *testing.T) {
-	m := NewMapI()
+func TestTableMatch(t *testing.T) {
+	m := NewTableI()
 
 	insertKey := Prefix{Address{0x0ae01800}, 24}
 	m.Insert(insertKey, true)
@@ -467,9 +467,9 @@ func TestMapMatch(t *testing.T) {
 	})
 }
 
-func TestMapRemovePrefix(t *testing.T) {
+func TestTableRemovePrefix(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		m := NewMapI()
+		m := NewTableI()
 
 		insertKey := Prefix{Address{0x0ae01800}, 24}
 		m.Insert(insertKey, true)
@@ -482,7 +482,7 @@ func TestMapRemovePrefix(t *testing.T) {
 	})
 
 	t.Run("Not Found", func(t *testing.T) {
-		m := NewMapI()
+		m := NewTableI()
 
 		insertKey := Prefix{Address{0x0ae01800}, 24}
 		m.Insert(insertKey, true)
@@ -495,7 +495,7 @@ func TestMapRemovePrefix(t *testing.T) {
 	})
 
 	t.Run("Not Exact", func(t *testing.T) {
-		m := NewMapI()
+		m := NewTableI()
 
 		insertKey := Prefix{Address{0x0ae01800}, 24}
 		m.Insert(insertKey, true)
@@ -508,8 +508,8 @@ func TestMapRemovePrefix(t *testing.T) {
 	})
 }
 
-func TestMapWalk(t *testing.T) {
-	m := NewMapI()
+func TestTableWalk(t *testing.T) {
+	m := NewTableI()
 
 	insertKey := Prefix{Address{0x0ae01800}, 24}
 	m.Insert(insertKey, true)
@@ -525,8 +525,8 @@ func TestMapWalk(t *testing.T) {
 	assert.True(t, m.m.trie.isValid())
 }
 
-func TestMapWalkAggregates(t *testing.T) {
-	m := NewMapI()
+func TestTableWalkAggregates(t *testing.T) {
+	m := NewTableI()
 
 	insertKey := Prefix{Address{0x0ae01800}, 24}
 	m.Insert(insertKey, true)
@@ -545,9 +545,9 @@ func TestMapWalkAggregates(t *testing.T) {
 	assert.True(t, m.m.trie.isValid())
 }
 
-func TestMapEqual(t *testing.T) {
-	a := NewMapI()
-	b := NewMapI()
+func TestTableEqual(t *testing.T) {
+	a := NewTableI()
+	b := NewTableI()
 
 	assert.True(t, a.m.trie.Equal(b.m.trie))
 	assert.True(t, b.m.trie.Equal(a.m.trie))
@@ -561,11 +561,11 @@ func TestMapEqual(t *testing.T) {
 	assert.False(t, b.m.trie.Equal(a.m.trie))
 }
 
-// Test that Maps, when passed and copied, refer to the same data
-func TestMapAsReferenceType(t *testing.T) {
-	m := NewMapI()
+// Test that Tables, when passed and copied, refer to the same data
+func TestTableAsReferenceType(t *testing.T) {
+	m := NewTableI()
 
-	manipulate := func(m MapI) {
+	manipulate := func(m TableI) {
 		m.Insert(_a("10.224.24.1"), nil)
 		m.InsertOrUpdate(_a("10.224.24.1"), 3)
 	}
@@ -576,8 +576,8 @@ func TestMapAsReferenceType(t *testing.T) {
 	assert.Equal(t, 3, data)
 }
 
-func TestMapConcurrentModification(t *testing.T) {
-	m := NewMapI()
+func TestTableConcurrentModification(t *testing.T) {
+	m := NewTableI()
 
 	wg := new(sync.WaitGroup)
 	wg.Add(2)

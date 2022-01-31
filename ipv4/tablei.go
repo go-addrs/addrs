@@ -5,31 +5,31 @@ import (
 	"unsafe"
 )
 
-// MapI is a structure that maps IP prefixes to values. For example, you can
+// TableI is a structure that tables IP prefixes to values. For example, you can
 // insert the following values and they will all exist as distinct prefix/value
-// pairs in the map.
+// pairs in the table.
 //
 // 10.0.0.0/16 -> 1
 // 10.0.0.0/24 -> 1
 // 10.0.0.0/32 -> 2
 //
-// The map supports looking up values based on a longest prefix match and also
+// The table supports looking up values based on a longest prefix match and also
 // supports efficient aggregation of prefix/value pairs based on equality of
 // values. See the README.md file for a more detailed discussion..
-type MapI struct {
-	// This is an abuse of FixedMapI because it uses its package privileges
+type TableI struct {
+	// This is an abuse of FixedTableI because it uses its package privileges
 	// to turn it into a mutable one. This could be refactored to be cleaner
 	// without changing the interface.
 
-	// Be careful not to take an FixedMapI from outside the package and turn
+	// Be careful not to take an FixedTableI from outside the package and turn
 	// it into a mutable one. That would break the contract.
-	m *FixedMapI
+	m *FixedTableI
 }
 
-// NewMapI returns a new fully-initialized MapI
-func NewMapI() MapI {
-	return MapI{
-		m: &FixedMapI{},
+// NewTableI returns a new fully-initialized TableI
+func NewTableI() TableI {
+	return TableI{
+		m: &FixedTableI{},
 	}
 }
 
@@ -45,13 +45,13 @@ const (
 	MatchExact
 )
 
-// Size returns the number of exact prefixes stored in the map
-func (me MapI) Size() int64 {
+// Size returns the number of exact prefixes stored in the table
+func (me TableI) Size() int64 {
 	return me.m.Size()
 }
 
-// mutate should be called by any method that modifies the map in any way
-func (me MapI) mutate(mutator func() (ok bool, node *trieNode)) {
+// mutate should be called by any method that modifies the table in any way
+func (me TableI) mutate(mutator func() (ok bool, node *trieNode)) {
 	oldNode := me.m.trie
 	ok, newNode := mutator()
 	if ok && oldNode != newNode {
@@ -63,15 +63,15 @@ func (me MapI) mutate(mutator func() (ok bool, node *trieNode)) {
 			unsafe.Pointer(newNode),
 		)
 		if !swapped {
-			panic("concurrent modification of Map detected")
+			panic("concurrent modification of Table detected")
 		}
 	}
 }
 
-// Insert inserts the given prefix with the given value into the map.
+// Insert inserts the given prefix with the given value into the table.
 // If an entry with the same prefix already exists, it will not overwrite it
 // and return false.
-func (me MapI) Insert(p PrefixI, value interface{}) (succeeded bool) {
+func (me TableI) Insert(p PrefixI, value interface{}) (succeeded bool) {
 	var err error
 	me.mutate(func() (bool, *trieNode) {
 		var newHead *trieNode
@@ -84,10 +84,10 @@ func (me MapI) Insert(p PrefixI, value interface{}) (succeeded bool) {
 	return err == nil
 }
 
-// Update inserts the given prefix with the given value into the map. If the
+// Update inserts the given prefix with the given value into the table. If the
 // prefix already existed, it updates the associated value in place and return
 // true. Otherwise, it returns false.
-func (me MapI) Update(p PrefixI, value interface{}) (succeeded bool) {
+func (me TableI) Update(p PrefixI, value interface{}) (succeeded bool) {
 	var err error
 	me.mutate(func() (bool, *trieNode) {
 		var newHead *trieNode
@@ -100,26 +100,26 @@ func (me MapI) Update(p PrefixI, value interface{}) (succeeded bool) {
 	return err == nil
 }
 
-// InsertOrUpdate inserts the given prefix with the given value into the map.
+// InsertOrUpdate inserts the given prefix with the given value into the table.
 // If the prefix already existed, it updates the associated value in place.
-func (me MapI) InsertOrUpdate(p PrefixI, value interface{}) {
+func (me TableI) InsertOrUpdate(p PrefixI, value interface{}) {
 	me.mutate(func() (bool, *trieNode) {
 		return true, me.m.trie.InsertOrUpdate(p.Prefix(), value)
 	})
 }
 
-// Get returns the value in the map associated with the given network prefix
+// Get returns the value in the table associated with the given network prefix
 // with an exact match: both the IP and the prefix length must match. If an
 // exact match is not found, found is false and value is nil and should be
 // ignored.
-func (me MapI) Get(prefix PrefixI) (interface{}, bool) {
+func (me TableI) Get(prefix PrefixI) (interface{}, bool) {
 	return me.m.Get(prefix)
 }
 
 // GetOrInsert returns the value associated with the given prefix if it already
 // exists. If it does not exist, it inserts it with the given value and returns
 // that.
-func (me MapI) GetOrInsert(p PrefixI, value interface{}) interface{} {
+func (me TableI) GetOrInsert(p PrefixI, value interface{}) interface{} {
 	var newHead, node *trieNode
 	me.mutate(func() (bool, *trieNode) {
 		newHead, node = me.m.trie.GetOrInsert(p.Prefix(), value)
@@ -128,37 +128,37 @@ func (me MapI) GetOrInsert(p PrefixI, value interface{}) interface{} {
 	return node.Data
 }
 
-// LongestMatch returns the value in the map associated with the given network
+// LongestMatch returns the value in the table associated with the given network
 // prefix using a longest prefix match. If a match is found, it returns a
 // Prefix representing the longest prefix matched. If a match is *not* found,
 // matched is MatchNone and the other fields should be ignored
-func (me MapI) LongestMatch(searchPrefix PrefixI) (value interface{}, matched Match, prefix Prefix) {
+func (me TableI) LongestMatch(searchPrefix PrefixI) (value interface{}, matched Match, prefix Prefix) {
 	return me.m.LongestMatch(searchPrefix)
 }
 
-// Remove removes the given prefix from the map with its associated value and
+// Remove removes the given prefix from the table with its associated value and
 // returns true if it was found. Only a prefix with an exact match will be
 // removed. If no entry with the given prefix exists, it will do nothing and
 // return false.
-func (me MapI) Remove(p PrefixI) (succeeded bool) {
+func (me TableI) Remove(p PrefixI) (succeeded bool) {
 	var err error
 	me.m.trie, err = me.m.trie.Delete(p.Prefix())
 	return err == nil
 }
 
 // Walk invokes the given callback function for each prefix/value pair in
-// the map in lexigraphical order.
+// the table in lexigraphical order.
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me MapI) Walk(callback MapICallback) bool {
+func (me TableI) Walk(callback TableICallback) bool {
 	return me.m.Walk(callback)
 }
 
 // WalkAggregates invokes then given callback function for each prefix/value
-// pair in the map, aggregated by value, in lexigraphical order.
+// pair in the table, aggregated by value, in lexigraphical order.
 //
-// If two prefixes map to the same value, one contains the other, and there is
+// If two prefixes table to the same value, one contains the other, and there is
 // no intermediate prefix between the two with a different value then only the
 // broader prefix will be visited with the value.
 //
@@ -171,15 +171,15 @@ func (me MapI) Walk(callback MapICallback) bool {
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me MapI) WalkAggregates(callback MapICallback) bool {
+func (me TableI) WalkAggregates(callback TableICallback) bool {
 	return me.m.WalkAggregates(callback)
 }
 
-// FixedMap returns an immutable snapshot of this MapI. Due to the COW
+// FixedTable returns an immutable snapshot of this TableI. Due to the COW
 // nature of the underlying datastructure, it is very cheap to create these --
 // effectively a pointer copy.
-func (me MapI) FixedMap() FixedMapI {
-	return FixedMapI{
+func (me TableI) FixedTable() FixedTableI {
+	return FixedTableI{
 		trie: me.m.trie,
 	}
 }

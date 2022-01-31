@@ -23,22 +23,22 @@ both is the wrong thing to do in the long run.
 
 Beyond that, since this package creates an all new IP address type, it tries to
 learn from other examples such as [inet.af/netaddr] to make a type that is
-opaque, immutable, comparable, small, allocation free, usable as a map key, and
+opaque, immutable, comparable, small, allocation free, usable as a table key, and
 is as interoperable as possible.
 
 // TODO address ipv6 scopes
 // TODO address situations that need to return either IPv4 or IPv6 such as a DNS resolver.
 
-## IP Maps
+## IP Tables
 
-This is a data structure that maps IP addresses to arbitrary `interface{}`
-values. It supports the constant-time basic map operations: insert, get, and
+This is a data structure that tables IP addresses to arbitrary `interface{}`
+values. It supports the constant-time basic table operations: insert, get, and
 remove. It also supports O(n) iteration over all prefix/value pairs in
 lexigraphical order of prefixes.
 
-When a map is created, you choose whether the prefixes will be IPv4 (4-byte
+When a table is created, you choose whether the prefixes will be IPv4 (4-byte
 representation only) or IPv6 (16-byte) addresses. The two families cannot be
-mixed in the same map instance. This is consistent with this library's stance on
+mixed in the same table instance. This is consistent with this library's stance on
 not conflating IPv4 with 16-byte IPv4 in IPv6 representation.
 
 Since this data structure was specifically designed to use IP addresses as keys,
@@ -71,7 +71,7 @@ be iterated after each mutation. Since the aggregated set of prefixes is
 disjoint from the original, either operation could result in both adding and
 removing key/value pairs. This makes it tricky but it should be possible.
 
-As a simple example, consider the following key/value pairs inserted into a map.
+As a simple example, consider the following key/value pairs inserted into a table.
 
 - 10.224.24.2/31 / true
 - 10.224.24.0/32 / true

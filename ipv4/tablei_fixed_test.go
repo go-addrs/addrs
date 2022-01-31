@@ -6,20 +6,20 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestFixedMapMap(t *testing.T) {
+func TestFixedTableTable(t *testing.T) {
 	addrOne := _a("10.224.24.1")
 	addrTwo := _a("10.224.24.2")
 	addrThree := _a("10.224.24.3")
 
-	m := NewMapI()
+	m := NewTableI()
 	succeeded := m.Insert(addrOne, nil)
 	assert.True(t, succeeded)
 
-	im := m.FixedMap()
+	im := m.FixedTable()
 	succeeded = m.Insert(addrTwo, nil)
 	assert.True(t, succeeded)
 
-	m2 := im.Map()
+	m2 := im.Table()
 	succeeded = m2.Insert(addrThree, nil)
 	assert.True(t, succeeded)
 
