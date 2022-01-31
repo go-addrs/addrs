@@ -82,13 +82,6 @@ func (me Address) LessThan(other Address) bool {
 	return me.ui < other.ui
 }
 
-// DefaultMask returns the default IP mask for the given IP. This is a wrapper
-// for net.IP.DefaultMask
-func (me Address) DefaultMask() Mask {
-	ones, _ := me.ToNetIP().DefaultMask().Size()
-	return lengthToMask(ones)
-}
-
 // Prefix returns a host prefix (/32) with the address
 func (me Address) Prefix() Prefix {
 	return Prefix{me, uint32(addressSize)}

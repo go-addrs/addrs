@@ -34,11 +34,6 @@ func TestMaskComparable(t *testing.T) {
 	}
 }
 
-func TestDefaultMask(t *testing.T) {
-	ip, _ := ParseAddress("192.0.2.1")
-	assert.Equal(t, Mask{ui: 0xffffff00}, ip.DefaultMask())
-}
-
 func TestMaskLength(t *testing.T) {
 	assert.Equal(t, 0, Mask{ui: 0x00000000}.Length())
 	assert.Equal(t, 16, Mask{ui: 0xffff0000}.Length())
