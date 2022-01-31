@@ -162,3 +162,15 @@ func (me Set) WalkAddresses(callback AddressCallback) bool {
 	}
 	return me.s.WalkAddresses(callback)
 }
+
+// WalkRanges calls `callback` for each address stored in lexographical
+// order. It stops iteration immediately if callback returns false.
+//
+// It returns false if iteration was stopped due to a callback return false or
+// true if it iterated all items.
+func (me Set) WalkRanges(callback RangeCallback) bool {
+	if me.s == nil {
+		return true
+	}
+	return me.s.WalkRanges(callback)
+}
