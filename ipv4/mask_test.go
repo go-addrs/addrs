@@ -41,8 +41,8 @@ func TestMaskLength(t *testing.T) {
 	assert.Equal(t, 32, Mask{ui: 0xffffffff}.Length())
 }
 
-func unsafeMaskFromBytes(a, b, c, d byte) Mask {
-	m, err := MaskFromBytes(a, b, c, d)
+func _m(length int) Mask {
+	m, err := MaskFromLength(length)
 	if err != nil {
 		panic("only use this is happy cases")
 	}
@@ -72,10 +72,10 @@ func TestMaskFromUint32Error(t *testing.T) {
 }
 
 func TestMaskFromBytes(t *testing.T) {
-	assert.Equal(t, Mask{ui: 0x00000000}, unsafeMaskFromBytes(0x00, 0x00, 0x00, 0x00))
-	assert.Equal(t, Mask{ui: 0xffff0000}, unsafeMaskFromBytes(0xff, 0xff, 0x00, 0x00))
-	assert.Equal(t, Mask{ui: 0xffffffe0}, unsafeMaskFromBytes(0xff, 0xff, 0xff, 0xe0))
-	assert.Equal(t, Mask{ui: 0xffffffff}, unsafeMaskFromBytes(0xff, 0xff, 0xff, 0xff))
+	assert.Equal(t, Mask{ui: 0x00000000}, _m(0))
+	assert.Equal(t, Mask{ui: 0xffff0000}, _m(16))
+	assert.Equal(t, Mask{ui: 0xffffffe0}, _m(27))
+	assert.Equal(t, Mask{ui: 0xffffffff}, _m(32))
 }
 
 func TestMaskFromNetIPMask(t *testing.T) {
@@ -139,4 +139,12 @@ func TestMaskString(t *testing.T) {
 			assert.Equal(t, tt.str, lengthToMask(tt.length).String())
 		})
 	}
+}
+
+func TestMaskAsMapKey(t *testing.T) {
+	m := make(map[Mask]bool)
+
+	m[_m(27)] = true
+
+	assert.True(t, m[_m(27)])
 }

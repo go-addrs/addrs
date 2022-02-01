@@ -390,3 +390,11 @@ func TestRangePlus(t *testing.T) {
 		})
 	}
 }
+
+func TestRangeAsMapKey(t *testing.T) {
+	m := make(map[Range]bool)
+
+	m[_r(_a("203.0.113.0"), _a("203.0.113.127"))] = true
+
+	assert.True(t, m[_r(_a("203.0.113.0"), _a("203.0.113.127"))])
+}

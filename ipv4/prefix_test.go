@@ -531,3 +531,11 @@ func TestPrefixSet(t *testing.T) {
 		})
 	}
 }
+
+func TestPrefixAsMapKey(t *testing.T) {
+	m := make(map[Prefix]bool)
+
+	m[_p("203.0.113.1/32")] = true
+
+	assert.True(t, m[_p("203.0.113.1/32")])
+}

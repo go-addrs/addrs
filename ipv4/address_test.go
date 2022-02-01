@@ -139,3 +139,11 @@ func TestAddressMaxAddress(t *testing.T) {
 	assert.Equal(t, maxAddress(first, second), second)
 	assert.Equal(t, maxAddress(second, first), second)
 }
+
+func TestAddressAsMapKey(t *testing.T) {
+	m := make(map[Address]bool)
+
+	m[_a("203.0.113.1")] = true
+
+	assert.True(t, m[_a("203.0.113.1")])
+}
