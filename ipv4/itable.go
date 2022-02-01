@@ -1,10 +1,5 @@
 package ipv4
 
-import (
-	"sync/atomic"
-	"unsafe"
-)
-
 // ITable is a structure that maps IP prefixes to values. For example, you can
 // insert the following values and they will all exist as distinct prefix/value
 // pairs in the table.
@@ -58,14 +53,7 @@ func (me ITable) mutate(mutator func() (ok bool, node *trieNode)) {
 	oldNode := me.m.trie
 	ok, newNode := mutator()
 	if ok && oldNode != newNode {
-		swapped := atomic.CompareAndSwapPointer(
-			(*unsafe.Pointer)(
-				unsafe.Pointer(&me.m.trie),
-			),
-			unsafe.Pointer(oldNode),
-			unsafe.Pointer(newNode),
-		)
-		if !swapped {
+		if !swapTrieNodePtr(&me.m.trie, oldNode, newNode) {
 			panic("concurrent modification of Table detected")
 		}
 	}
