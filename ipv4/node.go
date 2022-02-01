@@ -562,8 +562,8 @@ type dataContainer struct {
 
 func dataEqual(a, b interface{}) bool {
 	// If the data stored are EqualComparable, compare it using its method.
-	// This is useful to allow mapping to a more complex type (e.g.
-	// netaddr.IPSet)  that is not comparable by normal means.
+	// This is useful to allow mapping to a more complex type (e.g. Set) that
+	// is not comparable by normal means.
 	switch t := a.(type) {
 	case EqualComparable:
 		return t.EqualInterface(b)
