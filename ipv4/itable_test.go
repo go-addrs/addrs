@@ -8,7 +8,7 @@ import (
 )
 
 func TestInsertOrUpdate(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	m.Insert(_a("10.224.24.1"), nil)
 	m.InsertOrUpdate(_a("10.224.24.1"), 3)
 	assert.Equal(t, int64(1), m.Size())
@@ -19,7 +19,7 @@ func TestInsertOrUpdate(t *testing.T) {
 }
 
 func TestInsertOrUpdateDuplicate(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	m.InsertOrUpdate(_a("10.224.24.1"), 3)
 	assert.Equal(t, int64(1), m.Size())
 	data, ok := m.Get(_a("10.224.24.1"))
@@ -34,7 +34,7 @@ func TestInsertOrUpdateDuplicate(t *testing.T) {
 }
 
 func TestGetOnlyExactMatch(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	m.Insert(_p("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
 
@@ -43,7 +43,7 @@ func TestGetOnlyExactMatch(t *testing.T) {
 }
 
 func TestGetNotFound(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	succeeded := m.Insert(_a("10.224.24.1"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.Size())
@@ -53,7 +53,7 @@ func TestGetNotFound(t *testing.T) {
 }
 
 func TestGetOrInsertOnlyExactMatch(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	m.Insert(_p("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
 
@@ -63,7 +63,7 @@ func TestGetOrInsertOnlyExactMatch(t *testing.T) {
 }
 
 func TestGetOrInsertNotFound(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	succeeded := m.Insert(_a("10.224.24.1"), 3)
 	assert.True(t, succeeded)
 
@@ -73,7 +73,7 @@ func TestGetOrInsertNotFound(t *testing.T) {
 }
 
 func TestGetOrInsertPrefixOnlyExactMatch(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	m.Insert(_p("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
 
@@ -83,7 +83,7 @@ func TestGetOrInsertPrefixOnlyExactMatch(t *testing.T) {
 }
 
 func TestGetOrInsertPrefixNotFound(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	succeeded := m.Insert(_a("10.224.24.1"), 3)
 	assert.True(t, succeeded)
 
@@ -93,7 +93,7 @@ func TestGetOrInsertPrefixNotFound(t *testing.T) {
 }
 
 func TestMatchLongestPrefixMatch(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	m.Insert(_p("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
 	m.Insert(_p("10.224.0.0/16"), 4)
@@ -106,7 +106,7 @@ func TestMatchLongestPrefixMatch(t *testing.T) {
 }
 
 func TestMatchNotFound(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	succeeded := m.Insert(_a("10.224.24.1"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.Size())
@@ -116,7 +116,7 @@ func TestMatchNotFound(t *testing.T) {
 }
 
 func TestRemove(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	succeeded := m.Insert(_a("10.224.24.1"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.Size())
@@ -126,7 +126,7 @@ func TestRemove(t *testing.T) {
 }
 
 func TestRemoveNotFound(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	succeeded := m.Insert(_a("10.224.24.1"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.Size())
@@ -136,7 +136,7 @@ func TestRemoveNotFound(t *testing.T) {
 }
 
 func TestInsert(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	succeeded := m.Insert(_p("10.224.24.0/24"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.Size())
@@ -150,7 +150,7 @@ func TestInsert(t *testing.T) {
 }
 
 func TestInsertOrUpdatePrefix(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	m.Insert(_p("10.224.24.0/24"), nil)
 	m.InsertOrUpdate(_p("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
@@ -164,7 +164,7 @@ func TestInsertOrUpdatePrefix(t *testing.T) {
 }
 
 func TestRemovePrefix(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	succeeded := m.Insert(_p("10.224.24.0/24"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.Size())
@@ -174,7 +174,7 @@ func TestRemovePrefix(t *testing.T) {
 }
 
 func TestRemovePrefixNotFound(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	succeeded := m.Insert(_p("10.224.24.0/24"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.Size())
@@ -184,7 +184,7 @@ func TestRemovePrefixNotFound(t *testing.T) {
 }
 
 func TestMatchPrefixLongestPrefixMatch(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	m.Insert(_p("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
 	m.Insert(_p("10.224.0.0/16"), 4)
@@ -197,7 +197,7 @@ func TestMatchPrefixLongestPrefixMatch(t *testing.T) {
 }
 
 func TestMatchPrefixNotFound(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	m.Insert(_p("10.224.24.0/24"), 3)
 	assert.Equal(t, int64(1), m.Size())
 
@@ -206,7 +206,7 @@ func TestMatchPrefixNotFound(t *testing.T) {
 }
 
 func TestExample1(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	m.Insert(_p("10.224.24.2/31"), true)
 	m.Insert(_p("10.224.24.1/32"), true)
 	m.Insert(_p("10.224.24.0/32"), true)
@@ -246,7 +246,7 @@ type pair struct {
 }
 
 func TestExample2(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	m.Insert(_p("10.224.24.0/30"), true)
 	m.Insert(_p("10.224.24.0/31"), false)
 	m.Insert(_p("10.224.24.1/32"), true)
@@ -297,7 +297,7 @@ func TestExample2(t *testing.T) {
 }
 
 func TestExample3(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	m.Insert(_p("172.21.0.0/20"), nil)
 	m.Insert(_p("192.68.27.0/25"), nil)
 	m.Insert(_p("192.168.26.128/25"), nil)
@@ -370,8 +370,8 @@ func TestExample3(t *testing.T) {
 	assert.Equal(t, 1, iterations)
 }
 
-func TestTableInsert(t *testing.T) {
-	m := NewTableI()
+func TestITablensert(t *testing.T) {
+	m := NewITable()
 	assert.Equal(t, int64(0), m.m.trie.NumNodes())
 
 	key := Prefix{Address{0x0ae01800}, 24}
@@ -381,8 +381,8 @@ func TestTableInsert(t *testing.T) {
 	assert.True(t, m.m.trie.isValid())
 }
 
-func TestTableInsertOrUpdate(t *testing.T) {
-	m := NewTableI()
+func TestITablensertOrUpdate(t *testing.T) {
+	m := NewITable()
 	assert.Equal(t, int64(0), m.m.trie.NumNodes())
 
 	key := Prefix{Address{0x0ae01800}, 24}
@@ -403,7 +403,7 @@ func TestTableInsertOrUpdate(t *testing.T) {
 }
 
 func TestTableUpdate(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	assert.Equal(t, int64(0), m.m.trie.NumNodes())
 
 	key := Prefix{Address{0x0ae01800}, 24}
@@ -428,7 +428,7 @@ func TestTableUpdate(t *testing.T) {
 }
 
 func TestTableGetOrInsert(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 	assert.Equal(t, int64(0), m.m.trie.NumNodes())
 
 	key := Prefix{Address{0x0ae01800}, 24}
@@ -439,7 +439,7 @@ func TestTableGetOrInsert(t *testing.T) {
 }
 
 func TestTableMatch(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 
 	insertKey := Prefix{Address{0x0ae01800}, 24}
 	m.Insert(insertKey, true)
@@ -469,7 +469,7 @@ func TestTableMatch(t *testing.T) {
 
 func TestTableRemovePrefix(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		m := NewTableI()
+		m := NewITable()
 
 		insertKey := Prefix{Address{0x0ae01800}, 24}
 		m.Insert(insertKey, true)
@@ -482,7 +482,7 @@ func TestTableRemovePrefix(t *testing.T) {
 	})
 
 	t.Run("Not Found", func(t *testing.T) {
-		m := NewTableI()
+		m := NewITable()
 
 		insertKey := Prefix{Address{0x0ae01800}, 24}
 		m.Insert(insertKey, true)
@@ -495,7 +495,7 @@ func TestTableRemovePrefix(t *testing.T) {
 	})
 
 	t.Run("Not Exact", func(t *testing.T) {
-		m := NewTableI()
+		m := NewITable()
 
 		insertKey := Prefix{Address{0x0ae01800}, 24}
 		m.Insert(insertKey, true)
@@ -509,7 +509,7 @@ func TestTableRemovePrefix(t *testing.T) {
 }
 
 func TestTableWalk(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 
 	insertKey := Prefix{Address{0x0ae01800}, 24}
 	m.Insert(insertKey, true)
@@ -526,7 +526,7 @@ func TestTableWalk(t *testing.T) {
 }
 
 func TestTableWalkAggregates(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 
 	insertKey := Prefix{Address{0x0ae01800}, 24}
 	m.Insert(insertKey, true)
@@ -546,8 +546,8 @@ func TestTableWalkAggregates(t *testing.T) {
 }
 
 func TestTableEqual(t *testing.T) {
-	a := NewTableI()
-	b := NewTableI()
+	a := NewITable()
+	b := NewITable()
 
 	assert.True(t, a.m.trie.Equal(b.m.trie))
 	assert.True(t, b.m.trie.Equal(a.m.trie))
@@ -563,9 +563,9 @@ func TestTableEqual(t *testing.T) {
 
 // Test that Tables, when passed and copied, refer to the same data
 func TestTableAsReferenceType(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 
-	manipulate := func(m TableI) {
+	manipulate := func(m ITable) {
 		m.Insert(_a("10.224.24.1"), nil)
 		m.InsertOrUpdate(_a("10.224.24.1"), 3)
 	}
@@ -577,7 +577,7 @@ func TestTableAsReferenceType(t *testing.T) {
 }
 
 func TestTableConcurrentModification(t *testing.T) {
-	m := NewTableI()
+	m := NewITable()
 
 	wg := new(sync.WaitGroup)
 	wg.Add(2)
@@ -614,8 +614,8 @@ func TestTableConcurrentModification(t *testing.T) {
 	assert.Equal(t, 1, panicked)
 }
 
-func TestNilTableI(t *testing.T) {
-	var table TableI
+func TestNilITable(t *testing.T) {
+	var table ITable
 
 	// On-offs
 	assert.Equal(t, int64(0), table.Size())
