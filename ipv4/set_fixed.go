@@ -6,8 +6,9 @@ type FixedSet struct {
 }
 
 // SetI represents something that can be treated as a FixedSet by calling
-// .FixedSet(). This includes the following types: Address, Prefix, Range, Set,
-// and FixedSet
+// .FixedSet(). It is possible to be nil. In that case, it will be treated as
+// if a default zero-value FixedSet{} were passed which is an empty set.
+// This includes the following types: Address, Prefix, Range, Set, and FixedSet
 type SetI interface {
 	FixedSet() FixedSet
 }
@@ -134,17 +135,26 @@ func (me FixedSet) EqualInterface(other interface{}) bool {
 
 // Equal returns true if this set is equal to other
 func (me FixedSet) Equal(other SetI) bool {
+	if other == nil {
+		other = FixedSet{}
+	}
 	return me.trie.Equal(other.FixedSet().trie)
 }
 
 // Contains tests if the given prefix is entirely contained in the set
 func (me FixedSet) Contains(other SetI) bool {
+	if other == nil {
+		other = FixedSet{}
+	}
 	// NOTE This is the not the most efficient way to do this
 	return other.FixedSet().Difference(me).Size() == 0
 }
 
 // Union returns a new set with all addresses from both sets
 func (me FixedSet) Union(other SetI) FixedSet {
+	if other == nil {
+		other = FixedSet{}
+	}
 	return FixedSet{
 		trie: me.trie.Union(other.FixedSet().trie),
 	}
@@ -152,6 +162,9 @@ func (me FixedSet) Union(other SetI) FixedSet {
 
 // Intersection returns a new set with all addresses that appear in both sets
 func (me FixedSet) Intersection(other SetI) FixedSet {
+	if other == nil {
+		other = FixedSet{}
+	}
 	return FixedSet{
 		trie: me.trie.Intersect(other.FixedSet().trie),
 	}
@@ -160,6 +173,9 @@ func (me FixedSet) Intersection(other SetI) FixedSet {
 // Difference returns a new set with all addresses that appear in this set
 // excluding any that also appear in the other set
 func (me FixedSet) Difference(other SetI) FixedSet {
+	if other == nil {
+		other = FixedSet{}
+	}
 	return FixedSet{
 		trie: me.trie.Difference(other.FixedSet().trie),
 	}

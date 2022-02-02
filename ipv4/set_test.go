@@ -183,3 +183,40 @@ func TestNilSet(t *testing.T) {
 		assert.True(t, panicked)
 	})
 }
+
+func TestSetEqualNil(t *testing.T) {
+	assert.True(t, Set{}.Equal(nil))
+	assert.True(t, FixedSet{}.Equal(nil))
+}
+
+func TestSetContainsNil(t *testing.T) {
+	assert.True(t, Set{}.Contains(nil))
+	assert.True(t, FixedSet{}.Contains(nil))
+}
+
+func TestSetUnionNil(t *testing.T) {
+	assert.Equal(t, int64(0), Set{}.Union(nil).Size())
+	assert.Equal(t, int64(0), FixedSet{}.Union(nil).Size())
+}
+
+func TestSetIntesectionNil(t *testing.T) {
+	assert.Equal(t, int64(0), Set{}.Intersection(nil).Size())
+	assert.Equal(t, int64(0), FixedSet{}.Intersection(nil).Size())
+}
+
+func TestSetDifferenceNil(t *testing.T) {
+	assert.Equal(t, int64(0), Set{}.Difference(nil).Size())
+	assert.Equal(t, int64(0), FixedSet{}.Difference(nil).Size())
+}
+
+func TestSetInsertNil(t *testing.T) {
+	s := NewSet()
+	s.Insert(nil)
+	assert.Equal(t, int64(0), s.Size())
+}
+
+func TestSetRemoveNil(t *testing.T) {
+	s := NewSet()
+	s.Remove(nil)
+	assert.Equal(t, int64(0), s.Size())
+}

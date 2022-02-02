@@ -45,6 +45,9 @@ func (me Set) Insert(other SetI) {
 	if me.s == nil {
 		panic("cannot modify an unitialized Set")
 	}
+	if other == nil {
+		other = FixedSet{}
+	}
 	me.mutate(func() (bool, *setNode) {
 		return true, me.s.trie.Union(other.FixedSet().trie)
 	})
@@ -56,6 +59,9 @@ func (me Set) Insert(other SetI) {
 func (me Set) Remove(other SetI) {
 	if me.s == nil {
 		panic("cannot modify an unitialized Set")
+	}
+	if other == nil {
+		other = FixedSet{}
 	}
 	me.mutate(func() (bool, *setNode) {
 		return true, me.s.trie.Difference(other.FixedSet().trie)
@@ -73,13 +79,16 @@ func (me Set) Size() int64 {
 // Contains tests if the given prefix is entirely contained in the set
 func (me Set) Contains(other SetI) bool {
 	if me.s == nil {
-		return false
+		return other == nil || other.FixedSet().Size() == 0
 	}
 	return me.s.Contains(other)
 }
 
 // Equal returns true if this set is equal to other
 func (me Set) Equal(other SetI) bool {
+	if other == nil {
+		other = FixedSet{}
+	}
 	if me.s == nil {
 		return other.FixedSet().Size() == 0
 	}
@@ -102,6 +111,9 @@ func (me Set) isValid() bool {
 
 // Union returns a new fixed set with all addresses from both sets
 func (me Set) Union(other SetI) FixedSet {
+	if other == nil {
+		other = FixedSet{}
+	}
 	if me.s == nil {
 		return other.FixedSet()
 	}
@@ -110,6 +122,9 @@ func (me Set) Union(other SetI) FixedSet {
 
 // Intersection returns a new fixed set with all addresses that appear in both sets
 func (me Set) Intersection(other SetI) FixedSet {
+	if other == nil {
+		other = FixedSet{}
+	}
 	if me.s == nil {
 		return FixedSet{}
 	}
@@ -119,6 +134,9 @@ func (me Set) Intersection(other SetI) FixedSet {
 // Difference returns a new fixed set with all addresses that appear in this set
 // excluding any that also appear in the other set
 func (me Set) Difference(other SetI) FixedSet {
+	if other == nil {
+		other = FixedSet{}
+	}
 	if me.s == nil {
 		return FixedSet{}
 	}
