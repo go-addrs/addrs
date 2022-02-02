@@ -32,21 +32,21 @@ func (me Table[T]) Size() int64 {
 // Insert inserts the given prefix with the given value into the table.
 // If an entry with the same prefix already exists, it will not overwrite it
 // and return false.
-func (me Table[T]) Insert(p PrefixI, value T) (succeeded bool) {
-	return (ITable)(me).Insert(p, value)
+func (me Table[T]) Insert(prefix PrefixI, value T) (succeeded bool) {
+	return (ITable)(me).Insert(prefix, value)
 }
 
 // Update inserts the given prefix with the given value into the table. If the
 // prefix already existed, it updates the associated value in place and return
 // true. Otherwise, it returns false.
-func (me Table[T]) Update(p PrefixI, value T) (succeeded bool) {
-	return (ITable)(me).Update(p, value)
+func (me Table[T]) Update(prefix PrefixI, value T) (succeeded bool) {
+	return (ITable)(me).Update(prefix, value)
 }
 
 // InsertOrUpdate inserts the given prefix with the given value into the table.
 // If the prefix already existed, it updates the associated value in place.
-func (me Table[T]) InsertOrUpdate(p PrefixI, value T) {
-	(ITable)(me).InsertOrUpdate(p, value)
+func (me Table[T]) InsertOrUpdate(prefix PrefixI, value T) {
+	(ITable)(me).InsertOrUpdate(prefix, value)
 }
 
 // Get returns the value in the table associated with the given network prefix
@@ -64,8 +64,8 @@ func (me Table[T]) Get(prefix PrefixI) (T, bool) {
 // GetOrInsert returns the value associated with the given prefix if it already
 // exists. If it does not exist, it inserts it with the given value and returns
 // that.
-func (me Table[T]) GetOrInsert(p PrefixI, value T) T {
-	return (ITable)(me).GetOrInsert(p, value).(T)
+func (me Table[T]) GetOrInsert(prefix PrefixI, value T) T {
+	return (ITable)(me).GetOrInsert(prefix, value).(T)
 }
 
 // LongestMatch returns the value in the table associated with the given network
@@ -84,8 +84,8 @@ func (me Table[T]) LongestMatch(searchPrefix PrefixI) (value T, matched Match, p
 // returns true if it was found. Only a prefix with an exact match will be
 // removed. If no entry with the given prefix exists, it will do nothing and
 // return false.
-func (me Table[T]) Remove(p PrefixI) (succeeded bool) {
-	return (ITable)(me).Remove(p)
+func (me Table[T]) Remove(prefix PrefixI) (succeeded bool) {
+	return (ITable)(me).Remove(prefix)
 }
 
 // Walk invokes the given callback function for each prefix/value pair in

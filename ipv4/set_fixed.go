@@ -25,8 +25,8 @@ func NewFixedSet(initial ...SetI) FixedSet {
 	set := Set{
 		s: &FixedSet{},
 	}
-	for _, settish := range initial {
-		set.Insert(settish)
+	for _, s := range initial {
+		set.Insert(s)
 	}
 	return set.FixedSet()
 }
@@ -138,9 +138,9 @@ func (me FixedSet) Equal(other SetI) bool {
 }
 
 // Contains tests if the given prefix is entirely contained in the set
-func (me FixedSet) Contains(s SetI) bool {
+func (me FixedSet) Contains(other SetI) bool {
 	// NOTE This is the not the most efficient way to do this
-	return s.FixedSet().Difference(me).Size() == 0
+	return other.FixedSet().Difference(me).Size() == 0
 }
 
 // Union returns a new set with all addresses from both sets

@@ -44,8 +44,8 @@ func (me FixedITable) Get(prefix PrefixI) (interface{}, bool) {
 // prefix using a longest prefix match. If a match is found, it returns a
 // Prefix representing the longest prefix matched. If a match is *not* found,
 // matched is MatchNone and the other fields should be ignored
-func (me FixedITable) LongestMatch(searchPrefix PrefixI) (value interface{}, matched Match, prefix Prefix) {
-	sp := searchPrefix.Prefix()
+func (me FixedITable) LongestMatch(prefix PrefixI) (value interface{}, matched Match, matchPrefix Prefix) {
+	sp := prefix.Prefix()
 	var node *trieNode
 	node = me.trie.Match(sp)
 	if node == nil {

@@ -62,14 +62,14 @@ func (me ITable) mutate(mutator func() (ok bool, node *trieNode)) {
 // Insert inserts the given prefix with the given value into the table.
 // If an entry with the same prefix already exists, it will not overwrite it
 // and return false.
-func (me ITable) Insert(p PrefixI, value interface{}) (succeeded bool) {
+func (me ITable) Insert(prefix PrefixI, value interface{}) (succeeded bool) {
 	if me.m == nil {
 		panic("cannot modify an unitialized Set")
 	}
 	var err error
 	me.mutate(func() (bool, *trieNode) {
 		var newHead *trieNode
-		newHead, err = me.m.trie.Insert(p.Prefix(), value)
+		newHead, err = me.m.trie.Insert(prefix.Prefix(), value)
 		if err != nil {
 			return false, nil
 		}
@@ -81,14 +81,14 @@ func (me ITable) Insert(p PrefixI, value interface{}) (succeeded bool) {
 // Update inserts the given prefix with the given value into the table. If the
 // prefix already existed, it updates the associated value in place and return
 // true. Otherwise, it returns false.
-func (me ITable) Update(p PrefixI, value interface{}) (succeeded bool) {
+func (me ITable) Update(prefix PrefixI, value interface{}) (succeeded bool) {
 	if me.m == nil {
 		panic("cannot modify an unitialized Set")
 	}
 	var err error
 	me.mutate(func() (bool, *trieNode) {
 		var newHead *trieNode
-		newHead, err = me.m.trie.Update(p.Prefix(), value)
+		newHead, err = me.m.trie.Update(prefix.Prefix(), value)
 		if err != nil {
 			return false, nil
 		}
@@ -99,12 +99,12 @@ func (me ITable) Update(p PrefixI, value interface{}) (succeeded bool) {
 
 // InsertOrUpdate inserts the given prefix with the given value into the table.
 // If the prefix already existed, it updates the associated value in place.
-func (me ITable) InsertOrUpdate(p PrefixI, value interface{}) {
+func (me ITable) InsertOrUpdate(prefix PrefixI, value interface{}) {
 	if me.m == nil {
 		panic("cannot modify an unitialized Set")
 	}
 	me.mutate(func() (bool, *trieNode) {
-		return true, me.m.trie.InsertOrUpdate(p.Prefix(), value)
+		return true, me.m.trie.InsertOrUpdate(prefix.Prefix(), value)
 	})
 }
 
@@ -122,14 +122,14 @@ func (me ITable) Get(prefix PrefixI) (interface{}, bool) {
 // GetOrInsert returns the value associated with the given prefix if it already
 // exists. If it does not exist, it inserts it with the given value and returns
 // that.
-func (me ITable) GetOrInsert(p PrefixI, value interface{}) interface{} {
+func (me ITable) GetOrInsert(prefix PrefixI, value interface{}) interface{} {
 	if me.m == nil {
 		panic("cannot modify an unitialized Set")
 	}
 	var node *trieNode
 	me.mutate(func() (bool, *trieNode) {
 		var newHead *trieNode
-		newHead, node = me.m.trie.GetOrInsert(p.Prefix(), value)
+		newHead, node = me.m.trie.GetOrInsert(prefix.Prefix(), value)
 		return true, newHead
 	})
 	return node.Data
@@ -139,25 +139,25 @@ func (me ITable) GetOrInsert(p PrefixI, value interface{}) interface{} {
 // prefix using a longest prefix match. If a match is found, it returns a
 // Prefix representing the longest prefix matched. If a match is *not* found,
 // matched is MatchNone and the other fields should be ignored
-func (me ITable) LongestMatch(searchPrefix PrefixI) (value interface{}, matched Match, prefix Prefix) {
+func (me ITable) LongestMatch(prefix PrefixI) (value interface{}, matched Match, matchPrefix Prefix) {
 	if me.m == nil {
 		return nil, MatchNone, Prefix{}
 	}
-	return me.m.LongestMatch(searchPrefix)
+	return me.m.LongestMatch(prefix)
 }
 
 // Remove removes the given prefix from the table with its associated value and
 // returns true if it was found. Only a prefix with an exact match will be
 // removed. If no entry with the given prefix exists, it will do nothing and
 // return false.
-func (me ITable) Remove(p PrefixI) (succeeded bool) {
+func (me ITable) Remove(prefix PrefixI) (succeeded bool) {
 	if me.m == nil {
 		panic("cannot modify an unitialized Set")
 	}
 	var err error
 	me.mutate(func() (bool, *trieNode) {
 		var newHead *trieNode
-		newHead, err = me.m.trie.Delete(p.Prefix())
+		newHead, err = me.m.trie.Delete(prefix.Prefix())
 		return true, newHead
 	})
 	return err == nil
