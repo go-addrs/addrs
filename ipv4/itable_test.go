@@ -672,3 +672,66 @@ func TestNilITable(t *testing.T) {
 		})
 	})
 }
+
+func TestITableInsertNil(t *testing.T) {
+	m := NewITable()
+	succeeded := m.Insert(nil, 3)
+	assert.True(t, succeeded)
+	assert.Equal(t, int64(1), m.Size())
+	value, found := m.Get(_p("0.0.0.0/0"))
+	assert.True(t, found)
+	assert.Equal(t, 3, value)
+}
+
+func TestITableUpdateNil(t *testing.T) {
+	m := NewITable()
+	m.Insert(_p("0.0.0.0/0"), 10)
+
+	succeeded := m.Update(nil, 3)
+	assert.True(t, succeeded)
+	assert.Equal(t, int64(1), m.Size())
+	value, found := m.Get(_p("0.0.0.0/0"))
+	assert.True(t, found)
+	assert.Equal(t, 3, value)
+}
+
+func TestITableRemoveNil(t *testing.T) {
+	m := NewITable()
+	m.Insert(_p("0.0.0.0/0"), 10)
+
+	succeeded := m.Remove(nil)
+	assert.True(t, succeeded)
+
+	_, found := m.Get(_p("0.0.0.0/0"))
+	assert.False(t, found)
+}
+
+func TestITableLongestMatch(t *testing.T) {
+	m := NewITable()
+	m.Insert(_p("0.0.0.0/0"), 10)
+
+	value, matched, prefix := m.LongestMatch(nil)
+	assert.Equal(t, 10, value)
+	assert.Equal(t, MatchExact, matched)
+	assert.Equal(t, _p("0.0.0.0/0"), prefix)
+}
+
+func TestITableInsertOrUpdateNil(t *testing.T) {
+	m := NewITable()
+	m.InsertOrUpdate(nil, 3)
+
+	assert.Equal(t, int64(1), m.Size())
+	value, found := m.Get(_p("0.0.0.0/0"))
+	assert.True(t, found)
+	assert.Equal(t, 3, value)
+}
+
+func TestITableGetOrInsertNil(t *testing.T) {
+	m := NewITable()
+	result := m.GetOrInsert(nil, 11)
+	assert.Equal(t, 11, result)
+
+	value, found := m.Get(_p("0.0.0.0/0"))
+	assert.True(t, found)
+	assert.Equal(t, 11, value)
+}

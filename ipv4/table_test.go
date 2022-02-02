@@ -1,5 +1,5 @@
 //go:build go1.18
-//+build go1.18
+// +build go1.18
 
 package ipv4
 
@@ -664,4 +664,67 @@ func TestNilTable(t *testing.T) {
 			table.Remove(_a("203.0.113.0"))
 		})
 	})
+}
+
+func TestTableInsertNil(t *testing.T) {
+	m := NewTable[int]()
+	succeeded := m.Insert(nil, 3)
+	assert.True(t, succeeded)
+	assert.Equal(t, int64(1), m.Size())
+	value, found := m.Get(_p("0.0.0.0/0"))
+	assert.True(t, found)
+	assert.Equal(t, 3, value)
+}
+
+func TestTableUpdateNil(t *testing.T) {
+	m := NewTable[int]()
+	m.Insert(nil, 10)
+
+	succeeded := m.Update(nil, 3)
+	assert.True(t, succeeded)
+	assert.Equal(t, int64(1), m.Size())
+	value, found := m.Get(_p("0.0.0.0/0"))
+	assert.True(t, found)
+	assert.Equal(t, 3, value)
+}
+
+func TestTableRemoveNil(t *testing.T) {
+	m := NewTable[int]()
+	m.Insert(_p("0.0.0.0/0"), 10)
+
+	succeeded := m.Remove(nil)
+	assert.True(t, succeeded)
+
+	_, found := m.Get(_p("0.0.0.0/0"))
+	assert.False(t, found)
+}
+
+func TestTableLongestMatch(t *testing.T) {
+	m := NewTable[int]()
+	m.Insert(_p("0.0.0.0/0"), 10)
+
+	value, matched, prefix := m.LongestMatch(nil)
+	assert.Equal(t, 10, value)
+	assert.Equal(t, MatchExact, matched)
+	assert.Equal(t, _p("0.0.0.0/0"), prefix)
+}
+
+func TestTableInsertOrUpdateNil(t *testing.T) {
+	m := NewTable[int]()
+	m.InsertOrUpdate(nil, 3)
+
+	assert.Equal(t, int64(1), m.Size())
+	value, found := m.Get(_p("0.0.0.0/0"))
+	assert.True(t, found)
+	assert.Equal(t, 3, value)
+}
+
+func TestTableGetOrInsertNil(t *testing.T) {
+	m := NewTable[int]()
+	result := m.GetOrInsert(nil, 11)
+	assert.Equal(t, 11, result)
+
+	value, found := m.Get(_p("0.0.0.0/0"))
+	assert.True(t, found)
+	assert.Equal(t, 11, value)
 }

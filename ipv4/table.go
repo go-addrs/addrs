@@ -1,5 +1,5 @@
 //go:build go1.18
-//+build go1.18
+// +build go1.18
 
 package ipv4
 
@@ -65,7 +65,9 @@ func (me Table[T]) Get(prefix PrefixI) (T, bool) {
 // exists. If it does not exist, it inserts it with the given value and returns
 // that.
 func (me Table[T]) GetOrInsert(prefix PrefixI, value T) T {
-	return (ITable)(me).GetOrInsert(prefix, value).(T)
+	var rv T
+	rv, _ = (ITable)(me).GetOrInsert(prefix, value).(T)
+	return rv
 }
 
 // LongestMatch returns the value in the table associated with the given network

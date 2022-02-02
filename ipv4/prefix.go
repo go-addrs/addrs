@@ -16,6 +16,9 @@ type Prefix struct {
 }
 
 // PrefixI is something that can be treated as a Prefix by calling .Prefix().
+// It is possible to pass nil as a PrefixI. In that case, it will be treated as
+// if a default zero-value Prefix{} were passed which is equivalent to
+// "0.0.0.0/0".
 // This includes the following types: Address and Prefix
 type PrefixI interface {
 	Prefix() Prefix
