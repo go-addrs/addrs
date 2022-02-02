@@ -102,7 +102,13 @@ func TestWalkRanges(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
 			t.Run("finish", func(t *testing.T) {
-				s := NewFixedSet(tt.prefixes...)
+				s := func() FixedSet {
+					s := NewSet()
+					for _, p := range tt.prefixes {
+						s.Insert(p)
+					}
+					return s.FixedSet()
+				}()
 				ranges := []Range{}
 				finished := s.WalkRanges(func(r Range) bool {
 					ranges = append(ranges, r)
@@ -116,7 +122,13 @@ func TestWalkRanges(t *testing.T) {
 			})
 
 			t.Run("don't finish", func(t *testing.T) {
-				s := NewFixedSet(tt.prefixes...)
+				s := func() FixedSet {
+					s := NewSet()
+					for _, p := range tt.prefixes {
+						s.Insert(p)
+					}
+					return s.FixedSet()
+				}()
 				if s.Size() != 0 {
 					ranges := []Range{}
 					finished := s.WalkRanges(func(r Range) bool {

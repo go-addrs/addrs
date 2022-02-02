@@ -7,11 +7,6 @@ package ipv4
 // The zero value of a FixedTable is an empty table
 type FixedTable[T any] FixedITable
 
-// NewFixedTable returns an initialized but empty FixedTable
-func NewFixedTable[T any]() FixedTable[T] {
-	return (FixedTable[T])(NewFixedITable())
-}
-
 // Table returns a mutable table initialized with the contents of this one. Due to
 // the COW nature of the underlying datastructure, it is very cheap to copy
 // these -- effectively a pointer copy.

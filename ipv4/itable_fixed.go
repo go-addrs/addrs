@@ -6,11 +6,6 @@ type FixedITable struct {
 	trie *trieNode
 }
 
-// NewFixedITable returns an initialized but empty FixedITable
-func NewFixedITable() FixedITable {
-	return FixedITable{}
-}
-
 // Table returns a mutable table initialized with the contents of this one. Due to
 // the COW nature of the underlying datastructure, it is very cheap to copy
 // these -- effectively a pointer copy.

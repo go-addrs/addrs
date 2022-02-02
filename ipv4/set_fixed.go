@@ -20,19 +20,6 @@ var _ SetI = Range{}
 var _ SetI = Set{}
 var _ SetI = FixedSet{}
 
-// NewFixedSet returns an initialized FixedSet containing the given
-// initial contents. These can be any combination of Address, FixedSet,
-// Prefix, Range, and Set. The result will be the union of all of them.
-func NewFixedSet(initial ...SetI) FixedSet {
-	set := Set{
-		s: &FixedSet{},
-	}
-	for _, s := range initial {
-		set.Insert(s)
-	}
-	return set.FixedSet()
-}
-
 // Set returns a Set initialized with the contents of the fixed set
 func (me FixedSet) Set() Set {
 	return Set{

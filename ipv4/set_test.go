@@ -97,14 +97,14 @@ func TestSetConcurrentModification(t *testing.T) {
 		defer wrap()
 		set.mutate(func() (bool, *setNode) {
 			ch <- true
-			return true, set.s.trie.Union(NewFixedSet(_a("10.0.0.1")).trie)
+			return true, set.s.trie.Union(_a("10.0.0.1").FixedSet().trie)
 		})
 	}()
 	go func() {
 		defer wrap()
 		set.mutate(func() (bool, *setNode) {
 			<-ch
-			return true, set.s.trie.Union(NewFixedSet(_a("10.0.0.2")).trie)
+			return true, set.s.trie.Union(_a("10.0.0.2").FixedSet().trie)
 		})
 	}()
 	wg.Wait()

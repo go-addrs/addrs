@@ -13,10 +13,9 @@ type Set struct {
 }
 
 // NewSet returns a new fully-initialized Set
-func NewSet(initial ...SetI) Set {
-	im := NewFixedSet(initial...)
+func NewSet() Set {
 	return Set{
-		s: &im,
+		s: &FixedSet{},
 	}
 }
 
