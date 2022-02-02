@@ -64,7 +64,7 @@ func (me ITable) mutate(mutator func() (ok bool, node *trieNode)) {
 // and return false.
 func (me ITable) Insert(prefix PrefixI, value interface{}) (succeeded bool) {
 	if me.m == nil {
-		panic("cannot modify an unitialized Set")
+		panic("cannot modify an unitialized Table")
 	}
 	if prefix == nil {
 		prefix = Prefix{}
@@ -86,7 +86,7 @@ func (me ITable) Insert(prefix PrefixI, value interface{}) (succeeded bool) {
 // true. Otherwise, it returns false.
 func (me ITable) Update(prefix PrefixI, value interface{}) (succeeded bool) {
 	if me.m == nil {
-		panic("cannot modify an unitialized Set")
+		panic("cannot modify an unitialized Table")
 	}
 	if prefix == nil {
 		prefix = Prefix{}
@@ -107,7 +107,7 @@ func (me ITable) Update(prefix PrefixI, value interface{}) (succeeded bool) {
 // If the prefix already existed, it updates the associated value in place.
 func (me ITable) InsertOrUpdate(prefix PrefixI, value interface{}) {
 	if me.m == nil {
-		panic("cannot modify an unitialized Set")
+		panic("cannot modify an unitialized Table")
 	}
 	if prefix == nil {
 		prefix = Prefix{}
@@ -133,7 +133,7 @@ func (me ITable) Get(prefix PrefixI) (interface{}, bool) {
 // that.
 func (me ITable) GetOrInsert(prefix PrefixI, value interface{}) interface{} {
 	if me.m == nil {
-		panic("cannot modify an unitialized Set")
+		panic("cannot modify an unitialized Table")
 	}
 	if prefix == nil {
 		prefix = Prefix{}
@@ -164,7 +164,7 @@ func (me ITable) LongestMatch(prefix PrefixI) (value interface{}, matched Match,
 // return false.
 func (me ITable) Remove(prefix PrefixI) (succeeded bool) {
 	if me.m == nil {
-		panic("cannot modify an unitialized Set")
+		panic("cannot modify an unitialized Table")
 	}
 	if prefix == nil {
 		prefix = Prefix{}
