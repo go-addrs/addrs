@@ -8,6 +8,7 @@ import (
 
 // Mask represents an IPv4 prefix mask. It has 0-32 leading 1s and then all
 // remaining bits are 0s
+// The zero value of a Mask is "/0"
 type Mask Address
 
 const maxUint32 = ^uint32(0)

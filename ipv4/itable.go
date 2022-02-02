@@ -11,6 +11,10 @@ package ipv4
 // The table supports looking up values based on a longest prefix match and also
 // supports efficient aggregation of prefix/value pairs based on equality of
 // values. See the README.md file for a more detailed discussion..
+//
+// The zero value of a ITable is unitialized. Reading it is equivalent to
+// reading an empty ITable. Attempts to modify it will result in a panic. Always
+// use NewITable() to get a modifyable ITable.
 type ITable struct {
 	// This is an abuse of FixedITable because it uses its package privileges
 	// to turn it into a mutable one. This could be refactored to be cleaner

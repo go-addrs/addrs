@@ -4,6 +4,7 @@
 package ipv4
 
 // FixedTable is like a Table except this its contents are frozen
+// The zero value of a FixedTable is an empty table
 type FixedTable[T any] FixedITable
 
 // NewFixedTable returns an initialized but empty FixedTable

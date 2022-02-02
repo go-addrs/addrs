@@ -4,6 +4,9 @@ package ipv4
 // supports testing if an address or prefix is contained (entirely) in it. It
 // supports the standard set operations: union, intersection, and difference.
 // It supports conversion to/and from Ranges and Prefixes
+// The zero value of a Set is unitialized. Reading it is equivalent to reading
+// an empty set. Attempts to modify it will result in a panic. Always use
+// NewSet() to get a modifyable Set.
 type Set struct {
 	// See the note on Table
 	s *FixedSet

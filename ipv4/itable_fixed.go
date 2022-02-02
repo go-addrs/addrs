@@ -1,6 +1,7 @@
 package ipv4
 
 // FixedITable is like a ITable except this its contents are frozen
+// The zero value of a FixedITable is an empty table
 type FixedITable struct {
 	trie *trieNode
 }

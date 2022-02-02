@@ -10,6 +10,7 @@ import (
 // Note that any bits in the address can be 0 or 1 regardless if they in the
 // first `length` bits or not. This allows storing an IP address in CIDR
 // notation with both the network and host parts of the address.
+// The zero value of a Prefix is "0.0.0.0/0"
 type Prefix struct {
 	addr   Address
 	length uint32

@@ -14,6 +14,10 @@ package ipv4
 // The table supports looking up values based on a longest prefix match and also
 // supports efficient aggregation of prefix/value pairs based on equality of
 // values. See the README.md file for a more detailed discussion..
+//
+// The zero value of a Table is unitialized. Reading it is equivalent to
+// reading an empty Table. Attempts to modify it will result in a panic. Always
+// use NewTable() to get a modifyable Table.
 type Table[T any] ITable
 
 // NewTable returns a new fully-initialized Table

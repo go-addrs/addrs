@@ -5,7 +5,12 @@ import (
 )
 
 // Range represents a range of addresses that don't have to be aligned to
-// powers of 2 like prefixes
+// powers of 2 like a Prefix does.
+//
+// Note that there is no instantiation of an empty range (.Size() == 0) because
+// .First() and .Last() would not make sense.
+//
+// The zero value of a Range is "[0.0.0.0, 0.0.0.0]" (.Size() == 1)
 type Range struct {
 	first, last Address
 }

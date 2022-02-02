@@ -11,6 +11,7 @@ const (
 )
 
 // Address represents an IPv4 address
+// The zero value of a Address is "0.0.0.0"
 type Address struct {
 	ui uint32
 }

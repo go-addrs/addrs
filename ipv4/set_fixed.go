@@ -1,6 +1,7 @@
 package ipv4
 
 // FixedSet is like a Set except that its contents are frozen
+// The zero value of a FixedSet is an empty set
 type FixedSet struct {
 	trie *setNode
 }
