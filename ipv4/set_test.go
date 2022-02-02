@@ -148,13 +148,13 @@ func TestNilSet(t *testing.T) {
 	assert.Equal(t, int64(256), nonEmptySet.Difference(set).Size())
 
 	// Walk
-	assert.True(t, set.WalkAddresses(func(Address) bool {
+	assert.True(t, set.FixedSet().WalkAddresses(func(Address) bool {
 		panic("should not be called")
 	}))
-	assert.True(t, set.WalkPrefixes(func(Prefix) bool {
+	assert.True(t, set.FixedSet().WalkPrefixes(func(Prefix) bool {
 		panic("should not be called")
 	}))
-	assert.True(t, set.WalkRanges(func(Range) bool {
+	assert.True(t, set.FixedSet().WalkRanges(func(Range) bool {
 		panic("should not be called")
 	}))
 

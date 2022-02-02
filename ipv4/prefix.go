@@ -201,12 +201,12 @@ func (me Prefix) Uint32() (address, mask uint32) {
 // again).
 type AddressCallback func(Address) bool
 
-// WalkAddresses visits all of the addresses in the prefix in lexigraphical
+// walkAddresses visits all of the addresses in the prefix in lexigraphical
 // order
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me Prefix) WalkAddresses(callback AddressCallback) bool {
+func (me Prefix) walkAddresses(callback AddressCallback) bool {
 	for a := me.Network().addr.Uint32(); a <= me.Broadcast().addr.Uint32(); a++ {
 		if !callback(Address{a}) {
 			return false

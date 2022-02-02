@@ -182,41 +182,6 @@ func (me ITable) Remove(prefix PrefixI) (succeeded bool) {
 	return err == nil
 }
 
-// Walk invokes the given callback function for each prefix/value pair in
-// the table in lexigraphical order.
-//
-// It returns false if iteration was stopped due to a callback return false or
-// true if it iterated all items.
-func (me ITable) Walk(callback ITableCallback) bool {
-	if me.m == nil {
-		return true
-	}
-	return me.m.Walk(callback)
-}
-
-// WalkAggregates invokes then given callback function for each prefix/value
-// pair in the table, aggregated by value, in lexigraphical order.
-//
-// If two prefixes map to the same value, one contains the other, and there is
-// no intermediate prefix between the two with a different value then only the
-// broader prefix will be visited with the value.
-//
-// 1. The values stored must be comparable to be aggregable. Prefixes get
-//    aggregated only where their values compare equal.
-// 2. The set of prefix/value pairs visited is the minimal set such that any
-//    longest prefix match against the aggregated set will always return the
-//    same value as the same match against the non-aggregated set.
-// 3. The aggregated and non-aggregated sets of prefixes may be disjoint.
-//
-// It returns false if iteration was stopped due to a callback return false or
-// true if it iterated all items.
-func (me ITable) WalkAggregates(callback ITableCallback) bool {
-	if me.m == nil {
-		return true
-	}
-	return me.m.WalkAggregates(callback)
-}
-
 // FixedTable returns an immutable snapshot of this ITable. Due to the COW
 // nature of the underlying datastructure, it is very cheap to create these --
 // effectively a pointer copy.

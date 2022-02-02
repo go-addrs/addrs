@@ -67,7 +67,7 @@ func (me FixedSet) WalkPrefixes(callback PrefixCallback) bool {
 // true if it iterated all items.
 func (me FixedSet) WalkAddresses(callback AddressCallback) bool {
 	return me.WalkPrefixes(func(prefix Prefix) bool {
-		return prefix.WalkAddresses(callback)
+		return prefix.walkAddresses(callback)
 	})
 }
 
