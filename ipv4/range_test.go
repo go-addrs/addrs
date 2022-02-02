@@ -97,7 +97,7 @@ func TestRangeFirstLast(t *testing.T) {
 	}
 }
 
-func TestRangeContainsRange(t *testing.T) {
+func TestRangeContains(t *testing.T) {
 	tests := []struct {
 		description string
 		a, b        Range
@@ -115,9 +115,9 @@ func TestRangeContainsRange(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
-			assert.True(t, tt.a.ContainsRange(tt.b))
+			assert.True(t, tt.a.Contains(tt.b))
 			// If they're equal then containership goes the other way too.
-			assert.Equal(t, tt.a == tt.b, tt.b.ContainsRange(tt.a))
+			assert.Equal(t, tt.a == tt.b, tt.b.Contains(tt.a))
 		})
 	}
 }

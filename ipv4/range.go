@@ -42,9 +42,9 @@ func (me Range) String() string {
 	return fmt.Sprintf("[%s,%s]", me.first, me.last)
 }
 
-// ContainsRange returns true iff this range entirely contains the given other range
-func (me Range) ContainsRange(other Range) bool {
-	return me.first.ui <= other.first.ui && other.last.ui <= me.last.ui
+// Contains returns true iff this range entirely contains the given other range
+func (me Range) Contains(other SetI) bool {
+	return me.FixedSet().Contains(other)
 }
 
 // Minus returns a slice of ranges resulting from subtracting the given range
