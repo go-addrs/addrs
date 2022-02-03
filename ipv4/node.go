@@ -730,10 +730,7 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 			handler.Added(other)
 		}
 		for _, child := range other.children {
-			// TODO(Carl) Can I get away with not checking empty here?
-			if child != empty {
-				empty.diff(child, handler)
-			}
+			empty.diff(child, handler)
 		}
 		return
 	}
@@ -742,9 +739,7 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 			handler.Removed(me)
 		}
 		for _, child := range me.children {
-			if child != empty {
-				child.diff(empty, handler)
-			}
+			child.diff(empty, handler)
 		}
 		return
 	}
