@@ -721,28 +721,22 @@ type trieDiffHandler struct {
 
 func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 	var empty *trieNode
+	var result int
+	var child uint32
 
-	if me == empty {
-		if other == empty {
+	if me != empty {
+		if other != empty {
+			result, _, _, child = compare(me.Prefix, other.Prefix)
+		} else {
+			result = compareContains
+		}
+	} else {
+		if other != empty {
+			result = compareIsContained
+		} else {
 			return
 		}
-		if other.isActive {
-			handler.Added(other)
-		}
-		empty.diff(other.children[0], handler)
-		empty.diff(other.children[1], handler)
-		return
 	}
-	if other == empty {
-		if me.isActive {
-			handler.Removed(me)
-		}
-		me.children[0].diff(empty, handler)
-		me.children[1].diff(empty, handler)
-		return
-	}
-
-	result, _, _, child := compare(me.Prefix, other.Prefix)
 
 	switch result {
 	case compareSame:
