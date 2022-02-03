@@ -958,45 +958,6 @@ func TestContains(t *testing.T) {
 	}
 }
 
-func TestBitsToBytes(t *testing.T) {
-	tests := []struct {
-		bits, bytes uint32
-	}{
-		{bits: 0, bytes: 0},
-		{bits: 1, bytes: 1},
-		{bits: 8, bytes: 1},
-		{bits: 9, bytes: 2},
-		{bits: 16, bytes: 2},
-		{bits: 17, bytes: 3},
-		{bits: 24, bytes: 3},
-		{bits: 25, bytes: 4},
-		{bits: 32, bytes: 4},
-		{bits: 33, bytes: 5},
-		{bits: 40, bytes: 5},
-		{bits: 41, bytes: 6},
-		{bits: 48, bytes: 6},
-		{bits: 49, bytes: 7},
-		{bits: 64, bytes: 8},
-		{bits: 65, bytes: 9},
-		{bits: 128, bytes: 16},
-		{bits: 129, bytes: 17},
-		{bits: 256, bytes: 32},
-		{bits: 257, bytes: 33},
-		{bits: 512, bytes: 64},
-		{bits: 513, bytes: 65},
-		{bits: 1024, bytes: 128},
-		{bits: 1025, bytes: 129},
-		{bits: 4096, bytes: 512},
-		{bits: 4097, bytes: 513},
-	}
-
-	for _, tt := range tests {
-		t.Run(fmt.Sprintf("%d", tt.bits), func(t *testing.T) {
-			assert.Equal(t, tt.bytes, bitsToBytes(tt.bits))
-		})
-	}
-}
-
 func TestDeleteFromNilTree(t *testing.T) {
 	var trie *trieNode
 

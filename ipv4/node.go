@@ -14,12 +14,6 @@ type trieNode struct {
 	children [2]*trieNode
 }
 
-// bitsToBytes calculates the number of bytes (including possible
-// least-significant partial) to hold the given number of bits.
-func bitsToBytes(bits uint32) uint32 {
-	return (bits + 7) / 8
-}
-
 func intMin(a, b int) int {
 	if a < b {
 		return a
