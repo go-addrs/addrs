@@ -729,18 +729,16 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 		if other.isActive {
 			handler.Added(other)
 		}
-		for _, child := range other.children {
-			empty.diff(child, handler)
-		}
+		empty.diff(other.children[0], handler)
+		empty.diff(other.children[1], handler)
 		return
 	}
 	if other == empty {
 		if me.isActive {
 			handler.Removed(me)
 		}
-		for _, child := range me.children {
-			child.diff(empty, handler)
-		}
+		me.children[0].diff(empty, handler)
+		me.children[1].diff(empty, handler)
 		return
 	}
 
