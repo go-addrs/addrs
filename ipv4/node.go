@@ -712,3 +712,122 @@ func (me *trieNode) aggregate(data dataContainer, callback trieCallback) bool {
 func (me *trieNode) Aggregate(callback trieCallback) bool {
 	return me.aggregate(dataContainer{}, callback)
 }
+
+type trieDiffHandler struct {
+	Removed  func(left *trieNode) bool
+	Added    func(right *trieNode) bool
+	Modified func(left, right *trieNode) bool
+}
+
+func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
+	var empty *trieNode
+
+	if me == empty {
+		if other == empty {
+			return
+		}
+		if other.isActive {
+			handler.Added(other)
+		}
+		for _, child := range other.children {
+			// TODO(Carl) Can I get away with not checking empty here?
+			if child != empty {
+				empty.diff(child, handler)
+			}
+		}
+		return
+	}
+	if other == empty {
+		if me.isActive {
+			handler.Removed(me)
+		}
+		for _, child := range me.children {
+			if child != empty {
+				child.diff(empty, handler)
+			}
+		}
+		return
+	}
+
+	result, _, _, child := compare(me.Prefix, other.Prefix)
+
+	switch result {
+	case compareSame:
+		// They have the same key
+		if me.isActive {
+			if other.isActive {
+				if !dataEqual(me.Data, other.Data) {
+					handler.Modified(me, other)
+				}
+			} else {
+				handler.Removed(me)
+			}
+		} else {
+			if other.isActive {
+				handler.Added(other)
+			}
+		}
+		me.children[0].diff(other.children[0], handler)
+		me.children[1].diff(other.children[1], handler)
+
+	case compareContains:
+		// Trie node's key contains the other node's key
+		if me.isActive {
+			handler.Removed(me)
+		}
+		if child == 0 {
+			me.children[0].diff(other, handler)
+			me.children[1].diff(empty, handler)
+		} else {
+			me.children[0].diff(empty, handler)
+			me.children[1].diff(other, handler)
+		}
+
+	case compareIsContained:
+		// Other node's key contains the trie node's key
+		if other.isActive {
+			handler.Added(other)
+		}
+		if child == 0 {
+			me.diff(other.children[0], handler)
+			empty.diff(other.children[1], handler)
+		} else {
+			empty.diff(other.children[0], handler)
+			me.diff(other.children[1], handler)
+		}
+
+	case compareDisjoint:
+		// Keys are disjoint
+		// NOTE It was easier to lean on the logic at the front of this method
+		// rather than duplicate it here. So, create an empty set and recurse.
+		if child == 0 {
+			empty.diff(other, handler)
+			me.diff(empty, handler)
+		} else {
+			me.diff(empty, handler)
+			empty.diff(other, handler)
+		}
+	}
+}
+
+// Diff compares the two tries to find entries that are removed, added, or
+// changed between the two. It calls the appropriate callback
+func (me *trieNode) Diff(other *trieNode, handler trieDiffHandler) {
+	// Ensure I don't have to check for nil everywhere.
+	if handler.Removed == nil {
+		handler.Removed = func(*trieNode) bool {
+			return true
+		}
+	}
+	if handler.Added == nil {
+		handler.Added = func(*trieNode) bool {
+			return true
+		}
+	}
+	if handler.Modified == nil {
+		handler.Modified = func(l, r *trieNode) bool {
+			return true
+		}
+	}
+	me.diff(other, handler)
+}

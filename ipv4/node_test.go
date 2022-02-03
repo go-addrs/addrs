@@ -6,7 +6,9 @@ import (
 	"testing"
 	"unsafe"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestActive(t *testing.T) {
@@ -1686,4 +1688,249 @@ func TestFlatten(t *testing.T) {
 		assert.Nil(t, n.children[0])
 		assert.Nil(t, n.children[1])
 	})
+}
+
+type actionType int
+
+const (
+	actionTypeRemove actionType = iota
+	actionTypeAdd
+	actionTypeChange
+)
+
+type diffAction struct {
+	t    actionType
+	pair pair32
+	val  interface{}
+}
+
+func TestDiff(t *testing.T) {
+	tests := []struct {
+		desc        string
+		left, right []pair32
+		actions     []diffAction
+	}{
+		{
+			desc: "empty",
+		}, {
+			desc: "right_empty",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+			},
+		}, {
+			desc: "right_empty_with_subprefixes",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
+			},
+		}, {
+			desc: "right_empty_with_subprefix_on_left",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.64"), 26}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.64"), 26}}, nil},
+			},
+		}, {
+			desc: "right_empty_with_subprefix_on_right",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.192"), 26}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.192"), 26}}, nil},
+			},
+		}, {
+			desc: "no_diff",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+			},
+		}, {
+			desc: "different_data",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 2},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 3},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeChange, pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 2}, 3},
+			},
+		}, {
+			desc: "right_side_aggregable",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 2},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}, data: 3},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}, data: 3},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 2}, nil},
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.0"), 25}, data: 3}, nil},
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.128"), 25}, data: 3}, nil},
+			},
+		}, {
+			desc: "both_sides_aggregable",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}, data: 2},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}, data: 2},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}, data: 3},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}, data: 3},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeChange, pair32{key: Prefix{_a("203.0.113.0"), 25}, data: 2}, 3},
+				diffAction{actionTypeChange, pair32{key: Prefix{_a("203.0.113.128"), 25}, data: 2}, 3},
+			},
+		}, {
+			desc: "disjoint",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.128"), 25}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
+			},
+		}, {
+			desc: "contained_right",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.128"), 25}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
+			},
+		}, {
+			desc: "contained_right_subprefix",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.128"), 25}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
+			},
+		}, {
+			desc: "contained_left",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
+			},
+		}, {
+			desc: "contained_left_subprefix",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			left, right := func() (left, right *trieNode) {
+				fill := func(pairs []pair32) (trie *trieNode) {
+					var err error
+					for _, p := range pairs {
+						trie, err = trie.Insert(p.key, p.data)
+						require.Nil(t, err)
+					}
+					return
+				}
+				return fill(tt.left), fill(tt.right)
+			}()
+
+			var actions []diffAction
+			handler := trieDiffHandler{
+				Removed: func(left *trieNode) bool {
+					require.True(t, left.isActive)
+					actions = append(actions, diffAction{actionTypeRemove, pair32{key: left.Prefix, data: left.Data}, nil})
+					return true
+				},
+				Added: func(right *trieNode) bool {
+					require.True(t, right.isActive)
+					actions = append(actions, diffAction{actionTypeAdd, pair32{key: right.Prefix, data: right.Data}, nil})
+					return true
+				},
+				Modified: func(left, right *trieNode) bool {
+					require.True(t, left.isActive)
+					require.True(t, right.isActive)
+					actions = append(actions, diffAction{actionTypeChange, pair32{key: left.Prefix, data: left.Data}, right.Data})
+					return true
+				},
+			}
+
+			t.Run("forward", func(t *testing.T) {
+				actions = nil
+
+				left.Diff(right, handler)
+
+				assert.True(t,
+					reflect.DeepEqual(tt.actions, actions),
+					cmp.Diff(tt.actions, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
+				)
+			})
+
+			t.Run("backward", func(t *testing.T) {
+				actions = nil
+
+				right.Diff(left, handler)
+
+				var expected []diffAction
+				for _, action := range tt.actions {
+					var t actionType
+					pair := action.pair
+					val := action.val
+					switch action.t {
+					case actionTypeRemove:
+						t = actionTypeAdd
+					case actionTypeAdd:
+						t = actionTypeRemove
+					default:
+						t = action.t
+						pair.data, val = val, pair.data
+					}
+					expected = append(expected, diffAction{t, pair, val})
+				}
+				assert.True(t,
+					reflect.DeepEqual(expected, actions),
+					cmp.Diff(expected, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
+				)
+			})
+		})
+	}
 }
