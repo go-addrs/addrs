@@ -741,31 +741,15 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 	switch result {
 	case compareSame:
 		// They have the same key
-		if me.isActive {
-			if other.isActive {
-				if !dataEqual(me.Data, other.Data) {
-					handler.Modified(me, other)
-				}
-			} else {
-				handler.Removed(me)
-			}
-		} else {
-			if other.isActive {
-				handler.Added(other)
-			}
-		}
+		handler.Modified(me, other)
 
 	case compareContains:
 		// Trie node's key contains the other node's key
-		if me.isActive {
-			handler.Removed(me)
-		}
+		handler.Removed(me)
 
 	case compareIsContained:
 		// Other node's key contains the trie node's key
-		if other.isActive {
-			handler.Added(other)
-		}
+		handler.Added(other)
 	}
 
 	orderBasedOnChildComparison := func(left, right *trieNode, child uint32) [2]*trieNode {
@@ -823,5 +807,34 @@ func (me *trieNode) Diff(other *trieNode, handler trieDiffHandler) {
 			return true
 		}
 	}
-	me.diff(other, handler)
+
+	me.diff(other, trieDiffHandler{
+		Removed: func(left *trieNode) bool {
+			if left.isActive {
+				return handler.Removed(left)
+			}
+			return true
+		},
+		Added: func(right *trieNode) bool {
+			if right.isActive {
+				return handler.Added(right)
+			}
+			return true
+		},
+		Modified: func(left, right *trieNode) bool {
+			if left.isActive {
+				if right.isActive {
+					if !dataEqual(left.Data, right.Data) {
+						return handler.Modified(left, right)
+					}
+					return true
+				}
+				return handler.Removed(left)
+			}
+			if right.isActive {
+				return handler.Added(right)
+			}
+			return true
+		},
+	})
 }
