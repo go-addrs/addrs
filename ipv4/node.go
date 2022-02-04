@@ -764,8 +764,6 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 
 	case compareDisjoint:
 		// Keys are disjoint
-		// NOTE It was easier to lean on the logic at the front of this method
-		// rather than duplicate it here. So, create an empty set and recurse.
 		left = orderBasedOnChildComparison(empty, me, child)
 		right = orderBasedOnChildComparison(other, empty, child)
 	}
