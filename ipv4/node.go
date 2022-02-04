@@ -738,20 +738,6 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 		}
 	}
 
-	switch result {
-	case compareSame:
-		// They have the same key
-		handler.Modified(me, other)
-
-	case compareContains:
-		// Trie node's key contains the other node's key
-		handler.Removed(me)
-
-	case compareIsContained:
-		// Other node's key contains the trie node's key
-		handler.Added(other)
-	}
-
 	orderBasedOnChildComparison := func(left, right *trieNode, child uint32) [2]*trieNode {
 		if child == 0 {
 			return [2]*trieNode{left, right}
@@ -786,6 +772,20 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 	}
 	left[0].diff(right[0], handler)
 	left[1].diff(right[1], handler)
+
+	switch result {
+	case compareSame:
+		// They have the same key
+		handler.Modified(me, other)
+
+	case compareContains:
+		// Trie node's key contains the other node's key
+		handler.Removed(me)
+
+	case compareIsContained:
+		// Other node's key contains the trie node's key
+		handler.Added(other)
+	}
 }
 
 // Diff compares the two tries to find entries that are removed, added, or
