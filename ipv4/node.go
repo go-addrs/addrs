@@ -744,29 +744,29 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 	}
 
 	var empty *trieNode
-	var left, right [2]*trieNode
 
-	switch result {
-	case compareSame:
-		// They have the same key
-		left = me.children
-		right = other.children
+	left := func() [2]*trieNode {
+		switch result {
+		case compareIsContained:
+			return orderBasedOnChildComparison(me, empty, child)
 
-	case compareContains:
-		// Trie node's key contains the other node's key
-		left = me.children
-		right = orderBasedOnChildComparison(other, empty, child)
+		case compareDisjoint:
+			return orderBasedOnChildComparison(empty, me, child)
+		}
+		return me.children
+	}()
 
-	case compareIsContained:
-		// Other node's key contains the trie node's key
-		left = orderBasedOnChildComparison(me, empty, child)
-		right = other.children
+	right := func() [2]*trieNode {
+		switch result {
+		case compareContains:
+			return orderBasedOnChildComparison(other, empty, child)
 
-	case compareDisjoint:
-		// Keys are disjoint
-		left = orderBasedOnChildComparison(empty, me, child)
-		right = orderBasedOnChildComparison(other, empty, child)
-	}
+		case compareDisjoint:
+			return orderBasedOnChildComparison(other, empty, child)
+		}
+		return other.children
+	}()
+
 	left[0].diff(right[0], handler)
 	left[1].diff(right[1], handler)
 
