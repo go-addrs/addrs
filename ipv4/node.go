@@ -744,8 +744,7 @@ func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) {
 	}
 
 	// Based on the comparison above, determine where to descend to child nodes
-	// before recursing. In general, the left or the right may descend to its
-	// children but not both.
+	// before recursing.
 	//
 	// The side that doesn't descend is included in the pair of nodes as either
 	// the first (0) or second (1) element based on the comparison (child) with
@@ -754,27 +753,22 @@ func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) {
 	// If the two sides are disjoint, neither one descends and the two sides
 	// are split apart to compare each independently with an empty set.
 
-	newLeft := func(child int) (newLeft [2]*trieNode) {
-		if result == compareIsContained || result == compareDisjoint {
-			if result == compareDisjoint {
-				// Left node must be on the opposite side as the right one
-				child = reverseChild(child)
-			}
-			newLeft[child] = left
-		} else {
-			newLeft = left.children
-		}
-		return
-	}(child)
-
-	newRight := func(child int) (newRight [2]*trieNode) {
-		if result == compareContains || result == compareDisjoint {
-			newRight[child] = right
-		} else {
-			newRight = right.children
-		}
-		return
-	}(child)
+	var newLeft, newRight [2]*trieNode
+	switch result {
+	case compareSame:
+		newLeft = left.children
+		newRight = right.children
+	case compareIsContained:
+		newLeft[child] = left
+		newRight = right.children
+	case compareContains:
+		newLeft = left.children
+		newRight[child] = right
+	case compareDisjoint:
+		// Left node must be on the opposite side as the right one
+		newLeft[reverseChild(child)] = left
+		newRight[child] = right
+	}
 
 	// Recurse into children
 	newLeft[0].diff(newRight[0], handler)
