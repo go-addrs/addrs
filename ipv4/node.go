@@ -723,20 +723,20 @@ type trieDiffHandler struct {
 	Modified func(left, right *trieNode) bool
 }
 
-func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
+func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) {
 	// Compare the two nodes.
 	// If one of them is nil, we treat it as if it is contained by the non-nil one.
 	// In that case, `child` doesn't matter so we leave it initialized at zero.
 	// If both are nil, there is nothing to do.
 	var result, child int
 	switch {
-	case me != nil && other != nil:
-		result, _, _, child = compare(me.Prefix, other.Prefix)
+	case left != nil && right != nil:
+		result, _, _, child = compare(left.Prefix, right.Prefix)
 
-	case me != nil:
+	case left != nil:
 		result = compareContains
 
-	case other != nil:
+	case right != nil:
 		result = compareIsContained
 
 	default:
@@ -744,8 +744,8 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 	}
 
 	// Based on the comparison above, determine where to descend to child nodes
-	// before recursing. In general, the left (me) or the right (other) may
-	// descend to its children but not both.
+	// before recursing. In general, the left or the right may descend to its
+	// children but not both.
 	//
 	// The side that doesn't descend is included in the pair of nodes as either
 	// the first (0) or second (1) element based on the comparison (child) with
@@ -754,45 +754,45 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 	// If the two sides are disjoint, neither one descends and the two sides
 	// are split apart to compare each independently with an empty set.
 
-	left := func(child int) (left [2]*trieNode) {
+	newLeft := func(child int) (newLeft [2]*trieNode) {
 		if result == compareIsContained || result == compareDisjoint {
 			if result == compareDisjoint {
-				// This node should be on the opposite side as the other one
+				// Left node must be on the opposite side as the right one
 				child = reverseChild(child)
 			}
-			left[child] = me
+			newLeft[child] = left
 		} else {
-			left = me.children
+			newLeft = left.children
 		}
 		return
 	}(child)
 
-	right := func(child int) (right [2]*trieNode) {
+	newRight := func(child int) (newRight [2]*trieNode) {
 		if result == compareContains || result == compareDisjoint {
-			right[child] = other
+			newRight[child] = right
 		} else {
-			right = other.children
+			newRight = right.children
 		}
 		return
 	}(child)
 
 	// Recurse into children
-	left[0].diff(right[0], handler)
-	left[1].diff(right[1], handler)
+	newLeft[0].diff(newRight[0], handler)
+	newLeft[1].diff(newRight[1], handler)
 
 	// Call handlers. If the nodes are disjoint, nothing is called yet.
 	switch result {
 	case compareSame:
 		// They have the same key
-		handler.Modified(me, other)
+		handler.Modified(left, right)
 
 	case compareContains:
-		// Trie node's key contains the other node's key
-		handler.Removed(me)
+		// Left node's key contains the right node's key
+		handler.Removed(left)
 
 	case compareIsContained:
-		// Other node's key contains the trie node's key
-		handler.Added(other)
+		// Right node's key contains the left node's key
+		handler.Added(right)
 	}
 }
 
