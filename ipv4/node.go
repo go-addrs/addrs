@@ -738,8 +738,6 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 		}
 	}
 
-	var left, right [2]*trieNode
-
 	switch result {
 	case compareSame:
 		// They have the same key
@@ -756,19 +754,11 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 				handler.Added(other)
 			}
 		}
-		left = me.children
-		right = other.children
 
 	case compareContains:
 		// Trie node's key contains the other node's key
 		if me.isActive {
 			handler.Removed(me)
-		}
-		left = me.children
-		if child == 0 {
-			right = [2]*trieNode{other, empty}
-		} else {
-			right = [2]*trieNode{empty, other}
 		}
 
 	case compareIsContained:
@@ -776,24 +766,39 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 		if other.isActive {
 			handler.Added(other)
 		}
-		right = other.children
+	}
+
+	orderBasedOnChildComparison := func(left, right *trieNode, child uint32) [2]*trieNode {
 		if child == 0 {
-			left = [2]*trieNode{me, empty}
-		} else {
-			left = [2]*trieNode{empty, me}
+			return [2]*trieNode{left, right}
 		}
+		return [2]*trieNode{right, left}
+	}
+
+	var left, right [2]*trieNode
+
+	switch result {
+	case compareSame:
+		// They have the same key
+		left = me.children
+		right = other.children
+
+	case compareContains:
+		// Trie node's key contains the other node's key
+		left = me.children
+		right = orderBasedOnChildComparison(other, empty, child)
+
+	case compareIsContained:
+		// Other node's key contains the trie node's key
+		left = orderBasedOnChildComparison(me, empty, child)
+		right = other.children
 
 	case compareDisjoint:
 		// Keys are disjoint
 		// NOTE It was easier to lean on the logic at the front of this method
 		// rather than duplicate it here. So, create an empty set and recurse.
-		if child == 0 {
-			left = [2]*trieNode{empty, me}
-			right = [2]*trieNode{other, empty}
-		} else {
-			left = [2]*trieNode{me, empty}
-			right = [2]*trieNode{empty, other}
-		}
+		left = orderBasedOnChildComparison(empty, me, child)
+		right = orderBasedOnChildComparison(other, empty, child)
 	}
 	left[0].diff(right[0], handler)
 	left[1].diff(right[1], handler)
