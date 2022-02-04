@@ -468,6 +468,10 @@ func (me *trieNode) Delete(key Prefix) (newHead *trieNode, err error) {
 	return me.del(key, deleteOpts{})
 }
 
+func reverseChild(child int) int {
+	return (child + 1) % 2
+}
+
 func (me *trieNode) del(key Prefix, opts deleteOpts) (newHead *trieNode, err error) {
 	if me == nil {
 		if opts.flatten {
@@ -521,7 +525,7 @@ func (me *trieNode) del(key Prefix, opts deleteOpts) (newHead *trieNode, err err
 
 		if newChild == nil && !me.isActive {
 			// Promote the other child up
-			return me.children[(child+1)%2], nil
+			return me.children[reverseChild(child)], nil
 		}
 		newNode := me.copyMutate(func(n *trieNode) {
 			n.children[child] = newChild
@@ -720,56 +724,63 @@ type trieDiffHandler struct {
 }
 
 func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
+	// Compare the two nodes.
+	// If one of them is nil, we treat it as if it is contained by the non-nil one.
+	// In that case, `child` doesn't matter so we leave it initialized at zero.
+	// If both are nil, there is nothing to do.
 	var result, child int
-
 	switch {
 	case me != nil && other != nil:
 		result, _, _, child = compare(me.Prefix, other.Prefix)
 
-	case me != nil && other == nil:
+	case me != nil:
 		result = compareContains
 
-	case me == nil && other != nil:
+	case other != nil:
 		result = compareIsContained
 
 	default:
 		return
 	}
 
-	orderBasedOnChildComparison := func(left, right *trieNode, child int) [2]*trieNode {
-		if child == 0 {
-			return [2]*trieNode{left, right}
+	// Based on the comparison above, determine where to descend to child nodes
+	// before recursing. In general, the left (me) or the right (other) may
+	// descend to its children but not both.
+	//
+	// The side that doesn't descend is included in the pair of nodes as either
+	// the first (0) or second (1) element based on the comparison (child) with
+	// the other side being an empty set (nil by default).
+	//
+	// If the two sides are disjoint, neither one descends and the two sides
+	// are split apart to compare each independently with an empty set.
+
+	left := func(child int) (left [2]*trieNode) {
+		if result == compareIsContained || result == compareDisjoint {
+			if result == compareDisjoint {
+				// This node should be on the opposite side as the other one
+				child = reverseChild(child)
+			}
+			left[child] = me
+		} else {
+			left = me.children
 		}
-		return [2]*trieNode{right, left}
-	}
+		return
+	}(child)
 
-	var empty *trieNode
-
-	left := func() [2]*trieNode {
-		switch result {
-		case compareIsContained:
-			return orderBasedOnChildComparison(me, empty, child)
-
-		case compareDisjoint:
-			return orderBasedOnChildComparison(empty, me, child)
+	right := func(child int) (right [2]*trieNode) {
+		if result == compareContains || result == compareDisjoint {
+			right[child] = other
+		} else {
+			right = other.children
 		}
-		return me.children
-	}()
+		return
+	}(child)
 
-	right := func() [2]*trieNode {
-		switch result {
-		case compareContains:
-			return orderBasedOnChildComparison(other, empty, child)
-
-		case compareDisjoint:
-			return orderBasedOnChildComparison(other, empty, child)
-		}
-		return other.children
-	}()
-
+	// Recurse into children
 	left[0].diff(right[0], handler)
 	left[1].diff(right[1], handler)
 
+	// Call handlers. If the nodes are disjoint, nothing is called yet.
 	switch result {
 	case compareSame:
 		// They have the same key
