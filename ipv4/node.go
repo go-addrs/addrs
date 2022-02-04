@@ -798,17 +798,17 @@ func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) {
 
 // Diff compares the two tries to find entries that are removed, added, or
 // changed between the two. It calls the appropriate callback
-func (me *trieNode) Diff(other *trieNode, handler trieDiffHandler) {
+func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler) {
+	noop := func(*trieNode) bool {
+		return true
+	}
+
 	// Ensure I don't have to check for nil everywhere.
 	if handler.Removed == nil {
-		handler.Removed = func(*trieNode) bool {
-			return true
-		}
+		handler.Removed = noop
 	}
 	if handler.Added == nil {
-		handler.Added = func(*trieNode) bool {
-			return true
-		}
+		handler.Added = noop
 	}
 	if handler.Modified == nil {
 		handler.Modified = func(l, r *trieNode) bool {
@@ -816,7 +816,7 @@ func (me *trieNode) Diff(other *trieNode, handler trieDiffHandler) {
 		}
 	}
 
-	me.diff(other, trieDiffHandler{
+	left.diff(right, trieDiffHandler{
 		Removed: func(left *trieNode) bool {
 			if left.isActive {
 				return handler.Removed(left)
