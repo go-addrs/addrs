@@ -738,6 +738,8 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 		}
 	}
 
+	var left, right [2]*trieNode
+
 	switch result {
 	case compareSame:
 		// They have the same key
@@ -754,20 +756,19 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 				handler.Added(other)
 			}
 		}
-		me.children[0].diff(other.children[0], handler)
-		me.children[1].diff(other.children[1], handler)
+		left = me.children
+		right = other.children
 
 	case compareContains:
 		// Trie node's key contains the other node's key
 		if me.isActive {
 			handler.Removed(me)
 		}
+		left = me.children
 		if child == 0 {
-			me.children[0].diff(other, handler)
-			me.children[1].diff(empty, handler)
+			right = [2]*trieNode{other, empty}
 		} else {
-			me.children[0].diff(empty, handler)
-			me.children[1].diff(other, handler)
+			right = [2]*trieNode{empty, other}
 		}
 
 	case compareIsContained:
@@ -775,12 +776,11 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 		if other.isActive {
 			handler.Added(other)
 		}
+		right = other.children
 		if child == 0 {
-			me.diff(other.children[0], handler)
-			empty.diff(other.children[1], handler)
+			left = [2]*trieNode{me, empty}
 		} else {
-			empty.diff(other.children[0], handler)
-			me.diff(other.children[1], handler)
+			left = [2]*trieNode{empty, me}
 		}
 
 	case compareDisjoint:
@@ -788,13 +788,15 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 		// NOTE It was easier to lean on the logic at the front of this method
 		// rather than duplicate it here. So, create an empty set and recurse.
 		if child == 0 {
-			empty.diff(other, handler)
-			me.diff(empty, handler)
+			left = [2]*trieNode{empty, me}
+			right = [2]*trieNode{other, empty}
 		} else {
-			me.diff(empty, handler)
-			empty.diff(other, handler)
+			left = [2]*trieNode{me, empty}
+			right = [2]*trieNode{empty, other}
 		}
 	}
+	left[0].diff(right[0], handler)
+	left[1].diff(right[1], handler)
 }
 
 // Diff compares the two tries to find entries that are removed, added, or
