@@ -48,7 +48,7 @@ func intMax(a, b int) int {
 // | true    | false | 0     | `longer` belongs in `shorter`'s `children[0]`
 // | true    | false | 1     | `longer` belongs in `shorter`'s `children[1]`
 // | true    | true  | NA    | `shorter` and `longer` are the same key
-func contains(shorter, longer Prefix) (matches, exact bool, common, child uint32) {
+func contains(shorter, longer Prefix) (matches, exact bool, common uint32, child int) {
 	mask := uint32(0xffffffff) << (32 - shorter.length)
 
 	matches = shorter.addr.ui&mask == longer.addr.ui&mask
@@ -76,7 +76,7 @@ const (
 )
 
 // compare is a helper which compares two keys to find their relationship
-func compare(a, b Prefix) (result int, reversed bool, common, child uint32) {
+func compare(a, b Prefix) (result int, reversed bool, common uint32, child int) {
 	var aMatch, bMatch bool
 	// Figure out which is the longer prefix and reverse them if b is shorter
 	reversed = b.length < a.length
@@ -720,8 +720,7 @@ type trieDiffHandler struct {
 }
 
 func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
-	var result int
-	var child uint32
+	var result, child int
 
 	switch {
 	case me != nil && other != nil:
@@ -737,7 +736,7 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 		return
 	}
 
-	orderBasedOnChildComparison := func(left, right *trieNode, child uint32) [2]*trieNode {
+	orderBasedOnChildComparison := func(left, right *trieNode, child int) [2]*trieNode {
 		if child == 0 {
 			return [2]*trieNode{left, right}
 		}

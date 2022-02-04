@@ -793,7 +793,8 @@ func TestContains(t *testing.T) {
 		desc           string
 		a, b           Prefix
 		matches, exact bool
-		common, child  uint32
+		common  uint32
+		child  int
 	}{
 		{
 			desc:    "trivial",
