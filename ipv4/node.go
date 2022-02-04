@@ -765,9 +765,15 @@ func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) {
 		newLeft = left.children
 		newRight[child] = right
 	case compareDisjoint:
-		// Left node must be on the opposite side as the right one
-		newLeft[reverseChild(child)] = left
-		newRight[child] = right
+		// Divide and conquer. Compare each with an empty set. Order based on
+		// the comparison.
+		if child == 0 {
+			newLeft[1] = left
+			newRight[0] = right
+		} else {
+			newLeft[0] = left
+			newRight[1] = right
+		}
 	}
 
 	// Recurse into children
