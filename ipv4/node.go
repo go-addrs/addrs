@@ -720,22 +720,21 @@ type trieDiffHandler struct {
 }
 
 func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
-	var empty *trieNode
 	var result int
 	var child uint32
 
-	if me != empty {
-		if other != empty {
-			result, _, _, child = compare(me.Prefix, other.Prefix)
-		} else {
-			result = compareContains
-		}
-	} else {
-		if other != empty {
-			result = compareIsContained
-		} else {
-			return
-		}
+	switch {
+	case me != nil && other != nil:
+		result, _, _, child = compare(me.Prefix, other.Prefix)
+
+	case me != nil && other == nil:
+		result = compareContains
+
+	case me == nil && other != nil:
+		result = compareIsContained
+
+	default:
+		return
 	}
 
 	orderBasedOnChildComparison := func(left, right *trieNode, child uint32) [2]*trieNode {
@@ -745,6 +744,7 @@ func (me *trieNode) diff(other *trieNode, handler trieDiffHandler) {
 		return [2]*trieNode{right, left}
 	}
 
+	var empty *trieNode
 	var left, right [2]*trieNode
 
 	switch result {
