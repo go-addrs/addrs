@@ -830,16 +830,14 @@ func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler) {
 			return true
 		},
 		Modified: func(left, right *trieNode) bool {
-			if left.isActive {
-				if right.isActive {
-					if !dataEqual(left.Data, right.Data) {
-						return handler.Modified(left, right)
-					}
-					return true
+			switch {
+			case left.isActive && right.isActive:
+				if !dataEqual(left.Data, right.Data) {
+					return handler.Modified(left, right)
 				}
+			case left.isActive:
 				return handler.Removed(left)
-			}
-			if right.isActive {
+			case right.isActive:
 				return handler.Added(right)
 			}
 			return true
