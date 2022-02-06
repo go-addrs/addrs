@@ -87,7 +87,7 @@ func (me FixedITable) LongestMatch(prefix PrefixI) (value interface{}, matched M
 // peers.
 func (me FixedITable) Aggregate() FixedITable {
 	return FixedITable{
-		trie: me.trie.NewAggregate(),
+		trie: me.trie.Aggregate(),
 	}
 }
 

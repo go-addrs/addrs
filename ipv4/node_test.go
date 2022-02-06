@@ -1397,7 +1397,7 @@ func TestAggregate(t *testing.T) {
 			check := func(t *testing.T) {
 				expectedIterations := 0
 				result := []pair32{}
-				trie.Aggregate(
+				trie.Aggregate().Walk(
 					func(key Prefix, data interface{}) bool {
 						result = append(result, pair32{key: key, data: data})
 						expectedIterations = 1
@@ -1407,7 +1407,7 @@ func TestAggregate(t *testing.T) {
 				assert.Equal(t, tt.golden, result)
 
 				iterations := 0
-				trie.Aggregate(
+				trie.Aggregate().Walk(
 					func(key Prefix, data interface{}) bool {
 						result = append(result, pair32{key: key, data: data})
 						iterations++
@@ -1476,7 +1476,7 @@ func TestAggregateEqualComparable(t *testing.T) {
 			}
 
 			result := []pair32{}
-			trie.Aggregate(
+			trie.Aggregate().Walk(
 				func(key Prefix, data interface{}) bool {
 					result = append(result, pair32{key: key, data: data})
 					return true
@@ -2049,7 +2049,7 @@ func TestNewAggregate(t *testing.T) {
 				return fill(tt.table), fill(tt.aggregated)
 			}()
 
-			assert.True(t, table.NewAggregate().Equal(aggregated))
+			assert.True(t, table.Aggregate().Equal(aggregated))
 		})
 	}
 }

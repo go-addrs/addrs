@@ -553,11 +553,6 @@ func (me *trieNode) active() bool {
 	return me.isActive
 }
 
-type dataContainer struct {
-	valid bool
-	data  interface{}
-}
-
 func dataEqual(a, b interface{}) bool {
 	// If the data stored are EqualComparable, compare it using its method.
 	// This is useful to allow mapping to a more complex type (e.g. Set) that
@@ -570,61 +565,10 @@ func dataEqual(a, b interface{}) bool {
 	}
 }
 
-func dataContainerEqual(a, b dataContainer) bool {
-	if !(a.valid && b.valid) {
-		return false
-	}
-	return dataEqual(a.data, b.data)
-}
-
 // EqualComparable is an interface used to compare data. If the datatype you
 // store implements it, it can be used to aggregate prefixes.
 type EqualComparable interface {
 	EqualInterface(interface{}) bool
-}
-
-// aggregable returns if descendants can be aggregated into the current prefix,
-// it considers the `isActive` attributes of all nodes under consideration and
-// only aggregates where active nodes can be joined together in aggregation. It
-// also only aggregates nodes whose data compare equal.
-//
-// returns true and the data used to compare with if they are aggregable, false
-// otherwise (and data must be ignored).
-func (me *trieNode) aggregable(data dataContainer) (bool, dataContainer) {
-	// Note that me != nil by design
-
-	if me.isActive {
-		return true, dataContainer{valid: true, data: me.Data}
-	}
-
-	// Thoughts on aggregation.
-	//
-	// If a parent node's data compares equal to that of descendent nodes, then
-	// the descendent nodes should not be included in the aggregation. If there
-	// is an intermediate descendent between two nodes that doesn't compare
-	// equal, then all of them should be included. Another way to put this is
-	// that each time a descendent doesn't compare equal to its direct ancestor
-	// then it should be included in the aggregation. To accomplish this, each
-	// parent passes its data to its children to make the comparison.
-	//
-	// Aggregation gets a little more complicated when peers are considered. If
-	// a node's peer has the same length prefix and compare equal then they
-	// should be aggregated together. However, it should be aware of their
-	// joint direct ancestor and whether they should be aggrated into the
-	// ancestor as discussed above.
-
-	// NOTE that we know that BOTH children exist since me.isActive is false. If
-	// less than one child existed, the tree would have been compacted to
-	// eliminate this node (me).
-	left, right := me.children[0], me.children[1]
-	leftAggegable, leftData := left.aggregable(data)
-	rightAggegable, rightData := right.aggregable(data)
-
-	arePeers := (me.Prefix.length+1) == left.Prefix.length && left.Prefix.length == right.Prefix.length
-	if arePeers && leftAggegable && rightAggegable && dataContainerEqual(leftData, rightData) {
-		return true, leftData
-	}
-	return false, dataContainer{}
 }
 
 // trieCallback defines the signature of a function you can pass to Walk or
@@ -659,62 +603,6 @@ func (me *trieNode) Walk(callback trieCallback) bool {
 		}
 	}
 	return true
-}
-
-// aggregate is the recursive implementation for Aggregate
-// `data`:     the data value from nodes above to use for equal comparison. If
-//             the current node is active and its data compares different to
-//             this value then its key is not aggregable with containing
-//             prefixes.
-// `callback`: function to call with each key/data pair found.
-func (me *trieNode) aggregate(data dataContainer, callback trieCallback) bool {
-	if me == nil {
-		return true
-	}
-
-	aggregable, d := me.aggregable(data)
-	if aggregable && !dataContainerEqual(data, d) {
-		if callback != nil {
-			if !callback(me.Prefix, d.data) {
-				return false
-			}
-		}
-		for _, child := range me.children {
-			if !child.aggregate(d, callback) {
-				return false
-			}
-		}
-	} else {
-		// Don't visit the current node but descend to children
-		for _, child := range me.children {
-			if !child.aggregate(data, callback) {
-				return false
-			}
-		}
-	}
-	return true
-}
-
-// Aggregate is like iterate except that it has the capability of aggregating
-// prefixes that are either adjacent to each other with the same prefix length
-// or contained within another prefix with a shorter length.
-
-// Aggregation visits the minimum set of prefix/data pairs needed to return the
-// same data for any longest prefix match as would be returned by the the
-// original trie, non-aggregated. This can be useful, for example, to minimize
-// the number of prefixes needed to install into a router's datapath to
-// guarantee that all of the next hops are correct.
-//
-// In general, routing protocols should not aggregate and then pass on the
-// aggregates to neighbors as this will likely lead to poor comparisions by
-// neighboring routers who receive routes aggregated differently from different
-// peers.
-//
-// Prefixes are only considered aggregable if their data compare equal. This is
-// useful for aggregating prefixes where the next hop is the same but not where
-// they're different.
-func (me *trieNode) Aggregate(callback trieCallback) bool {
-	return me.aggregate(dataContainer{}, callback)
 }
 
 type trieDiffHandler struct {
@@ -849,7 +737,7 @@ type umbrella struct {
 	Data interface{}
 }
 
-func (me *trieNode) newAggregate(parentUmbrella *umbrella) (result *trieNode) {
+func (me *trieNode) aggregate(parentUmbrella *umbrella) (result *trieNode) {
 	if me == nil {
 		return me
 	}
@@ -878,8 +766,8 @@ func (me *trieNode) newAggregate(parentUmbrella *umbrella) (result *trieNode) {
 		}
 	}
 	children = [2]*trieNode{
-		children[0].newAggregate(u),
-		children[1].newAggregate(u),
+		children[0].aggregate(u),
+		children[1].aggregate(u),
 	}
 
 	childrenAggregate := func(a, b *trieNode) bool {
@@ -916,7 +804,6 @@ func (me *trieNode) newAggregate(parentUmbrella *umbrella) (result *trieNode) {
 	return createReturnValue()
 }
 
-// TODO Rename this to Aggregate when the other one is obsolete
-func (me *trieNode) NewAggregate() *trieNode {
-	return me.newAggregate(nil)
+func (me *trieNode) Aggregate() *trieNode {
+	return me.aggregate(nil)
 }
