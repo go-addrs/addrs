@@ -1935,3 +1935,121 @@ func TestDiff(t *testing.T) {
 		})
 	}
 }
+
+func TestNewAggregate(t *testing.T) {
+	tests := []struct {
+		desc              string
+		table, aggregated []pair32
+	}{
+		{
+			desc:       "empty",
+			table:      []pair32{},
+			aggregated: []pair32{},
+		}, {
+			desc: "trivial",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+			},
+		}, {
+			desc: "sub_prefix_left",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+			},
+		}, {
+			desc: "different_data",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.0"), 25}, data: true},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.0"), 25}, data: true},
+			},
+		}, {
+			desc: "disjoint",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 26}},
+				pair32{key: Prefix{_a("203.0.113.128"), 26}},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 26}},
+				pair32{key: Prefix{_a("203.0.113.128"), 26}},
+			},
+		}, {
+			desc: "subprefix_different_data",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.0"), 26}, data: true},
+				pair32{key: Prefix{_a("203.0.113.64"), 26}},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.0"), 26}, data: true},
+			},
+		}, {
+			desc: "aggregated_children",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+			},
+		}, {
+			desc: "adjacent_different_data",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}, data: true},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}, data: true},
+			},
+		}, {
+			desc: "adjacent_different_lengths",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+				pair32{key: Prefix{_a("203.0.113.128"), 26}},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+				pair32{key: Prefix{_a("203.0.113.128"), 26}},
+			},
+		}, {
+			desc: "aggregated_children_have_precedence",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.0"), 25}, data: true},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}, data: true},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}, data: true},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			table, aggregated := func() (a, b *trieNode) {
+				fill := func(pairs []pair32) (trie *trieNode) {
+					var err error
+					for _, p := range pairs {
+						trie, err = trie.Insert(p.key, p.data)
+						require.Nil(t, err)
+					}
+					return
+				}
+				return fill(tt.table), fill(tt.aggregated)
+			}()
+
+			assert.True(t, table.NewAggregate().Equal(aggregated))
+		})
+	}
+}

@@ -844,3 +844,79 @@ func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler) {
 		},
 	})
 }
+
+type umbrella struct {
+	Data interface{}
+}
+
+func (me *trieNode) newAggregate(parentUmbrella *umbrella) (result *trieNode) {
+	if me == nil {
+		return me
+	}
+
+	isActive := me.isActive
+	data := me.Data
+	children := me.children
+	createReturnValue := func() *trieNode {
+		if isActive == me.isActive && children == me.children && dataEqual(data, me.Data) {
+			return me
+		}
+		return me.copyMutate(func(n *trieNode) {
+			n.isActive = isActive
+			n.Data = data
+			n.children = children
+		})
+	}
+
+	u := parentUmbrella
+	if isActive {
+		if parentUmbrella == nil || !dataEqual(parentUmbrella.Data, data) {
+			u = &umbrella{data}
+		} else {
+			isActive = false
+			data = nil
+		}
+	}
+	children = [2]*trieNode{
+		children[0].newAggregate(u),
+		children[1].newAggregate(u),
+	}
+
+	childrenAggregate := func(a, b *trieNode) bool {
+		if a.active() && b.active() {
+			if a.Prefix.Length() == (me.Prefix.Length() + 1) {
+				if a.Prefix.Length() == b.Prefix.Length() {
+					if dataEqual(a.Data, b.Data) {
+						return true
+					}
+				}
+			}
+		}
+		return false
+	}(children[0], children[1])
+
+	if childrenAggregate {
+		isActive = true
+		data = children[0].Data
+		children = [2]*trieNode{}
+	}
+
+	if isActive {
+		return createReturnValue()
+	}
+
+	if children[0] == nil {
+		return children[1]
+	}
+
+	if children[1] == nil {
+		return children[0]
+	}
+
+	return createReturnValue()
+}
+
+// TODO Rename this to Aggregate when the other one is obsolete
+func (me *trieNode) NewAggregate() *trieNode {
+	return me.newAggregate(nil)
+}
