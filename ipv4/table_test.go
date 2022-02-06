@@ -220,7 +220,7 @@ func TestTableTExample1(t *testing.T) {
 	)
 
 	result = []string{}
-	m.FixedTable().WalkAggregates(func(prefix Prefix, value bool) bool {
+	m.FixedTable().Aggregate().Walk(func(prefix Prefix, value bool) bool {
 		result = append(result, prefix.String())
 		return true
 	})
@@ -268,7 +268,7 @@ func TestTableTExample2(t *testing.T) {
 	)
 
 	result = []pairT{}
-	m.FixedTable().WalkAggregates(func(prefix Prefix, value bool) bool {
+	m.FixedTable().Aggregate().Walk(func(prefix Prefix, value bool) bool {
 		result = append(
 			result,
 			pairT{
@@ -341,7 +341,7 @@ func TestTableTExample3(t *testing.T) {
 	assert.Equal(t, 1, iterations)
 
 	result = []string{}
-	m.FixedTable().WalkAggregates(func(prefix Prefix, value bool) bool {
+	m.FixedTable().Aggregate().Walk(func(prefix Prefix, value bool) bool {
 		result = append(result, prefix.String())
 		return true
 	})
@@ -356,7 +356,7 @@ func TestTableTExample3(t *testing.T) {
 		result,
 	)
 	iterations = 0
-	m.FixedTable().WalkAggregates(func(prefix Prefix, value bool) bool {
+	m.FixedTable().Aggregate().Walk(func(prefix Prefix, value bool) bool {
 		iterations++
 		return false
 	})
@@ -528,7 +528,7 @@ func TestTableTWalkAggregates(t *testing.T) {
 	m.Insert(secondKey, true)
 
 	found := false
-	m.FixedTable().WalkAggregates(func(key Prefix, value bool) bool {
+	m.FixedTable().Aggregate().Walk(func(key Prefix, value bool) bool {
 		assert.Equal(t, insertKey, key)
 		assert.True(t, value)
 		found = true
@@ -622,7 +622,7 @@ func TestNilTable(t *testing.T) {
 	assert.True(t, table.FixedTable().Walk(func(Prefix, bool) bool {
 		panic("should not be called")
 	}))
-	assert.True(t, table.FixedTable().WalkAggregates(func(Prefix, bool) bool {
+	assert.True(t, table.FixedTable().Aggregate().Walk(func(Prefix, bool) bool {
 		panic("should not be called")
 	}))
 

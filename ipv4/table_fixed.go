@@ -47,8 +47,39 @@ func (me FixedTable[T]) LongestMatch(searchPrefix PrefixI) (value T, matched Mat
 	return i.(T), matched, prefix
 }
 
+// Aggregate returns a new aggregated table as described below.
+//
+// It combines aggregable prefixes that are either adjacent to each other with
+// the same prefix length or contained within another prefix with a shorter
+// length.
+//
+// Prefixes are only considered aggregable if their values compare equal. This is
+// useful for aggregating prefixes where the next hop is the same but not where
+// they're different. Values that can be compared with == or implement the
+// EqualComparable interface can be used.
+//
+// The aggregated table has the minimum set of prefix/value pairs needed to
+// return the same value for any longest prefix match using a host route  as
+// would be returned by the the original trie, non-aggregated. This can be
+// useful, for example, to minimize the number of prefixes needed to install
+// into a router's datapath to guarantee that all of the next hops are correct.
+//
+// If two prefixes in the original table map to the same value, one contains
+// the other, and there is no intermediate prefix between them with a different
+// value then only the broader prefix will appear in the resulting table.
+//
+// In general, routing protocols should not aggregate and then pass on the
+// aggregates to neighbors as this will likely lead to poor comparisions by
+// neighboring routers who receive routes aggregated differently from different
+// peers.
+func (me FixedTable[T]) Aggregate() FixedTable[T] {
+	return (FixedTable[T])(
+		(FixedITable)(me).Aggregate(),
+	)
+}
+
 // TableCallback is the signature of the callback functions that can be passed to
-// Walk or WalkAggregates to handle each prefix/value combination.
+// Walk to handle each prefix/value combination.
 //
 // Each invocation of your callback should return true if iteration should
 // continue (as long as another key / value pair exists) or false to stop
@@ -63,28 +94,6 @@ type TableCallback[T any] func(Prefix, T) bool
 // true if it iterated all items.
 func (me FixedTable[T]) Walk(callback TableCallback[T]) bool {
 	return (FixedITable)(me).Walk(func(p Prefix, i interface{}) bool {
-		return callback(p, i.(T))
-	})
-}
-
-// WalkAggregates invokes then given callback function for each prefix/value
-// pair in the table, aggregated by value, in lexigraphical order.
-//
-// If two prefixes table to the same value, one contains the other, and there is
-// no intermediate prefix between the two with a different value then only the
-// broader prefix will be visited with the value.
-//
-// 1. The values stored must be comparable to be aggregable. Prefixes get
-//    aggregated only where their values compare equal.
-// 2. The set of prefix/value pairs visited is the minimal set such that any
-//    longest prefix match against the aggregated set will always return the
-//    same value as the same match against the non-aggregated set.
-// 3. The aggregated and non-aggregated sets of prefixes may be disjoint.
-//
-// It returns false if iteration was stopped due to a callback return false or
-// true if it iterated all items.
-func (me FixedTable[T]) WalkAggregates(callback TableCallback[T]) bool {
-	return (FixedITable)(me).WalkAggregates(func(p Prefix, i interface{}) bool {
 		return callback(p, i.(T))
 	})
 }
