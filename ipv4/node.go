@@ -633,39 +633,6 @@ func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) bool {
 		return true
 	}
 
-	// Based on the comparison above, determine where to descend to child nodes
-	// before recursing.
-	//
-	// The side that doesn't descend is included in the pair of nodes as either
-	// the first (0) or second (1) element based on the comparison (child) with
-	// the other side being an empty set (nil by default).
-	//
-	// If the two sides are disjoint, neither one descends and the two sides
-	// are split apart to compare each independently with an empty set.
-
-	var newLeft, newRight [2]*trieNode
-	switch result {
-	case compareSame:
-		newLeft = left.children
-		newRight = right.children
-	case compareIsContained:
-		newLeft[child] = left
-		newRight = right.children
-	case compareContains:
-		newLeft = left.children
-		newRight[child] = right
-	case compareDisjoint:
-		// Divide and conquer. Compare each with an empty set. Order based on
-		// the comparison.
-		if child == 0 {
-			newLeft[1] = left
-			newRight[0] = right
-		} else {
-			newLeft[0] = left
-			newRight[1] = right
-		}
-	}
-
 	// Call handlers. If the nodes are disjoint, nothing is called yet.
 	switch result {
 	case compareSame:
@@ -684,6 +651,42 @@ func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) bool {
 		// Right node's key contains the left node's key
 		if !handler.Added(right) {
 			return false
+		}
+	}
+
+	// Based on the comparison above, determine where to descend to child nodes
+	// before recursing.
+	//
+	// The side that doesn't descend is included in the pair of nodes as either
+	// the first (0) or second (1) element based on the comparison (child) with
+	// the other side being an empty set (nil by default).
+	//
+	// If the two sides are disjoint, neither one descends and the two sides
+	// are split apart to compare each independently with an empty set.
+
+	var newLeft, newRight [2]*trieNode
+	switch result {
+	case compareSame:
+		newLeft = left.children
+		newRight = right.children
+
+	case compareIsContained:
+		newLeft[child] = left
+		newRight = right.children
+
+	case compareContains:
+		newLeft = left.children
+		newRight[child] = right
+
+	case compareDisjoint:
+		// Divide and conquer. Compare each with an empty set. Order based on
+		// the comparison.
+		if child == 0 {
+			newLeft[1] = left
+			newRight[0] = right
+		} else {
+			newLeft[0] = left
+			newRight[1] = right
 		}
 	}
 
