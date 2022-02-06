@@ -588,21 +588,19 @@ type trieCallback func(Prefix, interface{}) bool
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
 func (me *trieNode) Walk(callback trieCallback) bool {
-	if me == nil {
-		return true
+	if callback == nil {
+		callback = func(Prefix, interface{}) bool {
+			return true
+		}
 	}
 
-	if me.isActive && callback != nil {
-		if !callback(me.Prefix, me.Data) {
-			return false
-		}
+	var empty *trieNode
+	handler := trieDiffHandler{
+		Added: func(n *trieNode) bool {
+			return callback(n.Prefix, n.Data)
+		},
 	}
-	for _, child := range me.children {
-		if !child.Walk(callback) {
-			return false
-		}
-	}
-	return true
+	return empty.Diff(me, handler)
 }
 
 type trieDiffHandler struct {
