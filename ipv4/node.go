@@ -664,10 +664,6 @@ func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) {
 		}
 	}
 
-	// Recurse into children
-	newLeft[0].diff(newRight[0], handler)
-	newLeft[1].diff(newRight[1], handler)
-
 	// Call handlers. If the nodes are disjoint, nothing is called yet.
 	switch result {
 	case compareSame:
@@ -682,6 +678,10 @@ func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) {
 		// Right node's key contains the left node's key
 		handler.Added(right)
 	}
+
+	// Recurse into children
+	newLeft[0].diff(newRight[0], handler)
+	newLeft[1].diff(newRight[1], handler)
 }
 
 // Diff compares the two tries to find entries that are removed, added, or

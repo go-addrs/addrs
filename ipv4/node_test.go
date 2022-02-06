@@ -1729,8 +1729,8 @@ func TestDiff(t *testing.T) {
 				pair32{key: Prefix{_a("203.0.113.128"), 25}},
 			},
 			actions: []diffAction{
-				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
 			},
 			aggregated: []diffAction{
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
@@ -1742,8 +1742,8 @@ func TestDiff(t *testing.T) {
 				pair32{key: Prefix{_a("203.0.113.64"), 26}},
 			},
 			actions: []diffAction{
-				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.64"), 26}}, nil},
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.64"), 26}}, nil},
 			},
 			aggregated: []diffAction{
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
@@ -1755,8 +1755,8 @@ func TestDiff(t *testing.T) {
 				pair32{key: Prefix{_a("203.0.113.192"), 26}},
 			},
 			actions: []diffAction{
-				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.192"), 26}}, nil},
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.192"), 26}}, nil},
 			},
 			aggregated: []diffAction{
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
@@ -1790,9 +1790,9 @@ func TestDiff(t *testing.T) {
 				pair32{key: Prefix{_a("203.0.113.128"), 25}, data: 3},
 			},
 			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 2}, nil},
 				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.0"), 25}, data: 3}, nil},
 				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.128"), 25}, data: 3}, nil},
-				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 2}, nil},
 			},
 			aggregated: []diffAction{
 				diffAction{actionTypeChange, pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 2}, 3},
@@ -1835,8 +1835,8 @@ func TestDiff(t *testing.T) {
 				pair32{key: Prefix{_a("203.0.113.128"), 25}},
 			},
 			actions: []diffAction{
-				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
 			},
 		}, {
 			desc: "contained_right_subprefix",
@@ -1851,8 +1851,8 @@ func TestDiff(t *testing.T) {
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
 			},
 			aggregated: []diffAction{
-				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
 			},
 		}, {
 			desc: "contained_left",
@@ -1863,8 +1863,8 @@ func TestDiff(t *testing.T) {
 				pair32{key: Prefix{_a("203.0.113.0"), 25}},
 			},
 			actions: []diffAction{
-				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
 			},
 		}, {
 			desc: "contained_left_subprefix",
@@ -1879,8 +1879,8 @@ func TestDiff(t *testing.T) {
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
 			},
 			aggregated: []diffAction{
-				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
 			},
 		},
 	}
