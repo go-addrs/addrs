@@ -735,3 +735,57 @@ func TestITableGetOrInsertNil(t *testing.T) {
 	assert.True(t, found)
 	assert.Equal(t, 11, value)
 }
+
+func TestITableDiff(t *testing.T) {
+	a := NewITable()
+	a.Insert(_p("203.0.113.0/27"), true)
+	a.Insert(_p("203.0.113.64/27"), true)
+	a.Insert(_p("203.0.113.0/25"), true)
+
+	b := NewITable()
+	b.Insert(_p("203.0.113.0/27"), true)
+	b.Insert(_p("203.0.113.96/27"), true)
+	b.Insert(_p("203.0.113.0/25"), false)
+
+	type action struct {
+		prefix        Prefix
+		before, after interface{}
+	}
+
+	var actions []action
+	getHandler := func() IDiffHandler {
+		actions = nil
+		return IDiffHandler{
+			Removed: func(p Prefix, v interface{}) bool {
+				actions = append(actions, action{p, v, nil})
+				return true
+			},
+			Added: func(p Prefix, v interface{}) bool {
+				actions = append(actions, action{p, nil, v})
+				return true
+			},
+			Modified: func(p Prefix, l, r interface{}) bool {
+				actions = append(actions, action{p, l, r})
+				return true
+			},
+		}
+	}
+
+	t.Run("forward", func(t *testing.T) {
+		a.FixedTable().Diff(b.FixedTable(), getHandler())
+		assert.Equal(t, []action{
+			action{_p("203.0.113.0/25"), true, false},
+			action{_p("203.0.113.64/27"), true, nil},
+			action{_p("203.0.113.96/27"), nil, true},
+		}, actions)
+	})
+
+	t.Run("backward", func(t *testing.T) {
+		b.FixedTable().Diff(a.FixedTable(), getHandler())
+		assert.Equal(t, []action{
+			action{_p("203.0.113.0/25"), false, true},
+			action{_p("203.0.113.64/27"), nil, true},
+			action{_p("203.0.113.96/27"), true, nil},
+		}, actions)
+	})
+}

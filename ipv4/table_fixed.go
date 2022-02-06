@@ -97,3 +97,52 @@ func (me FixedTable[T]) Walk(callback TableCallback[T]) bool {
 		return callback(p, i.(T))
 	})
 }
+
+// TableModifiedCallback is the signature of the callback functions to handle
+// a modified entry when diffing. It is passed the prefix and the values before
+// and after the change.
+//
+// Each invocation of your callback should return true if iteration should
+// continue (as long as another key / value pair exists) or false to stop
+// iterating and return immediately (meaning your callback will not be called
+// again).
+type TableModifiedCallback[T any] func(p Prefix, left, right T) bool
+
+// DiffHandler is a struct passed to Diff to handle changes found between the
+// left and right tables. Removed is called for prefixes that appear in
+// the left table but not the right, Added is called for prefixes that appear
+// in the right but not the left, and Modified is called for prefixes that
+// appear in both but have different values.
+//
+// Any of the handlers can be left out safely -- they will default to nil. In
+// that case, Diff will skip those cases.
+type DiffHandler[T any] struct {
+	Removed  TableCallback[T]
+	Added    TableCallback[T]
+	Modified TableModifiedCallback[T]
+}
+
+// Diff invokes the given callback functions for each prefix/value pair in the
+// table in lexigraphical order.
+//
+// It returns false if iteration was stopped due to a callback returning false
+// or true if it iterated all items.
+func (me FixedTable[T]) Diff(other FixedTable[T], handler DiffHandler[T]) bool {
+	trieHandler := trieDiffHandler{}
+	if handler.Removed != nil {
+		trieHandler.Removed = func(n *trieNode) bool {
+			return handler.Removed(n.Prefix, n.Data.(T))
+		}
+	}
+	if handler.Added != nil {
+		trieHandler.Added = func(n *trieNode) bool {
+			return handler.Added(n.Prefix, n.Data.(T))
+		}
+	}
+	if handler.Modified != nil {
+		trieHandler.Modified = func(l, r *trieNode) bool {
+			return handler.Modified(l.Prefix, l.Data.(T), r.Data.(T))
+		}
+	}
+	return me.trie.Diff(other.trie, trieHandler)
+}
