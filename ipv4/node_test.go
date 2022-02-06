@@ -1900,23 +1900,26 @@ func TestDiff(t *testing.T) {
 			}()
 
 			var actions []diffAction
-			handler := trieDiffHandler{
-				Removed: func(left *trieNode) bool {
-					require.True(t, left.isActive)
-					actions = append(actions, diffAction{actionTypeRemove, pair32{key: left.Prefix, data: left.Data}, nil})
-					return true
-				},
-				Added: func(right *trieNode) bool {
-					require.True(t, right.isActive)
-					actions = append(actions, diffAction{actionTypeAdd, pair32{key: right.Prefix, data: right.Data}, nil})
-					return true
-				},
-				Modified: func(left, right *trieNode) bool {
-					require.True(t, left.isActive)
-					require.True(t, right.isActive)
-					actions = append(actions, diffAction{actionTypeChange, pair32{key: left.Prefix, data: left.Data}, right.Data})
-					return true
-				},
+			getHandler := func(ret bool) trieDiffHandler {
+				actions = nil
+				return trieDiffHandler{
+					Removed: func(left *trieNode) bool {
+						require.True(t, left.isActive)
+						actions = append(actions, diffAction{actionTypeRemove, pair32{key: left.Prefix, data: left.Data}, nil})
+						return ret
+					},
+					Added: func(right *trieNode) bool {
+						require.True(t, right.isActive)
+						actions = append(actions, diffAction{actionTypeAdd, pair32{key: right.Prefix, data: right.Data}, nil})
+						return ret
+					},
+					Modified: func(left, right *trieNode) bool {
+						require.True(t, left.isActive)
+						require.True(t, right.isActive)
+						actions = append(actions, diffAction{actionTypeChange, pair32{key: left.Prefix, data: left.Data}, right.Data})
+						return ret
+					},
+				}
 			}
 
 			aggregatedExpected := tt.aggregated
@@ -1926,18 +1929,22 @@ func TestDiff(t *testing.T) {
 
 			t.Run("forward", func(t *testing.T) {
 				t.Run("normal", func(t *testing.T) {
-					actions = nil
-
-					left.Diff(right, handler)
+					left.Diff(right, getHandler(true))
 					assert.True(t,
 						reflect.DeepEqual(tt.actions, actions),
 						cmp.Diff(tt.actions, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
 					)
+					if len(tt.actions) >= 1 {
+						// Run the same thing but return false to stop iteration
+						t.Run("stop", func(t *testing.T) {
+							left.Diff(right, getHandler(false))
+							assert.True(t, reflect.DeepEqual(tt.actions[:1], actions))
+						})
+					}
 				})
 
 				t.Run("aggregated", func(t *testing.T) {
-					actions = nil
-					left.Aggregate().Diff(right.Aggregate(), handler)
+					left.Aggregate().Diff(right.Aggregate(), getHandler(true))
 					assert.True(t,
 						reflect.DeepEqual(aggregatedExpected, actions),
 						cmp.Diff(aggregatedExpected, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
@@ -1947,9 +1954,7 @@ func TestDiff(t *testing.T) {
 
 			t.Run("backward", func(t *testing.T) {
 				t.Run("normal", func(t *testing.T) {
-					actions = nil
-
-					right.Diff(left, handler)
+					right.Diff(left, getHandler(true))
 
 					var expected []diffAction
 					for _, action := range tt.actions {
@@ -1974,9 +1979,7 @@ func TestDiff(t *testing.T) {
 				})
 
 				t.Run("aggregated", func(t *testing.T) {
-					actions = nil
-
-					right.Aggregate().Diff(left.Aggregate(), handler)
+					right.Aggregate().Diff(left.Aggregate(), getHandler(true))
 
 					var expected []diffAction
 					for _, action := range aggregatedExpected {

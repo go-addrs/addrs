@@ -611,7 +611,7 @@ type trieDiffHandler struct {
 	Modified func(left, right *trieNode) bool
 }
 
-func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) {
+func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) bool {
 	// Compare the two nodes.
 	// If one of them is nil, we treat it as if it is contained by the non-nil one.
 	// In that case, `child` doesn't matter so we leave it initialized at zero.
@@ -628,7 +628,7 @@ func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) {
 		result = compareIsContained
 
 	default:
-		return
+		return true
 	}
 
 	// Based on the comparison above, determine where to descend to child nodes
@@ -668,25 +668,36 @@ func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) {
 	switch result {
 	case compareSame:
 		// They have the same key
-		handler.Modified(left, right)
+		if !handler.Modified(left, right) {
+			return false
+		}
 
 	case compareContains:
 		// Left node's key contains the right node's key
-		handler.Removed(left)
+		if !handler.Removed(left) {
+			return false
+		}
 
 	case compareIsContained:
 		// Right node's key contains the left node's key
-		handler.Added(right)
+		if !handler.Added(right) {
+			return false
+		}
 	}
 
 	// Recurse into children
-	newLeft[0].diff(newRight[0], handler)
-	newLeft[1].diff(newRight[1], handler)
+	if !newLeft[0].diff(newRight[0], handler) {
+		return false
+	}
+	if !newLeft[1].diff(newRight[1], handler) {
+		return false
+	}
+	return true
 }
 
 // Diff compares the two tries to find entries that are removed, added, or
 // changed between the two. It calls the appropriate callback
-func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler) {
+func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler) bool {
 	noop := func(*trieNode) bool {
 		return true
 	}
@@ -704,7 +715,7 @@ func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler) {
 		}
 	}
 
-	left.diff(right, trieDiffHandler{
+	return left.diff(right, trieDiffHandler{
 		Removed: func(left *trieNode) bool {
 			if left.isActive {
 				return handler.Removed(left)
