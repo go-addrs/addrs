@@ -1710,6 +1710,7 @@ func TestDiff(t *testing.T) {
 		desc        string
 		left, right []pair32
 		actions     []diffAction
+		aggregated  []diffAction
 	}{
 		{
 			desc: "empty",
@@ -1731,6 +1732,9 @@ func TestDiff(t *testing.T) {
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
 			},
+			aggregated: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+			},
 		}, {
 			desc: "right_empty_with_subprefix_on_left",
 			left: []pair32{
@@ -1741,6 +1745,9 @@ func TestDiff(t *testing.T) {
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.64"), 26}}, nil},
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
 			},
+			aggregated: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+			},
 		}, {
 			desc: "right_empty_with_subprefix_on_right",
 			left: []pair32{
@@ -1749,6 +1756,9 @@ func TestDiff(t *testing.T) {
 			},
 			actions: []diffAction{
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.192"), 26}}, nil},
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+			},
+			aggregated: []diffAction{
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
 			},
 		}, {
@@ -1784,6 +1794,9 @@ func TestDiff(t *testing.T) {
 				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.128"), 25}, data: 3}, nil},
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 2}, nil},
 			},
+			aggregated: []diffAction{
+				diffAction{actionTypeChange, pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 2}, 3},
+			},
 		}, {
 			desc: "both_sides_aggregable",
 			left: []pair32{
@@ -1797,6 +1810,9 @@ func TestDiff(t *testing.T) {
 			actions: []diffAction{
 				diffAction{actionTypeChange, pair32{key: Prefix{_a("203.0.113.0"), 25}, data: 2}, 3},
 				diffAction{actionTypeChange, pair32{key: Prefix{_a("203.0.113.128"), 25}, data: 2}, 3},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeChange, pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 2}, 3},
 			},
 		}, {
 			desc: "disjoint",
@@ -1834,6 +1850,10 @@ func TestDiff(t *testing.T) {
 			actions: []diffAction{
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
 			},
+			aggregated: []diffAction{
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+			},
 		}, {
 			desc: "contained_left",
 			left: []pair32{
@@ -1857,6 +1877,10 @@ func TestDiff(t *testing.T) {
 			},
 			actions: []diffAction{
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
 			},
 		},
 	}
@@ -1895,42 +1919,86 @@ func TestDiff(t *testing.T) {
 				},
 			}
 
+			aggregatedExpected := tt.aggregated
+			if aggregatedExpected == nil {
+				aggregatedExpected = tt.actions
+			}
+
 			t.Run("forward", func(t *testing.T) {
-				actions = nil
+				t.Run("normal", func(t *testing.T) {
+					actions = nil
 
-				left.Diff(right, handler)
+					left.Diff(right, handler)
+					assert.True(t,
+						reflect.DeepEqual(tt.actions, actions),
+						cmp.Diff(tt.actions, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
+					)
+				})
 
-				assert.True(t,
-					reflect.DeepEqual(tt.actions, actions),
-					cmp.Diff(tt.actions, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
-				)
+				t.Run("aggregated", func(t *testing.T) {
+					actions = nil
+					left.Aggregate().Diff(right.Aggregate(), handler)
+					assert.True(t,
+						reflect.DeepEqual(aggregatedExpected, actions),
+						cmp.Diff(aggregatedExpected, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
+					)
+				})
 			})
 
 			t.Run("backward", func(t *testing.T) {
-				actions = nil
+				t.Run("normal", func(t *testing.T) {
+					actions = nil
 
-				right.Diff(left, handler)
+					right.Diff(left, handler)
 
-				var expected []diffAction
-				for _, action := range tt.actions {
-					var t actionType
-					pair := action.pair
-					val := action.val
-					switch action.t {
-					case actionTypeRemove:
-						t = actionTypeAdd
-					case actionTypeAdd:
-						t = actionTypeRemove
-					default:
-						t = action.t
-						pair.data, val = val, pair.data
+					var expected []diffAction
+					for _, action := range tt.actions {
+						var t actionType
+						pair := action.pair
+						val := action.val
+						switch action.t {
+						case actionTypeRemove:
+							t = actionTypeAdd
+						case actionTypeAdd:
+							t = actionTypeRemove
+						default:
+							t = action.t
+							pair.data, val = val, pair.data
+						}
+						expected = append(expected, diffAction{t, pair, val})
 					}
-					expected = append(expected, diffAction{t, pair, val})
-				}
-				assert.True(t,
-					reflect.DeepEqual(expected, actions),
-					cmp.Diff(expected, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
-				)
+					assert.True(t,
+						reflect.DeepEqual(expected, actions),
+						cmp.Diff(expected, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
+					)
+				})
+
+				t.Run("aggregated", func(t *testing.T) {
+					actions = nil
+
+					right.Aggregate().Diff(left.Aggregate(), handler)
+
+					var expected []diffAction
+					for _, action := range aggregatedExpected {
+						var t actionType
+						pair := action.pair
+						val := action.val
+						switch action.t {
+						case actionTypeRemove:
+							t = actionTypeAdd
+						case actionTypeAdd:
+							t = actionTypeRemove
+						default:
+							t = action.t
+							pair.data, val = val, pair.data
+						}
+						expected = append(expected, diffAction{t, pair, val})
+					}
+					assert.True(t,
+						reflect.DeepEqual(expected, actions),
+						cmp.Diff(expected, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
+					)
+				})
 			})
 		})
 	}
