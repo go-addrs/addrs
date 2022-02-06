@@ -612,6 +612,10 @@ type trieDiffHandler struct {
 }
 
 func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) bool {
+	if left == right {
+		return true
+	}
+
 	// Compare the two nodes.
 	// If one of them is nil, we treat it as if it is contained by the non-nil one.
 	// In that case, `child` doesn't matter so we leave it initialized at zero.
