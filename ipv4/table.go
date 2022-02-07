@@ -3,13 +3,13 @@
 
 package ipv4
 
-// Table is a structure that tables IP prefixes to values. For example, you can
+// Table is a structure that maps IP prefixes to values. For example, you can
 // insert the following values and they will all exist as distinct prefix/value
 // pairs in the table.
 //
-// 10.0.0.0/16 -> 1
-// 10.0.0.0/24 -> 1
-// 10.0.0.0/32 -> 2
+//     10.0.0.0/16 -> 1
+//     10.0.0.0/24 -> 1
+//     10.0.0.0/32 -> 2
 //
 // The table supports looking up values based on a longest prefix match and also
 // supports efficient aggregation of prefix/value pairs based on equality of

@@ -12,29 +12,30 @@ maintains a clear distinction between IPv4 and IPv6 addresses and related types.
 ## Immutable Types
 
 The types described in this section are opaque, immutable, comparable, space
-efficient and do not require allocation. They can be used as map keys.
+efficient and do not allocate memory. They can be used as map keys.
 
 ### Address
 
 An `Address` does not store anything more than an IP address. Its size is 32
-bits for IPv4 and 128 bits for IPv6 -- exactly the same size when they appear
+bits for IPv4 and 128 bits for IPv6 -- exactly the same size as when they appear
 network packet headers. However, they are not stored as bytes in network order
-and cannot be directly serialized as such.
+and cannot be directly serialized as such. They can be converted to and from
+their `net.IP` representation.
 
 ### Mask
 
-A Msak is like an `Address` (same size) except that it must be in the format of
-a string of 1 bits in the most significant positions, followed by 0 bits to fill
-out the remainder of the bits.
+A Mask is like an `Address` (same size) except that it must be in the format of
+a (potentially empty) string of 1 bits in the most significant positions,
+followed by 0 bits to fill out the remainder.
 
 ### Prefix
 
 A `Prefix` is an `Address` plus a `Mask`. However, the mask is stored more
 efficiently as a length indicating the number of 1s.
 
-Any Address can be used With a `Prefix`. It is not limited to 0s where the
-`Mask` has 0s. If you need this, you can call `.Network()` to get another Prefix
-with these bits zeroed out.
+Any Address can be used with a `Prefix`. It is not limited to 0s where the
+`Mask` has 0s. For example, `203.0.113.17/24` is valid and preserves the `.17`
+at the end. If you need to mask off those bits, you can call `.Network()`.
 
 ### Range
 
@@ -53,11 +54,11 @@ These behave like Go maps in a few ways:
 
 1. They are reference types where each instance points to a share data
    structure. These can be efficiently passed and returned to and from functions
-   and methods without passing pointers.
+   and methods without using pointers.
 
 2. They must be initialized to be modifiable. An unitialized `Set` or `Table`
    will behave like it is empty when you read from it but any attempt to modify
-   it (e.g. insert entries) will result in a panic. Each type provides a factory
+   it (e.g. insert entries) will result in a panic. Each provides a factory
    function which will return a fully-initialized instance which can then be
    modified.
 
@@ -71,12 +72,12 @@ There are a few ways in which these types do not behave like a Go `map`:
    convert from mutable -> immutable -> mutable you end up with a mutable clone
    which is independent from the original.
 
-2. It is safe to read and write concurrently. All read operations work on a
+2. They are safe to read and write concurrently. All read operations work on a
    consistent representation of the underlying datastructure which is not
    affected by concurrent writes. However, subsequent reads on the same instance
    may, depending on timing, reflect concurrent writes from other goroutines.
 
-3. Concurrent writes *will* cause a panic.
+3. Multiple concurrent writes *will* cause a panic.
 
 A nice pattern to ensure consistency is to reserve writing to a single goroutine
 and then send fixed snapshots of the `Set` or `Table` through channels to other
@@ -84,7 +85,7 @@ goroutines to consume it.
 
 ### Set and FixedSet
 
-A `Set` contains any arbitrary combination of individual, distinct `Address`
+A `Set` contains any arbitrary collection of individual, distinct `Address`
 values. `Address`, `Prefix`, and `Range` are similar to sets but are more
 constrained. The API provides methods to convert freely between these types.
 
@@ -131,13 +132,16 @@ ones mentioned above.
 
 3. It can convert itself to an aggregated form containing the minimum number of
    entries required such that any search using an `Address` as the search key
-   will return the same value as the same search on the original. (This
-   operation requires that the values be of a comparable type, either by using a
-   type that is inherently comparable with `==` and `!=` or by implementing the
-   `EqualComparable` interface.
+   will return the same value as it would on the original. (This operation
+   requires that the values be of a comparable type, either by using a type that
+   is inherently comparable with `==` and `!=` or by implementing the
+   `EqualComparable` interface (e.g. `Set` implements this interface so they can
+   be stored as values in a `Table`).
 
 4. It supports an efficient diff operation so that you can iterate the entries
-   removed, added, or changed from one to the other. Given a large table to
-   start with, if you make a small number of modifications to it and then diff
-   the before and after snapshots, the diff operation efficiency will be very
-   good, proportional to the changes made between the two snapshots.
+   removed, added, or changed from one to the other.
+
+   Starting with a large `Table`, if you make a small number of modifications to
+   it and then diff the before and after snapshots, the diff operation
+   efficiency will be very good -- proportional to the changes made between the
+   two snapshots.
