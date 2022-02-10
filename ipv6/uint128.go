@@ -170,7 +170,7 @@ func Complement(x uint128) uint128 {
 	return uint128{high, low}
 }
 
-// LeftShift returns a the bitwise shift left of x by bits
+// LeftShift returns the bitwise shift left of x by bits
 func LeftShift(x uint128, bits int) uint128 {
 	high := x.high
 	low := x.low
@@ -188,7 +188,7 @@ func LeftShift(x uint128, bits int) uint128 {
 	return uint128{high, low}
 }
 
-// RightShift returns a the bitwise shift right of x by bits
+// RightShift returns the bitwise shift right of x by bits
 func RightShift(x uint128, bits int) uint128 {
 	high := x.high
 	low := x.low
