@@ -1,3 +1,15 @@
+/*
+This file takes influence from uint128: https://github.com/davidminor/uint128
+
+Copyright (c) 2014 David Minor
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+*/
+
 package ipv6
 
 import "math/bits"
@@ -6,7 +18,7 @@ type uint128 struct {
 	high, low uint64
 }
 
-// Uint128FromUint64 returns a uint128 from its two 64 bit unsigned representation
+// Uint128FromUint64 returns a uint128 from its two 64 bit unsigned representations
 func Uint128FromUint64(high uint64, low uint64) uint128 {
 	return uint128{high, low}
 }
@@ -71,7 +83,7 @@ func (me uint128) Equal(other uint128) bool {
 	return me == other
 }
 
-// Compare compares two addresses and returns:
+// Compare returns comparison of two uint128s and returns:
 //  O if equal
 // -1 if me is less than other
 //  1 if me is greater than other
@@ -85,12 +97,12 @@ func (me uint128) Compare(other uint128) int {
 	}
 }
 
-// IsZero reports whether this uint128 is zero
+// IsZero returns whether uint128 equals zero
 func (me uint128) IsZero() bool {
 	return me.low == 0 && me.high == 0
 }
 
-// SubtractUint64 suctract y uint128 from x uint128
+// SubtractUint64 returns difference of y (uint64) from x (uint128)
 func SubtractUint64(x uint128, y uint64) uint128 {
 	low := x.low - y
 	high := x.high
@@ -100,7 +112,7 @@ func SubtractUint64(x uint128, y uint64) uint128 {
 	return uint128{high, low}
 }
 
-// SubtractUint64 subtracts y uint128 from x uint128
+// SubtractUint64 returns difference of y (uint128) from x (uint128)
 func SubtractUint128(x uint128, y uint128) uint128 {
 	low, borrow := bits.Sub64(x.low, y.low, 0)
 	high, borrow := bits.Sub64(x.high, y.high, borrow)
@@ -110,7 +122,7 @@ func SubtractUint128(x uint128, y uint128) uint128 {
 	return uint128{high, low}
 }
 
-// AddUint64 adds y uint128 to x uint128
+// AddUint64 returns sum of x (uint128) with y (uint64)
 func AddUint64(x uint128, y uint64) uint128 {
 	low := x.low + y
 	high := x.high
@@ -120,7 +132,7 @@ func AddUint64(x uint128, y uint64) uint128 {
 	return uint128{high, low}
 }
 
-// AddUint128 adds y uint128 to x uint128
+// AddUint128 returns sum of x (uint128) with y (uint128)
 func AddUint128(x uint128, y uint128) uint128 {
 	low, borrow := bits.Add64(x.low, y.low, 0)
 	high, borrow := bits.Add64(x.high, y.high, borrow)
@@ -130,35 +142,35 @@ func AddUint128(x uint128, y uint128) uint128 {
 	return uint128{high, low}
 }
 
-// And bitwise and x with y uint128
+// And returns a bitwise AND of x with y
 func And(x uint128, y uint128) uint128 {
 	high := x.high & y.high
 	low := x.low & y.low
 	return uint128{high, low}
 }
 
-// Xor bitwise xor x with y uint128
+// Xor returns a bitwise XOR of x with y
 func Xor(x uint128, y uint128) uint128 {
 	high := x.high ^ y.high
 	low := x.low ^ y.low
 	return uint128{high, low}
 }
 
-// Or bitwise or x with y uint128
+// Or returns a bitwise OR of x with y
 func Or(x uint128, y uint128) uint128 {
 	high := x.high | y.high
 	low := x.low | y.low
 	return uint128{high, low}
 }
 
-// Complement returns the bitwise complement of the uint128
+// Complement returns the bitwise complement of x
 func Complement(x uint128) uint128 {
 	high := ^x.high
 	low := ^x.low
 	return uint128{high, low}
 }
 
-// LeftShift applies a bitwise shift left to the me uint128
+// LeftShift returns a the bitwise shift left of x by bits
 func LeftShift(x uint128, bits int) uint128 {
 	high := x.high
 	low := x.low
@@ -166,7 +178,7 @@ func LeftShift(x uint128, bits int) uint128 {
 		high = 0
 		low = 0
 	} else if bits >= 64 {
-		high = me.low << (bits - 64)
+		high = x.low << (bits - 64)
 		low = 0
 	} else {
 		high <<= bits
@@ -176,7 +188,7 @@ func LeftShift(x uint128, bits int) uint128 {
 	return uint128{high, low}
 }
 
-// RightShift applies a bitwise shift right to the x uint128
+// RightShift returns a the bitwise shift right of x by bits
 func RightShift(x uint128, bits int) uint128 {
 	high := x.high
 	low := x.low
