@@ -21,8 +21,8 @@ type uint128 struct {
 	high, low uint64
 }
 
-// Uint128FromBytes returns the the uint128 converted from a array of 16 bytes
-func Uint128FromBytes(s []byte) (uint128, error) {
+// uint128FromBytes returns the the uint128 converted from a array of 16 bytes
+func uint128FromBytes(s []byte) (uint128, error) {
 	if s == nil {
 		return uint128{}, fmt.Errorf("failed to parse nil uint128 bytes")
 	}
@@ -49,22 +49,8 @@ func Uint128FromBytes(s []byte) (uint128, error) {
 	}, nil
 }
 
-// OnesCount128 returns the number of one bits ("population count") in x.
-func (me uint128) OnesCount() int {
-	return bits.OnesCount64(me.high) + bits.OnesCount64(me.low)
-}
-
-// LeadingZeros128 returns the number of leading zero bits in x; the result is 128 for x == 0.
-func (me uint128) LeadingZeros() int {
-	leadingZeros := bits.LeadingZeros64(me.high)
-	if leadingZeros == 64 {
-		leadingZeros += bits.LeadingZeros64(me.low)
-	}
-	return leadingZeros
-}
-
-// ToBytes returns a slice representation of 16 bytes of the uint128
-func (me uint128) ToBytes() []byte {
+// toBytes returns a slice representation of 16 bytes of the uint128
+func (me uint128) toBytes() []byte {
 	bytes := []byte{
 		byte(0xff & (me.high >> 56)),
 		byte(0xff & (me.high >> 48)),
@@ -86,16 +72,30 @@ func (me uint128) ToBytes() []byte {
 	return bytes
 }
 
-// Uint64 returns the uint128 as two uint64
-func (me uint128) Uint64() (uint64, uint64) {
+// uint64 returns the uint128 as two uint64
+func (me uint128) uint64() (uint64, uint64) {
 	return me.high, me.low
 }
 
-// Compare returns comparison of two uint128s and returns:
+// onesCount returns the number of one bits ("population count") in x.
+func (me uint128) onesCount() int {
+	return bits.OnesCount64(me.high) + bits.OnesCount64(me.low)
+}
+
+// leadingZeros returns the number of leading zero bits in x; the result is 128 for x == 0.
+func (me uint128) leadingZeros() int {
+	leadingZeros := bits.LeadingZeros64(me.high)
+	if leadingZeros == 64 {
+		leadingZeros += bits.LeadingZeros64(me.low)
+	}
+	return leadingZeros
+}
+
+// compare returns comparison of two uint128s and returns:
 //  O if equal
 // -1 if me is less than other
 //  1 if me is greater than other
-func (me uint128) Compare(other uint128) int {
+func (me uint128) compare(other uint128) int {
 	if me == other {
 		return 0
 	} else if me.high < other.high || (me.high == other.high && me.low < other.low) {
@@ -105,8 +105,8 @@ func (me uint128) Compare(other uint128) int {
 	}
 }
 
-// SubtractUint64 returns the difference of uint128 with x (uint64)
-func (me uint128) SubtractUint64(x uint64) uint128 {
+// subtractUint64 returns the difference of uint128 with x (uint64)
+func (me uint128) subtractUint64(x uint64) uint128 {
 	low := me.low - x
 	high := me.high
 	if me.low < low {
@@ -115,8 +115,8 @@ func (me uint128) SubtractUint64(x uint64) uint128 {
 	return uint128{high, low}
 }
 
-// SubtractUint128 returns the difference of uint128 with x (uint128)
-func (me uint128) SubtractUint128(x uint128) uint128 {
+// subtractUint128 returns the difference of uint128 with x (uint128)
+func (me uint128) subtractUint128(x uint128) uint128 {
 	low := me.low - x.low
 	high := me.high - x.high
 	if me.low < low {
@@ -125,8 +125,8 @@ func (me uint128) SubtractUint128(x uint128) uint128 {
 	return uint128{high, low}
 }
 
-// AddUint64 returns sum of uint128 with x (uint64)
-func (me uint128) AddUint64(x uint64) uint128 {
+// addUint64 returns sum of uint128 with x (uint64)
+func (me uint128) addUint64(x uint64) uint128 {
 	low := me.low + x
 	high := me.high
 	if me.low > low {
@@ -135,8 +135,8 @@ func (me uint128) AddUint64(x uint64) uint128 {
 	return uint128{high, low}
 }
 
-// AddUint128 returns sum of uint128 with x (uint128)
-func (me uint128) AddUint128(x uint128) uint128 {
+// addUint128 returns sum of uint128 with x (uint128)
+func (me uint128) addUint128(x uint128) uint128 {
 	low := me.low + x.low
 	high := me.high + x.high
 	if me.low > low {
@@ -145,28 +145,28 @@ func (me uint128) AddUint128(x uint128) uint128 {
 	return uint128{high, low}
 }
 
-// And returns a bitwise AND with x
-func (me uint128) And(x uint128) uint128 {
+// and returns a bitwise AND with x
+func (me uint128) and(x uint128) uint128 {
 	return uint128{me.high & x.high, me.low & x.low}
 }
 
-// Xor returns a bitwise XOR with x
-func (me uint128) Xor(x uint128) uint128 {
+// xor returns a bitwise XOR with x
+func (me uint128) xor(x uint128) uint128 {
 	return uint128{me.high ^ x.high, me.low ^ x.low}
 }
 
-// Or returns a bitwise OR with x
-func (me uint128) Or(x uint128) uint128 {
+// or returns a bitwise OR with x
+func (me uint128) or(x uint128) uint128 {
 	return uint128{me.high | x.high, me.low | x.low}
 }
 
-// Complement returns the bitwise complement
-func (me uint128) Complement() uint128 {
+// complement returns the bitwise complement
+func (me uint128) complement() uint128 {
 	return uint128{^me.high, ^me.low}
 }
 
-// LeftShift returns the bitwise shift left by bits
-func (me uint128) LeftShift(bits int) uint128 {
+// leftShift returns the bitwise shift left by bits
+func (me uint128) leftShift(bits int) uint128 {
 	high := me.high
 	low := me.low
 	if bits >= 128 {
@@ -183,8 +183,8 @@ func (me uint128) LeftShift(bits int) uint128 {
 	return uint128{high, low}
 }
 
-// RightShift returns the bitwise shift right by bits
-func (me uint128) RightShift(bits int) uint128 {
+// rightShift returns the bitwise shift right by bits
+func (me uint128) rightShift(bits int) uint128 {
 	high := me.high
 	low := me.low
 	if bits >= 128 {

@@ -33,14 +33,9 @@ func AddressFromUint16(a, b, c, d, e, f, g, h uint16) Address {
 	return Address{uint128{high, low}}
 }
 
-// AddressFromBytes returns the IPv6 address from bytes
-func AddressFromBytes(s []byte) (Address, error) {
-	return fromSlice(s)
-}
-
 // AddressFromNetIP converts
 func AddressFromNetIP(ip net.IP) (Address, error) {
-	return AddressFromBytes(ip)
+	return fromSlice(ip)
 }
 
 // ParseAddress returns the ip represented by `addr` in colon notation. If
@@ -88,7 +83,7 @@ func (me Address) Equal(other Address) bool {
 // lessThan reports whether this IPv6 address comes strictly before `other`
 // lexigraphically.
 func (me Address) lessThan(other Address) bool {
-	return me.ui.Compare(other.ui) < 0
+	return me.ui.compare(other.ui) < 0
 }
 
 // String returns a string representing the address in IPv6 notation
@@ -108,11 +103,11 @@ func (me Address) uint128() uint128 {
 
 // Uint64 returns the address as two uint64
 func (me Address) Uint64() (uint64, uint64) {
-	return me.ui.Uint64()
+	return me.ui.uint64()
 }
 
 func (me Address) toBytes() []byte {
-	return me.ui.ToBytes()
+	return me.ui.toBytes()
 }
 
 // fromSlice returns the IPv6 address from a slice with 16 bytes or an error
@@ -124,6 +119,6 @@ func fromSlice(s []byte) (Address, error) {
 	if len(s) != 16 {
 		return Address{}, fmt.Errorf("failed to parse ip because slice size is not equal to 16")
 	}
-	val, err := Uint128FromBytes(s)
+	val, err := uint128FromBytes(s)
 	return Address{val}, err
 }
