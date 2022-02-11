@@ -5,8 +5,9 @@ import (
 	"net"
 )
 
-// Prefix represents an IPv4 prefix which is IPv4 address along with prefix
-// length, or the number of bits which are significant in the network portion.
+// Prefix represents an IP prefix which is formally an Address plus a Mask. It
+// is stored in a more space-efficient way by storing the number of 1s in the
+// Mask as a length.
 // Note that any bits in the address can be 0 or 1 regardless if they in the
 // first `length` bits or not. This allows storing an IP address in CIDR
 // notation with both the network and host parts of the address.
@@ -63,7 +64,7 @@ func PrefixFromAddressMask(address Address, mask Mask) Prefix {
 func parseNet(prefix string) (*net.IPNet, error) {
 	ip, ipNet, err := net.ParseCIDR(prefix)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse IPv4 prefix: %s", prefix)
+		return nil, fmt.Errorf("failed to parse prefix: %s", prefix)
 	}
 	return &net.IPNet{IP: ip, Mask: ipNet.Mask}, nil
 }
@@ -97,16 +98,11 @@ func (me Prefix) ToNetIPNet() *net.IPNet {
 	}
 }
 
-// Equal reports whether this IPv4 address is the same as other
-func (me Prefix) Equal(other Prefix) bool {
-	return me == other
-}
-
-// lessThan reports whether this IPv4 prefix comes strictly before `other`
+// lessThan reports whether this Prefix comes strictly before `other`
 // lexigraphically.
 func (me Prefix) lessThan(other Prefix) bool {
 	meNet, otherNet := me.Network(), other.Network()
-	if !meNet.addr.Equal(otherNet.addr) {
+	if meNet.addr != otherNet.addr {
 		return meNet.addr.lessThan(otherNet.addr)
 	}
 	if me.length == other.length {

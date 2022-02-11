@@ -137,7 +137,7 @@ func (me *trieNode) Equal(other *trieNode) bool {
 		return false
 	case me.isActive != other.isActive:
 		return false
-	case !me.Prefix.Equal(other.Prefix):
+	case me.Prefix != other.Prefix:
 		return false
 	case me.isActive && !dataEqual(me.Data, other.Data):
 		return false

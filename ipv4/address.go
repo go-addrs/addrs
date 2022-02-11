@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	// addressSize is the number of bits that an IPv4 address takes
+	// addressSize is the number of bits that an address takes
 	addressSize int = 32
 )
 
@@ -16,30 +16,31 @@ type Address struct {
 	ui uint32
 }
 
-// AddressFromUint32 returns the IPv4 address from its 32 bit unsigned representation
+// AddressFromUint32 returns the Address from its 32 bit unsigned representation
 func AddressFromUint32(ui uint32) Address {
 	return Address{ui}
 }
 
-// AddressFromBytes returns the IPv4 address of the `a.b.c.d`.
+// AddressFromBytes returns the Address from individual bytes, ordered from
+// highest to lowest significance
 func AddressFromBytes(a, b, c, d byte) Address {
 	return Address{
 		ui: uint32(a)<<24 | uint32(b)<<16 | uint32(c)<<8 | uint32(d),
 	}
 }
 
-// AddressFromNetIP converts
+// AddressFromNetIP converts a NetIP to an Address
 func AddressFromNetIP(ip net.IP) (Address, error) {
 	return fromSlice(ip.To4())
 }
 
-// ParseAddress returns the ip represented by `addr` in dotted-quad notation. If
-// the address cannot be parsed, then error is non-nil and the address returned
-// must be ignored.
+// ParseAddress returns the Address represented by `addr` in dotted-quad
+// notation. If it cannot be parsed, then error is non-nil and the Address
+// returned must be ignored.
 func ParseAddress(address string) (Address, error) {
 	netIP := net.ParseIP(address)
 	if netIP == nil {
-		return Address{}, fmt.Errorf("failed to parse IPv4: %s", address)
+		return Address{}, fmt.Errorf("failed to parse address: %s", address)
 	}
 
 	netIPv4 := netIP.To4()
@@ -72,12 +73,7 @@ func (me Address) ToNetIP() net.IP {
 	return net.IPv4(a, b, c, d)
 }
 
-// Equal reports whether this IPv4 address is the same as other
-func (me Address) Equal(other Address) bool {
-	return me == other
-}
-
-// lessThan reports whether this IPv4 address comes strictly before `other`
+// lessThan reports whether this Address comes strictly before `other`
 // lexigraphically.
 func (me Address) lessThan(other Address) bool {
 	return me.ui < other.ui
@@ -117,8 +113,8 @@ func (me Address) toBytes() (a, b, c, d byte) {
 	return
 }
 
-// fromSlice returns the IPv4 address from a slice with four bytes or an error
-// if the slice is the wrong size.
+// fromSlice returns the Address from a slice or an error if the slice is the
+// wrong length.
 func fromSlice(s []byte) (Address, error) {
 	if s == nil {
 		return Address{}, fmt.Errorf("failed to parse nil ip")

@@ -159,13 +159,11 @@ func TestPrefixFromNetIPNet(t *testing.T) {
 func TestPrefixEqual(t *testing.T) {
 	first, second := unsafePrefixFromUint32(0x0ae01801, 24), unsafePrefixFromUint32(0x0ae01801, 24)
 	assert.Equal(t, first, second)
-	assert.True(t, first.Equal(second))
 	assert.True(t, first == second)
 	assert.True(t, reflect.DeepEqual(first, second))
 
 	third := unsafePrefixFromUint32(0x0ae01701, 24)
 	assert.NotEqual(t, third, second)
-	assert.False(t, third.Equal(first))
 	assert.False(t, third == first)
 	assert.False(t, reflect.DeepEqual(third, first))
 }
@@ -286,7 +284,7 @@ func TestPrefixContainsPrefix(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
 			assert.True(t, tt.container.Contains(tt.containee))
-			if tt.container.Equal(tt.containee) {
+			if tt.container == tt.containee {
 				assert.True(t, tt.containee.Contains(tt.container))
 			} else {
 				assert.False(t, tt.containee.Contains(tt.container))

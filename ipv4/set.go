@@ -1,6 +1,6 @@
 package ipv4
 
-// Set is a structure that efficiently stores sets of IPv4 addresses and
+// Set is a structure that efficiently stores sets of addresses and
 // supports testing if an address or prefix is contained (entirely) in it. It
 // supports the standard set operations: union, intersection, and difference.
 // It supports conversion to/and from Ranges and Prefixes

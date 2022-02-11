@@ -100,13 +100,11 @@ func TestAddressFromNetIP(t *testing.T) {
 func TestAddressEquality(t *testing.T) {
 	first, second := AddressFromUint32(0x0ae01801), AddressFromUint32(0x0ae01801)
 	assert.Equal(t, first, second)
-	assert.True(t, first.Equal(second))
 	assert.True(t, first == second)
 	assert.True(t, reflect.DeepEqual(first, second))
 
 	third := AddressFromUint32(0x0ae01701)
 	assert.NotEqual(t, third, second)
-	assert.False(t, third.Equal(first))
 	assert.False(t, third == first)
 	assert.False(t, reflect.DeepEqual(third, first))
 }
