@@ -365,46 +365,46 @@ func TestTableTExample3(t *testing.T) {
 
 func TestTableTnsert(t *testing.T) {
 	m := NewTable[bool]()
-	assert.Equal(t, int64(0), m.m.trie.NumNodes())
+	assert.Equal(t, int64(0), m.t.m.trie.NumNodes())
 
 	key := Prefix{Address{0x0ae01800}, 24}
 	succeeded := m.Insert(key, true)
 	assert.True(t, succeeded)
-	assert.Equal(t, int64(1), m.m.trie.NumNodes())
-	assert.True(t, m.m.trie.isValid())
+	assert.Equal(t, int64(1), m.t.m.trie.NumNodes())
+	assert.True(t, m.t.m.trie.isValid())
 }
 
 func TestTableTnsertOrUpdate(t *testing.T) {
 	m := NewTable[bool]()
-	assert.Equal(t, int64(0), m.m.trie.NumNodes())
+	assert.Equal(t, int64(0), m.t.m.trie.NumNodes())
 
 	key := Prefix{Address{0x0ae01800}, 24}
 	m.InsertOrUpdate(key, true)
-	assert.Equal(t, int64(1), m.m.trie.NumNodes())
+	assert.Equal(t, int64(1), m.t.m.trie.NumNodes())
 	value, match, matchedKey := m.LongestMatch(key)
 	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
 	assert.True(t, value)
 
 	m.InsertOrUpdate(key, false)
-	assert.Equal(t, int64(1), m.m.trie.NumNodes())
+	assert.Equal(t, int64(1), m.t.m.trie.NumNodes())
 	value, match, matchedKey = m.LongestMatch(key)
 	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
 	assert.False(t, value)
-	assert.True(t, m.m.trie.isValid())
+	assert.True(t, m.t.m.trie.isValid())
 }
 
 func TestTableTUpdate(t *testing.T) {
 	m := NewTable[bool]()
-	assert.Equal(t, int64(0), m.m.trie.NumNodes())
+	assert.Equal(t, int64(0), m.t.m.trie.NumNodes())
 
 	key := Prefix{Address{0x0ae01800}, 24}
 	m.Insert(key, false)
 
 	succeeded := m.Update(key, true)
 	assert.True(t, succeeded)
-	assert.Equal(t, int64(1), m.m.trie.NumNodes())
+	assert.Equal(t, int64(1), m.t.m.trie.NumNodes())
 	value, match, matchedKey := m.LongestMatch(key)
 	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
@@ -412,23 +412,23 @@ func TestTableTUpdate(t *testing.T) {
 
 	succeeded = m.Update(key, false)
 	assert.True(t, succeeded)
-	assert.Equal(t, int64(1), m.m.trie.NumNodes())
+	assert.Equal(t, int64(1), m.t.m.trie.NumNodes())
 	value, match, matchedKey = m.LongestMatch(key)
 	assert.Equal(t, MatchExact, match)
 	assert.Equal(t, key, matchedKey)
 	assert.False(t, value)
-	assert.True(t, m.m.trie.isValid())
+	assert.True(t, m.t.m.trie.isValid())
 }
 
 func TestTableTGetOrInsert(t *testing.T) {
 	m := NewTable[bool]()
-	assert.Equal(t, int64(0), m.m.trie.NumNodes())
+	assert.Equal(t, int64(0), m.t.m.trie.NumNodes())
 
 	key := Prefix{Address{0x0ae01800}, 24}
 	value := m.GetOrInsert(key, true)
 	assert.True(t, value)
-	assert.Equal(t, int64(1), m.m.trie.NumNodes())
-	assert.True(t, m.m.trie.isValid())
+	assert.Equal(t, int64(1), m.t.m.trie.NumNodes())
+	assert.True(t, m.t.m.trie.isValid())
 }
 
 func TestTableTMatch(t *testing.T) {
@@ -440,7 +440,7 @@ func TestTableTMatch(t *testing.T) {
 	t.Run("None", func(t *testing.T) {
 		_, level, _ := m.LongestMatch(Prefix{Address{0x0ae01000}, 24})
 		assert.Equal(t, MatchNone, level)
-		assert.True(t, m.m.trie.isValid())
+		assert.True(t, m.t.m.trie.isValid())
 	})
 
 	t.Run("Exact", func(t *testing.T) {
@@ -448,7 +448,7 @@ func TestTableTMatch(t *testing.T) {
 		assert.Equal(t, MatchExact, level)
 		assert.Equal(t, insertKey, key)
 		assert.True(t, value)
-		assert.True(t, m.m.trie.isValid())
+		assert.True(t, m.t.m.trie.isValid())
 	})
 
 	t.Run("Contains", func(t *testing.T) {
@@ -456,7 +456,7 @@ func TestTableTMatch(t *testing.T) {
 		assert.Equal(t, MatchContains, level)
 		assert.Equal(t, insertKey, key)
 		assert.True(t, value)
-		assert.True(t, m.m.trie.isValid())
+		assert.True(t, m.t.m.trie.isValid())
 	})
 }
 
@@ -470,8 +470,8 @@ func TestTableTRemovePrefix(t *testing.T) {
 		key := Prefix{Address{0x0ae01800}, 24}
 		succeeded := m.Remove(key)
 		assert.True(t, succeeded)
-		assert.Equal(t, int64(0), m.m.trie.NumNodes())
-		assert.True(t, m.m.trie.isValid())
+		assert.Equal(t, int64(0), m.t.m.trie.NumNodes())
+		assert.True(t, m.t.m.trie.isValid())
 	})
 
 	t.Run("Not Found", func(t *testing.T) {
@@ -483,8 +483,8 @@ func TestTableTRemovePrefix(t *testing.T) {
 		key := Prefix{Address{0x0ae01000}, 24}
 		succeeded := m.Remove(key)
 		assert.False(t, succeeded)
-		assert.Equal(t, int64(1), m.m.trie.NumNodes())
-		assert.True(t, m.m.trie.isValid())
+		assert.Equal(t, int64(1), m.t.m.trie.NumNodes())
+		assert.True(t, m.t.m.trie.isValid())
 	})
 
 	t.Run("Not Exact", func(t *testing.T) {
@@ -496,8 +496,8 @@ func TestTableTRemovePrefix(t *testing.T) {
 		key := Prefix{Address{0x0ae01817}, 32}
 		succeeded := m.Remove(key)
 		assert.False(t, succeeded)
-		assert.Equal(t, int64(1), m.m.trie.NumNodes())
-		assert.True(t, m.m.trie.isValid())
+		assert.Equal(t, int64(1), m.t.m.trie.NumNodes())
+		assert.True(t, m.t.m.trie.isValid())
 	})
 }
 
@@ -515,7 +515,7 @@ func TestTableTWalk(t *testing.T) {
 		return true
 	})
 	assert.True(t, found)
-	assert.True(t, m.m.trie.isValid())
+	assert.True(t, m.t.m.trie.isValid())
 }
 
 func TestTableTWalkAggregates(t *testing.T) {
@@ -535,23 +535,23 @@ func TestTableTWalkAggregates(t *testing.T) {
 		return true
 	})
 	assert.True(t, found)
-	assert.True(t, m.m.trie.isValid())
+	assert.True(t, m.t.m.trie.isValid())
 }
 
 func TestTableTEqual(t *testing.T) {
 	a := NewTable[bool]()
 	b := NewTable[bool]()
 
-	assert.True(t, a.m.trie.Equal(b.m.trie))
-	assert.True(t, b.m.trie.Equal(a.m.trie))
+	assert.True(t, a.t.m.trie.Equal(b.t.m.trie))
+	assert.True(t, b.t.m.trie.Equal(a.t.m.trie))
 
 	a.Insert(Prefix{Address{0x0ae01801}, 24}, true)
-	assert.False(t, a.m.trie.Equal(b.m.trie))
-	assert.False(t, b.m.trie.Equal(a.m.trie))
+	assert.False(t, a.t.m.trie.Equal(b.t.m.trie))
+	assert.False(t, b.t.m.trie.Equal(a.t.m.trie))
 
 	b.Insert(Prefix{Address{0x0ae01800}, 24}, true)
-	assert.False(t, a.m.trie.Equal(b.m.trie))
-	assert.False(t, b.m.trie.Equal(a.m.trie))
+	assert.False(t, a.t.m.trie.Equal(b.t.m.trie))
+	assert.False(t, b.t.m.trie.Equal(a.t.m.trie))
 }
 
 // Test that Tables, when passed and copied, refer to the same data
@@ -588,18 +588,18 @@ func TestTableTConcurrentModification(t *testing.T) {
 	ch := make(chan bool)
 	go func() {
 		defer wrap()
-		(ITable)(m).mutate(func() (bool, *trieNode) {
+		m.t.mutate(func() (bool, *trieNode) {
 			ch <- true
 
-			newHead, _ := m.m.trie.Insert(_p("10.0.0.0/24"), nil)
+			newHead, _ := m.t.m.trie.Insert(_p("10.0.0.0/24"), nil)
 			return true, newHead
 		})
 	}()
 	go func() {
 		defer wrap()
-		(ITable)(m).mutate(func() (bool, *trieNode) {
+		m.t.mutate(func() (bool, *trieNode) {
 			<-ch
-			newHead, _ := m.m.trie.Insert(_p("10.0.1.0/24"), nil)
+			newHead, _ := m.t.m.trie.Insert(_p("10.0.1.0/24"), nil)
 			return true, newHead
 		})
 	}()
