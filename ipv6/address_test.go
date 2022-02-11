@@ -44,6 +44,8 @@ func TestAddressComparable(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			assert.Equal(t, tt.equal, tt.a == tt.b)
 			assert.Equal(t, !tt.equal, tt.a != tt.b)
+			assert.Equal(t, tt.equal, tt.a.Prefix() == tt.b.Prefix())
+			assert.Equal(t, !tt.equal, tt.a.Prefix() != tt.b.Prefix())
 		})
 	}
 }
