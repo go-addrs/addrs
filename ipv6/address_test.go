@@ -162,3 +162,8 @@ func TestAddressToString(t *testing.T) {
 	ip := AddressFromUint64(0x20010db885a30000, 0x8a2e03707334)
 	assert.Equal(t, ip.String(), "2001:db8:85a3::8a2e:370:7334")
 }
+
+func TestAddressFromUint16(t *testing.T) {
+	ip := AddressFromUint16(0x2001, 0xdb8, 0x85a3, 0xabcd, 0, 0, 0, 0x1)
+	assert.Equal(t, ip.String(), "2001:db8:85a3:abcd::1")
+}

@@ -16,7 +16,20 @@ type Address struct {
 }
 
 // AddressFromUint64 returns the IPv6 address from its two 64 bit unsigned representation
-func AddressFromUint64(high uint64, low uint64) Address {
+func AddressFromUint64(high, low uint64) Address {
+	return Address{uint128{high, low}}
+}
+
+// AddressFromUint16 returns the IPv6 address from its eight 16 bit unsigned representation
+func AddressFromUint16(a, b, c, d, e, f, g, h uint16) Address {
+	high := uint64(a)<<48 |
+		uint64(b)<<32 |
+		uint64(c)<<16 |
+		uint64(d)
+	low := uint64(e)<<48 |
+		uint64(f)<<32 |
+		uint64(g)<<16 |
+		uint64(h)
 	return Address{uint128{high, low}}
 }
 
@@ -111,5 +124,6 @@ func fromSlice(s []byte) (Address, error) {
 	if len(s) != 16 {
 		return Address{}, fmt.Errorf("failed to parse ip because slice size is not equal to 16")
 	}
-	return Address{Uint128FromBytes(s)}, nil
+	val, err := Uint128FromBytes(s)
+	return Address{val}, err
 }

@@ -12,14 +12,23 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 
 package ipv6
 
-import "math/bits"
+import (
+	"fmt"
+	"math/bits"
+)
 
 type uint128 struct {
 	high, low uint64
 }
 
-// Uint128FromBytes returns the the uint128 converted from a slice of 16 bytes
-func Uint128FromBytes(s []byte) uint128 {
+// Uint128FromBytes returns the the uint128 converted from a array of 16 bytes
+func Uint128FromBytes(s []byte) (uint128, error) {
+	if s == nil {
+		return uint128{}, fmt.Errorf("failed to parse nil uint128 bytes")
+	}
+	if len(s) != 16 {
+		return uint128{}, fmt.Errorf("failed to parse uint128 because slice size is not equal to 16")
+	}
 	return uint128{
 		high: uint64(s[0])<<56 |
 			uint64(s[1])<<48 |
@@ -37,7 +46,7 @@ func Uint128FromBytes(s []byte) uint128 {
 			uint64(s[13])<<16 |
 			uint64(s[14])<<8 |
 			uint64(s[15]),
-	}
+	}, nil
 }
 
 // OnesCount128 returns the number of one bits ("population count") in x.
