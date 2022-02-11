@@ -138,26 +138,26 @@ func (me FixedTable[T]) Size() int64 {
 // with an exact match: both the IP and the prefix length must match. If an
 // exact match is not found, found is false and value is nil and should be
 // ignored.
-func (me FixedTable[T]) Get(prefix PrefixI) (T, bool) {
+func (me FixedTable[T]) Get(prefix PrefixI) (t T, ok bool) {
 	i, b := me.t.Get(prefix)
 	if !b {
-		var t T
 		return t, b
 	}
-	return i.(T), b
+	t, _ = i.(T)
+	return t, b
 }
 
 // LongestMatch returns the value in the table associated with the given network
 // prefix using a longest prefix match. If a match is found, it returns a
 // Prefix representing the longest prefix matched. If a match is *not* found,
 // matched is MatchNone and the other fields should be ignored
-func (me FixedTable[T]) LongestMatch(searchPrefix PrefixI) (value T, matched Match, prefix Prefix) {
+func (me FixedTable[T]) LongestMatch(searchPrefix PrefixI) (t T, matched Match, prefix Prefix) {
 	i, matched, prefix := me.t.LongestMatch(searchPrefix)
 	if matched == MatchNone {
-		var t T
 		return t, matched, prefix
 	}
-	return i.(T), matched, prefix
+	t, _ = i.(T)
+	return t, matched, prefix
 }
 
 // Aggregate returns a new aggregated table as described below.
@@ -246,17 +246,24 @@ func (me FixedTable[T]) Diff(other FixedTable[T], handler DiffHandler[T]) bool {
 	trieHandler := trieDiffHandler{}
 	if handler.Removed != nil {
 		trieHandler.Removed = func(n *trieNode) bool {
-			return handler.Removed(n.Prefix, n.Data.(T))
+			var t T
+			t, _ = n.Data.(T)
+			return handler.Removed(n.Prefix, t)
 		}
 	}
 	if handler.Added != nil {
 		trieHandler.Added = func(n *trieNode) bool {
-			return handler.Added(n.Prefix, n.Data.(T))
+			var t T
+			t, _ = n.Data.(T)
+			return handler.Added(n.Prefix, t)
 		}
 	}
 	if handler.Modified != nil {
 		trieHandler.Modified = func(l, r *trieNode) bool {
-			return handler.Modified(l.Prefix, l.Data.(T), r.Data.(T))
+			var lt, rt T
+			lt, _ = l.Data.(T)
+			rt, _ = r.Data.(T)
+			return handler.Modified(l.Prefix, lt, rt)
 		}
 	}
 	return me.t.trie.Diff(other.t.trie, trieHandler)
