@@ -6,23 +6,25 @@ import (
 	"net"
 )
 
-// Mask represents an IPv4 prefix mask. It has 0-32 leading 1s and then all
-// remaining bits are 0s
+// Mask represents a prefix mask. It has any number of leading 1s  and then the
+// remaining bits are 0s up to the number of bits in an address. It can be all
+// zeroes or all ones.
+// The zero value of a Mask is "/0"
 type Mask Address
 
-// MaxUint32 is the maximum integer that can be stored in a uint32, "all ones"
-const MaxUint32 = ^uint32(0)
+const maxUint32 = ^uint32(0)
 
-// CreateMask converts the given length (0-32) into a mask with that number of leading 1s
-func CreateMask(length int) (Mask, error) {
-	if length < 0 || SIZE < length {
+// MaskFromLength converts the given length into a mask with that number of leading 1s
+func MaskFromLength(length int) (Mask, error) {
+	if length < 0 || addressSize < length {
 		return Mask{}, fmt.Errorf("failed to create Mask where length %d isn't between 0 and 32", length)
 	}
 
 	return lengthToMask(length), nil
 }
 
-// MaskFromBytes returns the IPv4 address mask represented by `a.b.c.d`.
+// MaskFromBytes returns the mask represented by the given bytes ordered from
+// highest to lowest significance
 func MaskFromBytes(a, b, c, d byte) (Mask, error) {
 	m := Mask(AddressFromBytes(a, b, c, d))
 	if !m.valid() {
@@ -31,7 +33,8 @@ func MaskFromBytes(a, b, c, d byte) (Mask, error) {
 	return m, nil
 }
 
-// MaskFromUint32 returns the IPv4 mask from its 32 bit unsigned representation
+// MaskFromUint32 returns the mask from its unsigned integer
+// representation.
 func MaskFromUint32(ui uint32) (Mask, error) {
 	m := Mask{ui}
 	if !m.valid() {
@@ -40,13 +43,13 @@ func MaskFromUint32(ui uint32) (Mask, error) {
 	return m, nil
 }
 
-// MaskFromStdIPMask converts a net.IPMask to a Mask
-func MaskFromStdIPMask(mask net.IPMask) (Mask, error) {
+// MaskFromNetIPMask converts a net.IPMask to a Mask
+func MaskFromNetIPMask(mask net.IPMask) (Mask, error) {
 	ones, bits := mask.Size()
-	if bits != SIZE {
-		return Mask{}, fmt.Errorf("failed to convert IPMask with size != 32")
+	if bits != addressSize {
+		return Mask{}, fmt.Errorf("failed to convert IPMask with incorrect size")
 	}
-	m, err := CreateMask(ones)
+	m, err := MaskFromLength(ones)
 	if err != nil {
 		return Mask{}, err
 	}
@@ -61,9 +64,9 @@ func (me Mask) Length() int {
 	return bits.LeadingZeros32(^me.ui)
 }
 
-// ToStdIPMask returns the net.IPMask representation of this Mask
-func (me Mask) ToStdIPMask() net.IPMask {
-	return net.CIDRMask(me.Length(), SIZE)
+// ToNetIPMask returns the net.IPMask representation of this Mask
+func (me Mask) ToNetIPMask() net.IPMask {
+	return net.CIDRMask(me.Length(), addressSize)
 }
 
 // String returns the net.IPMask representation of this Mask
@@ -82,6 +85,6 @@ func (me Mask) valid() bool {
 
 func lengthToMask(length int) Mask {
 	return Mask{
-		ui: MaxUint32 << (SIZE - length),
+		ui: maxUint32 << (addressSize - length),
 	}
 }

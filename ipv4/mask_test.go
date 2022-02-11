@@ -7,9 +7,31 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDefaultMask(t *testing.T) {
-	ip, _ := ParseAddress("192.0.2.1")
-	assert.Equal(t, Mask{ui: 0xffffff00}, ip.DefaultMask())
+func TestMaskComparable(t *testing.T) {
+	tests := []struct {
+		description string
+		a, b        Mask
+		equal       bool
+	}{
+		{
+			description: "equal",
+			a:           Mask{ui: 0xff000000},
+			b:           Mask{ui: 0xff000000},
+			equal:       true,
+		}, {
+			description: "not equal",
+			a:           Mask{ui: 0xff000000},
+			b:           Mask{ui: 0xffffff00},
+			equal:       false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			assert.Equal(t, tt.equal, tt.a == tt.b)
+			assert.Equal(t, !tt.equal, tt.a != tt.b)
+		})
+	}
 }
 
 func TestMaskLength(t *testing.T) {
@@ -19,8 +41,8 @@ func TestMaskLength(t *testing.T) {
 	assert.Equal(t, 32, Mask{ui: 0xffffffff}.Length())
 }
 
-func unsafeMaskFromBytes(a, b, c, d byte) Mask {
-	m, err := MaskFromBytes(a, b, c, d)
+func _m(length int) Mask {
+	m, err := MaskFromLength(length)
 	if err != nil {
 		panic("only use this is happy cases")
 	}
@@ -50,27 +72,27 @@ func TestMaskFromUint32Error(t *testing.T) {
 }
 
 func TestMaskFromBytes(t *testing.T) {
-	assert.Equal(t, Mask{ui: 0x00000000}, unsafeMaskFromBytes(0x00, 0x00, 0x00, 0x00))
-	assert.Equal(t, Mask{ui: 0xffff0000}, unsafeMaskFromBytes(0xff, 0xff, 0x00, 0x00))
-	assert.Equal(t, Mask{ui: 0xffffffe0}, unsafeMaskFromBytes(0xff, 0xff, 0xff, 0xe0))
-	assert.Equal(t, Mask{ui: 0xffffffff}, unsafeMaskFromBytes(0xff, 0xff, 0xff, 0xff))
+	assert.Equal(t, Mask{ui: 0x00000000}, _m(0))
+	assert.Equal(t, Mask{ui: 0xffff0000}, _m(16))
+	assert.Equal(t, Mask{ui: 0xffffffe0}, _m(27))
+	assert.Equal(t, Mask{ui: 0xffffffff}, _m(32))
 }
 
-func TestMaskFromStdIPMask(t *testing.T) {
+func TestMaskFromNetIPMask(t *testing.T) {
 	convert := func(ones, bits int) Mask {
 		stdMask := net.CIDRMask(ones, bits)
-		mask, err := MaskFromStdIPMask(stdMask)
+		mask, err := MaskFromNetIPMask(stdMask)
 		assert.Nil(t, err)
 		return mask
 	}
-	assert.Equal(t, Mask{ui: 0x00000000}, convert(0, SIZE))
-	assert.Equal(t, Mask{ui: 0xffff0000}, convert(16, SIZE))
-	assert.Equal(t, Mask{ui: 0xffffffe0}, convert(27, SIZE))
-	assert.Equal(t, Mask{ui: 0xffffffff}, convert(32, SIZE))
+	assert.Equal(t, Mask{ui: 0x00000000}, convert(0, addressSize))
+	assert.Equal(t, Mask{ui: 0xffff0000}, convert(16, addressSize))
+	assert.Equal(t, Mask{ui: 0xffffffe0}, convert(27, addressSize))
+	assert.Equal(t, Mask{ui: 0xffffffff}, convert(32, addressSize))
 
 	runWithError := func(ones, bits int) {
 		stdMask := net.CIDRMask(ones, bits)
-		_, err := MaskFromStdIPMask(stdMask)
+		_, err := MaskFromNetIPMask(stdMask)
 		assert.NotNil(t, err)
 	}
 	runWithError(64, 128)
@@ -78,8 +100,8 @@ func TestMaskFromStdIPMask(t *testing.T) {
 	runWithError(33, 32)
 }
 
-func TestMaskToStdIPMask(t *testing.T) {
-	assert.Equal(t, net.CIDRMask(25, SIZE), Mask{ui: 0xffffff80}.ToStdIPMask())
+func TestMaskToNetIPMask(t *testing.T) {
+	assert.Equal(t, net.CIDRMask(25, addressSize), Mask{ui: 0xffffff80}.ToNetIPMask())
 }
 
 func TestAddressString(t *testing.T) {
@@ -92,7 +114,7 @@ func TestAddressString(t *testing.T) {
 
 	for _, ip := range ips {
 		t.Run(ip, func(t *testing.T) {
-			assert.Equal(t, ip, unsafeParseAddress(ip).String())
+			assert.Equal(t, ip, _a(ip).String())
 		})
 	}
 }
@@ -117,4 +139,12 @@ func TestMaskString(t *testing.T) {
 			assert.Equal(t, tt.str, lengthToMask(tt.length).String())
 		})
 	}
+}
+
+func TestMaskAsMapKey(t *testing.T) {
+	m := make(map[Mask]bool)
+
+	m[_m(27)] = true
+
+	assert.True(t, m[_m(27)])
 }

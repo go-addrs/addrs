@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func unsafeParsePrefix(cidr string) Prefix {
+func _p(cidr string) Prefix {
 	prefix, err := ParsePrefix(cidr)
 	if err != nil {
 		panic("only use this is happy cases")
@@ -18,11 +18,11 @@ func unsafeParsePrefix(cidr string) Prefix {
 }
 
 func unsafePrefixFromUint32(ip uint32, length int) Prefix {
-	prefix, err := PrefixFromUint32(ip, length)
+	mask, err := MaskFromLength(length)
 	if err != nil {
 		panic("only use this is happy cases")
 	}
-	return prefix
+	return PrefixFromAddressMask(Address{ip}, mask)
 }
 
 func unsafeParseNet(prefix string) *net.IPNet {
@@ -31,6 +31,48 @@ func unsafeParseNet(prefix string) *net.IPNet {
 		panic("only use this is happy cases")
 	}
 	return ipNet
+}
+
+func TestPrefixComparable(t *testing.T) {
+	tests := []struct {
+		description string
+		a, b        Prefix
+		equal       bool
+	}{
+		{
+			description: "equal",
+			a:           _p("10.0.0.1/24"),
+			b:           _p("10.0.0.1/24"),
+			equal:       true,
+		}, {
+			description: "lengths not equal",
+			a:           _p("10.0.0.1/24"),
+			b:           _p("10.0.0.1/25"),
+			equal:       false,
+		}, {
+			description: "host bits not equal",
+			a:           _p("10.0.0.1/24"),
+			b:           _p("10.0.0.2/24"),
+			equal:       false,
+		}, {
+			description: "prefix bits not equal",
+			a:           _p("10.0.0.1/24"),
+			b:           _p("11.0.0.1/24"),
+			equal:       false,
+		}, {
+			description: "extremes",
+			a:           _p("0.0.0.0/0"),
+			b:           _p("255.255.255.255/32"),
+			equal:       false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			assert.Equal(t, tt.equal, tt.a == tt.b)
+			assert.Equal(t, !tt.equal, tt.a != tt.b)
+		})
+	}
 }
 
 func TestParsePrefix(t *testing.T) {
@@ -69,7 +111,7 @@ func TestParsePrefix(t *testing.T) {
 	}
 }
 
-func TestPrefixFromStdIPNet(t *testing.T) {
+func TestPrefixFromNetIPNet(t *testing.T) {
 	tests := []struct {
 		description string
 		net         *net.IPNet
@@ -103,7 +145,7 @@ func TestPrefixFromStdIPNet(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
-			net, err := PrefixFromStdIPNet(tt.net)
+			net, err := PrefixFromNetIPNet(tt.net)
 			if tt.isErr {
 				assert.NotNil(t, err)
 			} else {
@@ -114,38 +156,14 @@ func TestPrefixFromStdIPNet(t *testing.T) {
 	}
 }
 
-func TestPrefixFromBytes(t *testing.T) {
-	prefix, err := PrefixFromBytes(10, 224, 24, 1, 22)
-	assert.Equal(t, unsafePrefixFromUint32(0x0ae01801, 22), prefix)
-	assert.Nil(t, err)
-
-	prefix, err = PrefixFromBytes(10, 224, 24, 1, 32)
-	assert.Equal(t, unsafePrefixFromUint32(0x0ae01801, 32), prefix)
-	assert.Nil(t, err)
-
-	prefix, err = PrefixFromBytes(10, 224, 24, 1, 33)
-	assert.NotNil(t, err)
-}
-
-func TestPrefixFromUint32(t *testing.T) {
-	prefix, err := PrefixFromUint32(0x0ae01801, 22)
-	assert.Equal(t, unsafeParsePrefix("10.224.24.1/22"), prefix)
-	assert.Nil(t, err)
-
-	prefix, err = PrefixFromUint32(0x0ae01801, 33)
-	assert.NotNil(t, err)
-}
-
 func TestPrefixEqual(t *testing.T) {
 	first, second := unsafePrefixFromUint32(0x0ae01801, 24), unsafePrefixFromUint32(0x0ae01801, 24)
 	assert.Equal(t, first, second)
-	assert.True(t, first.Equal(second))
 	assert.True(t, first == second)
 	assert.True(t, reflect.DeepEqual(first, second))
 
 	third := unsafePrefixFromUint32(0x0ae01701, 24)
 	assert.NotEqual(t, third, second)
-	assert.False(t, third.Equal(first))
 	assert.False(t, third == first)
 	assert.False(t, reflect.DeepEqual(third, first))
 }
@@ -171,11 +189,11 @@ func TestPrefixLessThan(t *testing.T) {
 		for b := a; b < len(prefixes); b++ {
 			t.Run(fmt.Sprintf("%d < %d", a, b), func(t *testing.T) {
 				if a == b {
-					assert.False(t, prefixes[a].LessThan(prefixes[b]))
+					assert.False(t, prefixes[a].lessThan(prefixes[b]))
 				} else {
-					assert.True(t, prefixes[a].LessThan(prefixes[b]))
+					assert.True(t, prefixes[a].lessThan(prefixes[b]))
 				}
-				assert.False(t, prefixes[b].LessThan(prefixes[a]))
+				assert.False(t, prefixes[b].lessThan(prefixes[a]))
 			})
 		}
 	}
@@ -189,31 +207,31 @@ func TestNetworkHostBroadcast(t *testing.T) {
 	}{
 		{
 			description: "0",
-			prefix:      unsafeParsePrefix("10.224.24.1/0"),
-			network:     unsafeParsePrefix("0.0.0.0/0"),
-			host:        unsafeParsePrefix("10.224.24.1/0"),
-			broadcast:   unsafeParsePrefix("255.255.255.255/0"),
+			prefix:      _p("10.224.24.1/0"),
+			network:     _p("0.0.0.0/0"),
+			host:        _p("10.224.24.1/0"),
+			broadcast:   _p("255.255.255.255/0"),
 		},
 		{
 			description: "8",
-			prefix:      unsafeParsePrefix("10.224.24.1/8"),
-			network:     unsafeParsePrefix("10.0.0.0/8"),
-			host:        unsafeParsePrefix("0.224.24.1/8"),
-			broadcast:   unsafeParsePrefix("10.255.255.255/8"),
+			prefix:      _p("10.224.24.1/8"),
+			network:     _p("10.0.0.0/8"),
+			host:        _p("0.224.24.1/8"),
+			broadcast:   _p("10.255.255.255/8"),
 		},
 		{
 			description: "22",
-			prefix:      unsafeParsePrefix("10.224.24.1/22"),
-			network:     unsafeParsePrefix("10.224.24.0/22"),
-			host:        unsafeParsePrefix("0.0.0.1/22"),
-			broadcast:   unsafeParsePrefix("10.224.27.255/22"),
+			prefix:      _p("10.224.24.1/22"),
+			network:     _p("10.224.24.0/22"),
+			host:        _p("0.0.0.1/22"),
+			broadcast:   _p("10.224.27.255/22"),
 		},
 		{
 			description: "32",
-			prefix:      unsafeParsePrefix("10.224.24.1/32"),
-			network:     unsafeParsePrefix("10.224.24.1/32"),
-			host:        unsafeParsePrefix("0.0.0.0/32"),
-			broadcast:   unsafeParsePrefix("10.224.24.1/32"),
+			prefix:      _p("10.224.24.1/32"),
+			network:     _p("10.224.24.1/32"),
+			host:        _p("0.0.0.0/32"),
+			broadcast:   _p("10.224.24.1/32"),
 		},
 	}
 
@@ -233,43 +251,43 @@ func TestPrefixContainsPrefix(t *testing.T) {
 	}{
 		{
 			description: "all",
-			container:   unsafeParsePrefix("0.0.0.0/0"),
-			containee:   unsafeParsePrefix("1.2.3.4/32"),
+			container:   _p("0.0.0.0/0"),
+			containee:   _p("1.2.3.4/32"),
 		},
 		{
 			description: "same host",
-			container:   unsafeParsePrefix("1.2.3.4/32"),
-			containee:   unsafeParsePrefix("1.2.3.4/32"),
+			container:   _p("1.2.3.4/32"),
+			containee:   _p("1.2.3.4/32"),
 		},
 		{
 			description: "same host route",
-			container:   unsafeParsePrefix("1.2.3.4/32"),
-			containee:   unsafeParsePrefix("1.2.3.4/32"),
+			container:   _p("1.2.3.4/32"),
+			containee:   _p("1.2.3.4/32"),
 		},
 		{
 			description: "same prefix",
-			container:   unsafeParsePrefix("192.168.20.0/24"),
-			containee:   unsafeParsePrefix("192.168.20.0/24"),
+			container:   _p("192.168.20.0/24"),
+			containee:   _p("192.168.20.0/24"),
 		},
 		{
 			description: "contained smaller",
-			container:   unsafeParsePrefix("192.168.0.0/16"),
-			containee:   unsafeParsePrefix("192.168.20.0/24"),
+			container:   _p("192.168.0.0/16"),
+			containee:   _p("192.168.20.0/24"),
 		},
 		{
 			description: "ignore host part",
-			container:   unsafeParsePrefix("1.2.3.4/24"),
-			containee:   unsafeParsePrefix("1.2.3.5/32"),
+			container:   _p("1.2.3.4/24"),
+			containee:   _p("1.2.3.5/32"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
-			assert.True(t, tt.container.ContainsPrefix(tt.containee))
-			if tt.container.Equal(tt.containee) {
-				assert.True(t, tt.containee.ContainsPrefix(tt.container))
+			assert.True(t, tt.container.Contains(tt.containee))
+			if tt.container == tt.containee {
+				assert.True(t, tt.containee.Contains(tt.container))
 			} else {
-				assert.False(t, tt.containee.ContainsPrefix(tt.container))
+				assert.False(t, tt.containee.Contains(tt.container))
 			}
 		})
 	}
@@ -283,43 +301,43 @@ func TestPrefixContainsAddress(t *testing.T) {
 	}{
 		{
 			description: "all",
-			container:   unsafeParsePrefix("0.0.0.0/0"),
+			container:   _p("0.0.0.0/0"),
 			containees: []Address{
-				unsafeParseAddress("1.2.3.4"),
-				unsafeParseAddress("192.168.4.2"),
+				_a("1.2.3.4"),
+				_a("192.168.4.2"),
 			},
 		},
 		{
 			description: "host route",
-			container:   unsafeParsePrefix("1.2.3.4/32"),
+			container:   _p("1.2.3.4/32"),
 			containees: []Address{
-				unsafeParseAddress("1.2.3.4"),
+				_a("1.2.3.4"),
 			},
 			not: []Address{
-				unsafeParseAddress("1.2.3.5"),
-				unsafeParseAddress("1.2.3.3"),
+				_a("1.2.3.5"),
+				_a("1.2.3.3"),
 			},
 		},
 		{
 			description: "same prefix",
-			container:   unsafeParsePrefix("192.168.20.0/24"),
+			container:   _p("192.168.20.0/24"),
 			containees: []Address{
-				unsafeParseAddress("192.168.20.0"),
+				_a("192.168.20.0"),
 			},
 		},
 		{
 			description: "contained smaller",
-			container:   unsafeParsePrefix("192.168.0.0/16"),
+			container:   _p("192.168.0.0/16"),
 			containees: []Address{
-				unsafeParseAddress("192.168.20.0"),
+				_a("192.168.20.0"),
 			},
 		},
 		{
 			description: "ignore host part",
-			container:   unsafeParsePrefix("1.2.3.4/24"),
+			container:   _p("1.2.3.4/24"),
 			containees: []Address{
-				unsafeParseAddress("1.2.3.5"),
-				unsafeParseAddress("1.2.3.245"),
+				_a("1.2.3.5"),
+				_a("1.2.3.245"),
 			},
 		},
 	}
@@ -328,12 +346,12 @@ func TestPrefixContainsAddress(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			for i, containee := range tt.containees {
 				t.Run(fmt.Sprintf("contains %d", i), func(t *testing.T) {
-					assert.True(t, tt.container.ContainsAddress(containee))
+					assert.True(t, tt.container.Contains(containee))
 				})
 			}
 			for i, notContainee := range tt.not {
 				t.Run(fmt.Sprintf("doesn't contain %d", i), func(t *testing.T) {
-					assert.False(t, tt.container.ContainsAddress(notContainee))
+					assert.False(t, tt.container.Contains(notContainee))
 				})
 			}
 		})
@@ -348,17 +366,17 @@ func TestPrefixSize(t *testing.T) {
 	}{
 		{
 			description: "all",
-			prefix:      unsafeParsePrefix("0.0.0.0/0"),
+			prefix:      _p("0.0.0.0/0"),
 			expected:    int64(0x100000000),
 		},
 		{
 			description: "private",
-			prefix:      unsafeParsePrefix("172.16.0.0/12"),
+			prefix:      _p("172.16.0.0/12"),
 			expected:    0x00100000,
 		},
 		{
 			description: "host",
-			prefix:      unsafeParsePrefix("172.16.244.117/32"),
+			prefix:      _p("172.16.244.117/32"),
 			expected:    1,
 		},
 	}
@@ -370,8 +388,8 @@ func TestPrefixSize(t *testing.T) {
 	}
 }
 
-func TestPrefixToStdIPNet(t *testing.T) {
-	assert.Equal(t, "10.224.24.1/24", unsafeParsePrefix("10.224.24.1/24").ToStdIPNet().String())
+func TestPrefixToNetIPNet(t *testing.T) {
+	assert.Equal(t, "10.224.24.1/24", _p("10.224.24.1/24").ToNetIPNet().String())
 }
 
 func TestPrefixString(t *testing.T) {
@@ -383,21 +401,21 @@ func TestPrefixString(t *testing.T) {
 
 	for _, cidr := range cidrs {
 		t.Run(cidr, func(t *testing.T) {
-			assert.Equal(t, cidr, unsafeParsePrefix(cidr).String())
+			assert.Equal(t, cidr, _p(cidr).String())
 		})
 	}
 }
 
 func TestPrefixUint32(t *testing.T) {
-	address, mask := unsafeParsePrefix("10.224.24.1/24").Uint32()
+	address, mask := _p("10.224.24.1/24").Uint32()
 	assert.Equal(t, uint32(0x0ae01801), address)
 	assert.Equal(t, uint32(0xffffff00), mask)
 }
 
 func TestPrefixFromAddressMask(t *testing.T) {
 	address := Address{ui: 0x0ae01801}
-	mask, _ := CreateMask(24)
-	assert.Equal(t, Prefix{Address: address, length: 24}, PrefixFromAddressMask(address, mask))
+	mask, _ := MaskFromLength(24)
+	assert.Equal(t, Prefix{addr: address, length: 24}, PrefixFromAddressMask(address, mask))
 }
 
 func TestPrefixHalves(t *testing.T) {
@@ -406,24 +424,24 @@ func TestPrefixHalves(t *testing.T) {
 		a, b   Prefix
 	}{
 		{
-			prefix: unsafeParsePrefix("0.0.0.0/0"),
-			a:      unsafeParsePrefix("0.0.0.0/1"),
-			b:      unsafeParsePrefix("128.0.0.0/1"),
+			prefix: _p("0.0.0.0/0"),
+			a:      _p("0.0.0.0/1"),
+			b:      _p("128.0.0.0/1"),
 		},
 		{
-			prefix: unsafeParsePrefix("10.224.0.0/16"),
-			a:      unsafeParsePrefix("10.224.0.0/17"),
-			b:      unsafeParsePrefix("10.224.128.0/17"),
+			prefix: _p("10.224.0.0/16"),
+			a:      _p("10.224.0.0/17"),
+			b:      _p("10.224.128.0/17"),
 		},
 		{
-			prefix: unsafeParsePrefix("10.224.24.1/24"),
-			a:      unsafeParsePrefix("10.224.24.0/25"),
-			b:      unsafeParsePrefix("10.224.24.128/25"),
+			prefix: _p("10.224.24.1/24"),
+			a:      _p("10.224.24.0/25"),
+			b:      _p("10.224.24.128/25"),
 		},
 		{
-			prefix: unsafeParsePrefix("10.224.24.117/31"),
-			a:      unsafeParsePrefix("10.224.24.116/32"),
-			b:      unsafeParsePrefix("10.224.24.117/32"),
+			prefix: _p("10.224.24.117/31"),
+			a:      _p("10.224.24.116/32"),
+			b:      _p("10.224.24.117/32"),
 		},
 	}
 
@@ -436,25 +454,25 @@ func TestPrefixHalves(t *testing.T) {
 	}
 }
 
-func TestIterateAddress(t *testing.T) {
+func TestWalkAddress(t *testing.T) {
 	tests := []struct {
 		prefix      Prefix
 		first, last Address
 	}{
 		{
-			prefix: unsafeParsePrefix("10.224.0.0/24"),
-			first:  unsafeParseAddress("10.224.0.0"),
-			last:   unsafeParseAddress("10.224.0.99"),
+			prefix: _p("10.224.0.0/24"),
+			first:  _a("10.224.0.0"),
+			last:   _a("10.224.0.99"),
 		},
 		{
-			prefix: unsafeParsePrefix("203.0.113.116/31"),
-			first:  unsafeParseAddress("203.0.113.116"),
-			last:   unsafeParseAddress("203.0.113.117"),
+			prefix: _p("203.0.113.116/31"),
+			first:  _a("203.0.113.116"),
+			last:   _a("203.0.113.117"),
 		},
 		{
-			prefix: unsafeParsePrefix("100.64.0.1/32"),
-			first:  unsafeParseAddress("100.64.0.1"),
-			last:   unsafeParseAddress("100.64.0.1"),
+			prefix: _p("100.64.0.1/32"),
+			first:  _a("100.64.0.1"),
+			last:   _a("100.64.0.1"),
 		},
 	}
 
@@ -462,7 +480,7 @@ func TestIterateAddress(t *testing.T) {
 		t.Run(tt.prefix.String(), func(t *testing.T) {
 			count := 0
 			ips := []Address{}
-			tt.prefix.Iterate(func(ip Address) bool {
+			tt.prefix.walkAddresses(func(ip Address) bool {
 				count++
 				ips = append(ips, ip)
 				if count == 100 {
@@ -482,32 +500,40 @@ func TestPrefixSet(t *testing.T) {
 		in, out Address
 	}{
 		{
-			prefix: unsafeParsePrefix("0.0.0.0/1"),
-			in:     unsafeParseAddress("127.0.0.1"),
-			out:    unsafeParseAddress("192.168.0.3"),
+			prefix: _p("0.0.0.0/1"),
+			in:     _a("127.0.0.1"),
+			out:    _a("192.168.0.3"),
 		},
 		{
-			prefix: unsafeParsePrefix("10.224.0.0/16"),
-			in:     unsafeParseAddress("10.224.0.123"),
-			out:    unsafeParseAddress("10.225.128.123"),
+			prefix: _p("10.224.0.0/16"),
+			in:     _a("10.224.0.123"),
+			out:    _a("10.225.128.123"),
 		},
 		{
-			prefix: unsafeParsePrefix("10.224.24.1/24"),
-			in:     unsafeParseAddress("10.224.24.0"),
-			out:    unsafeParseAddress("10.224.25.128"),
+			prefix: _p("10.224.24.1/24"),
+			in:     _a("10.224.24.0"),
+			out:    _a("10.224.25.128"),
 		},
 		{
-			prefix: unsafeParsePrefix("10.224.24.117/31"),
-			in:     unsafeParseAddress("10.224.24.116"),
-			out:    unsafeParseAddress("10.224.24.118"),
+			prefix: _p("10.224.24.117/31"),
+			in:     _a("10.224.24.116"),
+			out:    _a("10.224.24.118"),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.prefix.String(), func(t *testing.T) {
-			set := tt.prefix.Set()
+			set := tt.prefix.FixedSet()
 			assert.True(t, set.Contains(tt.in))
 			assert.False(t, set.Contains(tt.out))
 		})
 	}
+}
+
+func TestPrefixAsMapKey(t *testing.T) {
+	m := make(map[Prefix]bool)
+
+	m[_p("203.0.113.1/32")] = true
+
+	assert.True(t, m[_p("203.0.113.1/32")])
 }

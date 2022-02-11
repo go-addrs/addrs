@@ -1,128 +1,147 @@
-An alternative representation for IP addresses than the one in the [go net
-library]. After authoring [go-netaddr] -- aimed at addressing some frustrations
-with the net package -- and seeing other similar packages, such as
-[inet.af/netaddr] started to address other frustrations, I realized that it
-still wasn't quite right.
+# Overview
 
-This package's position is that IPv4 and IPv6 are two different protocols. When
-you have an address in either one, you always know which one it is. There is no
-16-byte representation of an IPv4 address. That myth leads to confusion. There
-is a way to project IPv4 addresses into IPv6 but let's be honest; it isn't very
-useful.
+`addrs` provides IP address related types and data structures for the Go
+programming language with a clean and complete API and many nice features when
+compared with correspanding types in the Go `net` package. The basic types are
+opaque, immutable, comparable, space efficient, and defined as simple structs
+that don't require extra memory allocation.
 
-If you put a packet analyzer on the wire and capture packets, you may find a
-mixture of ARP/IPv4 and IPv6 packets but the difference between them is always
-clear.
+One key difference which sets this library apart from others is that it
+maintains a clear distinction between IPv4 and IPv6 addresses and related types.
 
- - the ethertype in the L2 header is `0x0800` for IPv4 and `0x86DD` for IPv6
- - you will find a 4-byte address in an IPv4 packet and 16-byte in IPv6
- - the software stacks handling the two are more different than they are the same
+## Immutable Types
 
-Conflating the two protocols by creating a single address type to represent
-both is the wrong thing to do in the long run.
+The types described in this section are opaque, immutable, comparable, space
+efficient and do not allocate memory. They can be used as map keys.
 
-Beyond that, since this package creates an all new IP address type, it tries to
-learn from other examples such as [inet.af/netaddr] to make a type that is
-opaque, immutable, comparable, small, allocation free, usable as a map key, and
-is as interoperable as possible.
+### Address
 
-// TODO address ipv6 scopes
-// TODO address situations that need to return either IPv4 or IPv6 such as a DNS resolver.
+An `Address` does not store anything more than an IP address. Its size is 32
+bits for IPv4 and 128 bits for IPv6 -- exactly the same size as when they appear
+network packet headers. However, they are not stored as bytes in network order
+and cannot be directly serialized as such. They can be converted to and from
+their `net.IP` representation.
 
-## IP Maps
+### Mask
 
-This is a data structure that maps IP addresses to arbitrary `interface{}`
-values. It supports the constant-time basic map operations: insert, get, and
-remove. It also supports O(n) iteration over all prefix/value pairs in
-lexigraphical order of prefixes.
+A Mask is like an `Address` (same size) except that it must be in the format of
+a (potentially empty) string of 1 bits in the most significant positions,
+followed by 0 bits to fill out the remainder.
 
-When a map is created, you choose whether the prefixes will be IPv4 (4-byte
-representation only) or IPv6 (16-byte) addresses. The two families cannot be
-mixed in the same map instance. This is consistent with this library's stance on
-not conflating IPv4 with 16-byte IPv4 in IPv6 representation.
+### Prefix
 
-Since this data structure was specifically designed to use IP addresses as keys,
-it supports a couple of other cool operations.
+A `Prefix` is an `Address` plus a `Mask`. However, the mask is stored more
+efficiently as a length indicating the number of 1s.
 
-First, it can efficiently perform a longest prefix match when an exact match is
-not available. This operation has the same O(1) efficiency as an exact match.
+Any Address can be used with a `Prefix`. It is not limited to 0s where the
+`Mask` has 0s. For example, `203.0.113.17/24` is valid and preserves the `.17`
+at the end. If you need to mask off those bits, you can call `.Network()`.
 
-Second, it supports aggregation of key/values while iterating on the fly. This
-has nearly the same O(n) efficiency \*\* as iterating without aggregating. The
-rules of aggregation are as follows:
+### Range
 
-1. The values stored must be comparable. Prefixes get aggregated only where
-   their values compare equal.
-2. The set of key/value pairs visited is the minimal-size set such that any
-   longest prefix match against the aggregated set will always return the same
-   value as the same match against the non-aggregated set.
-3. The aggregated and non-aggregated sets of prefixes may be disjoint.
+A `Range` represents the set of all addresses between a first and a last address
+(inclusive) and is store efficiently as such.
 
-Aggregation can be useful, for example, to minimize the number of prefixes
-needed to install into a router's datapath to guarantee that all of the next
-hops are correct. In general, though, routing protocols should be careful when
-passing aggregated routes to neighbors as this will likely lead to poor
-comparisions by neighboring routers who receive routes aggregated differently
-from different peers.
+One thing to note is that there is no valid representation of an empty `Range`.
+The API will not return one in any case and the zero value of a `Range` has one
+address in it (`Address{}` - `Address{}`).
 
-A future enhancement could efficiently compute the difference in the aggregated
-set when inserting or removing elements so that the entire set doesn't need to
-be iterated after each mutation. Since the aggregated set of prefixes is
-disjoint from the original, either operation could result in both adding and
-removing key/value pairs. This makes it tricky but it should be possible.
+## Mutable Types
 
-As a simple example, consider the following key/value pairs inserted into a map.
+The two most complex types in this library are mutable -- `Set` and `Table`.
 
-- 10.224.24.2/31 / true
-- 10.224.24.0/32 / true
-- 10.224.24.1/32 / true
+These behave like Go maps in a few ways:
 
-When iterating over the aggregated set, only the following key/value pair will
-be visited.
+1. They are reference types where each instance points to a share data
+   structure. These can be efficiently passed and returned to and from functions
+   and methods without using pointers.
 
-- 10.224.24.0/30 / true
+2. They must be initialized to be modifiable. An unitialized `Set` or `Table`
+   will behave like it is empty when you read from it but any attempt to modify
+   it (e.g. insert entries) will result in a panic. Each provides a factory
+   function which will return a fully-initialized instance which can then be
+   modified.
 
-A slightly more complex example shows how value comparison comes into play.
+3. Unlike the simpler, immutable types mentioned above, The memory for `Set` and
+   `Table` is allocated from the heap.
 
-- 10.224.24.0/30 / true
-- 10.224.24.0/31 / false
-- 10.224.24.1/32 / true
-- 10.224.24.0/32 / false
+There are a few ways in which these types do not behave like a Go `map`:
 
-Iterating the aggregated set:
+1. Both types have a corresponding immutable represation. Converting between
+   mutable and immutable instances is as efficient as copying a pointer. If you
+   convert from mutable -> immutable -> mutable you end up with a mutable clone
+   which is independent from the original.
 
-- 10.224.24.0/30 / true
-- 10.224.24.0/31 / false
-- 10.224.24.1/32 / true
+2. They are safe to read and write concurrently. All read operations work on a
+   consistent representation of the underlying datastructure which is not
+   affected by concurrent writes. However, subsequent reads on the same instance
+   may, depending on timing, reflect concurrent writes from other goroutines.
 
-A more complex example where all values are the same (so they aren't shown)
+3. Multiple concurrent writes *will* cause a panic.
 
-- 172.21.0.0/20
-- 192.68.27.0/25
-- 192.168.26.128/25
-- 10.224.24.0/32
-- 192.68.24.0/24
-- 172.16.0.0/12
-- 192.68.26.0/24
-- 10.224.24.0/30
-- 192.168.24.0/24
-- 192.168.25.0/24
-- 192.168.26.0/25
-- 192.68.25.0/24
-- 192.168.27.0/24
-- 172.20.128.0/19
-- 192.68.27.128/25
+A nice pattern to ensure consistency is to reserve writing to a single goroutine
+and then send fixed snapshots of the `Set` or `Table` through channels to other
+goroutines to consume it.
 
-The aggregrated set is as follows:
+### Set and FixedSet
 
-- 10.224.24.0/30
-- 172.16.0.0/12
-- 192.68.24.0/22
-- 192.168.24.0/22
+A `Set` contains any arbitrary collection of individual, distinct `Address`
+values. `Address`, `Prefix`, and `Range` are similar to sets but are more
+constrained. The API provides methods to convert freely between these types.
 
-\*\* There is one complication that may throw its efficiency slightly off of
-     O(n) but I haven't analyzed it yet to be sure. It should be pretty close.
+The fixed representation of a `Set` is called `FixedSet`. One can be efficiently
+obtained by calling `.FixedSet()` on an `Address`, `Prefix`, `Range`, or `Set`.
 
-[go net library]: https://golang.org/pkg/net/
-[go-netaddr]: https://gopkg.in/netaddr.v1
-[inet.af/netaddr]: https://pkg.go.dev/inet.af/netaddr
+The memory required to store a `Set` is proportional to the minimum number of
+`Prefix`es required to exactly cover all of its `Address`es. This
+proportionality is maintained as modifications occur. For example,
+subsequentially inserting two equally sized, and properly aligned `Prefix`es
+will result in changes to the underlying structure to represent them both with a
+single `Prefix`. It can get arbitrarily complicated and this will hold true.
+
+The above is especially important when it comes to storing IPv6 addresses. For
+example, an entire `/64` `Prefix` has a massive number of distinct `Address`es
+but is stored in a very small space.
+
+### Table and FixedTable
+
+A `Table` maps `Prefix`es to arbitrary values. They use Go generics so that any
+type of value can be stored and retreived in a type-safe manner. Bits in the
+`Address` part that would be masked off by 0s in the `Mask` are ignored when
+using it as a key in a `Table`.
+
+`ITable` is equivalent but does not require generics. If you do not have at
+least Go version `1.18`, you can use this type to map to `interface{}`es
+instead. Arbitrary types can still be stored but it is up to you to dynamically
+cast them to the type you want.
+
+At first glance, `Table` may seem similar but more restrictive than Go's `map`.
+Afterall, a `Prefix` can be used as a `map` key so why is it necessary?
+
+`Table` is more capable than Go `map` in a few very important ways besides the
+ones mentioned above.
+
+1. Walking a `Table` always orders the keys lexigraphically. Much like strings,
+   shorter `Prefix`es come first followed by longer ones that it contains.
+   `Prefix`es of the same length are ordered by their upper bits, up to that
+   length.
+
+2. It supports an efficient longest prefix match. When you search using a
+   `Prefix`, it will return the entry whose key is closest to it (longest) yet
+   still contains it.
+
+3. It can convert itself to an aggregated form containing the minimum number of
+   entries required such that any search using an `Address` as the search key
+   will return the same value as it would on the original. (This operation
+   requires that the values be of a comparable type, either by using a type that
+   is inherently comparable with `==` and `!=` or by implementing the
+   `EqualComparable` interface (e.g. `Set` implements this interface so they can
+   be stored as values in a `Table`).
+
+4. It supports an efficient diff operation so that you can iterate the entries
+   removed, added, or changed from one to the other.
+
+   Starting with a large `Table`, if you make a small number of modifications to
+   it and then diff the before and after snapshots, the diff operation
+   efficiency will be very good -- proportional to the changes made between the
+   two snapshots.

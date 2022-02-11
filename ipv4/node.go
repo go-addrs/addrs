@@ -14,12 +14,6 @@ type trieNode struct {
 	children [2]*trieNode
 }
 
-// bitsToBytes calculates the number of bytes (including possible
-// least-significant partial) to hold the given number of bits.
-func bitsToBytes(bits uint32) uint32 {
-	return (bits + 7) / 8
-}
-
 func intMin(a, b int) int {
 	if a < b {
 		return a
@@ -54,20 +48,20 @@ func intMax(a, b int) int {
 // | true    | false | 0     | `longer` belongs in `shorter`'s `children[0]`
 // | true    | false | 1     | `longer` belongs in `shorter`'s `children[1]`
 // | true    | true  | NA    | `shorter` and `longer` are the same key
-func contains(shorter, longer Prefix) (matches, exact bool, common, child uint32) {
+func contains(shorter, longer Prefix) (matches, exact bool, common uint32, child int) {
 	mask := uint32(0xffffffff) << (32 - shorter.length)
 
-	matches = shorter.Address.ui&mask == longer.Address.ui&mask
+	matches = shorter.addr.ui&mask == longer.addr.ui&mask
 	if matches {
 		exact = shorter.length == longer.length
 		common = shorter.length
 	} else {
-		common = uint32(bits.LeadingZeros32(shorter.Address.ui ^ longer.Address.ui))
+		common = uint32(bits.LeadingZeros32(shorter.addr.ui ^ longer.addr.ui))
 	}
 	if !exact {
 		// Whether `longer` goes on the left (0) or right (1)
 		pivotMask := uint32(0x80000000) >> common
-		if longer.Address.ui&pivotMask != 0 {
+		if longer.addr.ui&pivotMask != 0 {
 			child = 1
 		}
 	}
@@ -82,7 +76,7 @@ const (
 )
 
 // compare is a helper which compares two keys to find their relationship
-func compare(a, b Prefix) (result int, reversed bool, common, child uint32) {
+func compare(a, b Prefix) (result int, reversed bool, common uint32, child int) {
 	var aMatch, bMatch bool
 	// Figure out which is the longer prefix and reverse them if b is shorter
 	reversed = b.length < a.length
@@ -104,22 +98,31 @@ func compare(a, b Prefix) (result int, reversed bool, common, child uint32) {
 	return
 }
 
-func (me *trieNode) makeCopy() *trieNode {
+func (me *trieNode) mutate(mutator func(*trieNode)) *trieNode {
+	if me == nil {
+		return nil
+	}
+
+	mutator(me)
+
+	numNodes := me.children[0].NumNodes() + me.children[1].NumNodes()
+	height := 1 + intMax(me.children[0].height(), me.children[1].height())
+
+	me.size = uint32(numNodes)
+	me.h = uint16(height)
+	if me.isActive {
+		me.size++
+	}
+	return me
+}
+
+func (me *trieNode) copyMutate(mutator func(*trieNode)) *trieNode {
 	if me == nil {
 		return nil
 	}
 	doppelganger := &trieNode{}
 	*doppelganger = *me
-	return doppelganger
-}
-
-func (me *trieNode) setSize() {
-	// me is not nil by design
-	me.size = uint32(me.children[0].NumNodes() + me.children[1].NumNodes())
-	me.h = 1 + uint16(uint16(intMax(me.children[0].height(), me.children[1].height())))
-	if me.isActive {
-		me.size++
-	}
+	return doppelganger.mutate(mutator)
 }
 
 // Equal returns true if all of the entries are the same in the two data structures
@@ -134,7 +137,7 @@ func (me *trieNode) Equal(other *trieNode) bool {
 		return false
 	case me.isActive != other.isActive:
 		return false
-	case !me.Prefix.Equal(other.Prefix):
+	case me.Prefix != other.Prefix:
 		return false
 	case me.isActive && !dataEqual(me.Data, other.Data):
 		return false
@@ -154,8 +157,12 @@ func (me *trieNode) GetOrInsert(searchKey Prefix, data interface{}) (head, resul
 		if result == nil {
 			result = &trieNode{Prefix: searchKey, Data: data}
 
-			// The only error from insert is that the key already exists. But, that cannot happen by design.
-			head, _ = me.insert(result, insertOpts{insert: true})
+			var err error
+			head, err = me.insert(result, insertOpts{insert: true})
+			if err != nil {
+				// when getting *or* inserting, we design around the errors that could come from insert
+				panic(fmt.Errorf("this error shouldn't happen: %w", err))
+			}
 		}
 	}()
 
@@ -172,9 +179,9 @@ func (me *trieNode) GetOrInsert(searchKey Prefix, data interface{}) (head, resul
 		var newChild *trieNode
 		newChild, result = me.children[child].GetOrInsert(searchKey, data)
 
-		head = me.makeCopy()
-		head.children[child] = newChild
-		head.setSize()
+		head = me.copyMutate(func(n *trieNode) {
+			n.children[child] = newChild
+		})
 		return
 	}
 
@@ -229,7 +236,7 @@ func (me *trieNode) Match(searchKey Prefix) *trieNode {
 // Size returns the number of addresses that could match this node
 // Note that this may have to search all nodes recursively to find the answer.
 // The implementation can be changed to store the size in each node at the cost
-// of adding about 8 more bits to the size of each node.
+// of adding about 8 more bytes to the size of each node.
 func (me *trieNode) Size() int64 {
 	if me == nil {
 		return 0
@@ -241,11 +248,11 @@ func (me *trieNode) Size() int64 {
 }
 
 // NumNodes returns the number of entries in the trie
-func (me *trieNode) NumNodes() int {
+func (me *trieNode) NumNodes() int64 {
 	if me == nil {
 		return 0
 	}
-	return int(me.size)
+	return int64(me.size)
 }
 
 // height returns the maximum height of the trie.
@@ -295,8 +302,14 @@ func (me *trieNode) Update(key Prefix, data interface{}) (newHead *trieNode, err
 
 // InsertOrUpdate inserts the key / value if the key didn't previously exist.
 // Otherwise, it updates the data.
-func (me *trieNode) InsertOrUpdate(key Prefix, data interface{}) (newHead *trieNode, err error) {
-	return me.insert(&trieNode{Prefix: key, Data: data}, insertOpts{insert: true, update: true})
+func (me *trieNode) InsertOrUpdate(key Prefix, data interface{}) (newHead *trieNode) {
+	var err error
+	newHead, err = me.insert(&trieNode{Prefix: key, Data: data}, insertOpts{insert: true, update: true})
+	if err != nil {
+		// when inserting *or* updating, we design around the errors that could come from insert
+		panic(fmt.Errorf("this error shouldn't happen: %w", err))
+	}
+	return newHead
 }
 
 // Insert is the public form of insert(...)
@@ -308,9 +321,9 @@ type insertOpts struct {
 	insert, update, flatten bool
 }
 
+// flatten assumes that `me` is a new node. It should not be called that had
+// already existed as a node in the trie because it does not make a copy.
 func (me *trieNode) flatten() {
-	defer me.setSize()
-
 	if me.isActive {
 		// If the current node is active, then anything referenced by the
 		// children is redundant, they can be removed.
@@ -344,20 +357,13 @@ func (me *trieNode) flatten() {
 // important to note that the root of the trie can change. If the new node
 // cannot be inserted, nil is returned.
 func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, err error) {
-	defer func() {
-		if me != newHead {
-			if opts.flatten {
-				newHead.flatten()
-			}
-			newHead.setSize()
-		}
-	}()
-
 	if me == nil {
 		if !opts.insert {
 			return me, fmt.Errorf("the key doesn't exist to update")
 		}
-		node.isActive = true
+		node = node.mutate(func(n *trieNode) {
+			n.isActive = true
+		})
 		return node, nil
 	}
 
@@ -376,8 +382,13 @@ func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, 
 			// avoid copy-on-write when it will be flattened resulting in no effective change
 			return me, nil
 		}
-		node.children = me.children
-		node.isActive = true
+		node = node.mutate(func(n *trieNode) {
+			n.children = me.children
+			n.isActive = true
+			if opts.flatten {
+				n.flatten()
+			}
+		})
 		return node, nil
 
 	case compareContains:
@@ -390,8 +401,12 @@ func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, 
 		if err != nil {
 			return me, err
 		}
-		newNode := me.makeCopy()
-		newNode.children[child] = newChild
+		newNode := me.copyMutate(func(n *trieNode) {
+			n.children[child] = newChild
+			if opts.flatten {
+				n.flatten()
+			}
+		})
 		return newNode, nil
 
 	case compareIsContained:
@@ -399,8 +414,13 @@ func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, 
 		if !opts.insert {
 			return me, fmt.Errorf("the key doesn't exist to update")
 		}
-		node.children[child] = me
-		node.isActive = true
+		node = node.mutate(func(n *trieNode) {
+			n.children[child] = me
+			n.isActive = true
+			if opts.flatten {
+				n.flatten()
+			}
+		})
 		return node, nil
 
 	case compareDisjoint:
@@ -419,15 +439,21 @@ func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, 
 			children[0], children[1] = newChild, me
 		}
 
-		return &trieNode{
+		newNode := &trieNode{
 			Prefix: Prefix{
-				Address: Address{
-					ui: me.Prefix.Address.ui & ^(uint32(0xffffffff) >> common), // zero out bits not in common
+				addr: Address{
+					ui: me.Prefix.addr.ui & ^(uint32(0xffffffff) >> common), // zero out bits not in common
 				},
 				length: common,
 			},
 			children: children,
-		}, nil
+		}
+		newNode.mutate(func(n *trieNode) {
+			if opts.flatten {
+				n.flatten()
+			}
+		})
+		return newNode, nil
 	}
 	panic("unreachable code")
 }
@@ -442,13 +468,11 @@ func (me *trieNode) Delete(key Prefix) (newHead *trieNode, err error) {
 	return me.del(key, deleteOpts{})
 }
 
-func (me *trieNode) del(key Prefix, opts deleteOpts) (newHead *trieNode, err error) {
-	defer func() {
-		if err == nil && newHead != nil {
-			newHead.setSize()
-		}
-	}()
+func reverseChild(child int) int {
+	return (child + 1) % 2
+}
 
+func (me *trieNode) del(key Prefix, opts deleteOpts) (newHead *trieNode, err error) {
 	if me == nil {
 		if opts.flatten {
 			return nil, nil
@@ -472,8 +496,9 @@ func (me *trieNode) del(key Prefix, opts deleteOpts) (newHead *trieNode, err err
 		}
 
 		// The two children are disjoint so keep this inactive node.
-		newNode := me.makeCopy()
-		newNode.isActive = false
+		newNode := me.copyMutate(func(n *trieNode) {
+			n.isActive = false
+		})
 		return newNode, nil
 
 	case compareContains:
@@ -500,10 +525,11 @@ func (me *trieNode) del(key Prefix, opts deleteOpts) (newHead *trieNode, err err
 
 		if newChild == nil && !me.isActive {
 			// Promote the other child up
-			return me.children[(child+1)%2], nil
+			return me.children[reverseChild(child)], nil
 		}
-		newNode := me.makeCopy()
-		newNode.children[child] = newChild
+		newNode := me.copyMutate(func(n *trieNode) {
+			n.children[child] = newChild
+		})
 		return newNode, nil
 
 	case compareIsContained:
@@ -527,15 +553,10 @@ func (me *trieNode) active() bool {
 	return me.isActive
 }
 
-type dataContainer struct {
-	valid bool
-	data  interface{}
-}
-
 func dataEqual(a, b interface{}) bool {
 	// If the data stored are EqualComparable, compare it using its method.
-	// This is useful to allow mapping to a more complex type (e.g.
-	// netaddr.IPSet)  that is not comparable by normal means.
+	// This is useful to allow mapping to a more complex type (e.g. Set) that
+	// is not comparable by normal means.
 	switch t := a.(type) {
 	case EqualComparable:
 		return t.EqualInterface(b)
@@ -544,144 +565,261 @@ func dataEqual(a, b interface{}) bool {
 	}
 }
 
-func dataContainerEqual(a, b dataContainer) bool {
-	if !(a.valid && b.valid) {
-		return false
-	}
-	return dataEqual(a.data, b.data)
-}
-
 // EqualComparable is an interface used to compare data. If the datatype you
 // store implements it, it can be used to aggregate prefixes.
 type EqualComparable interface {
 	EqualInterface(interface{}) bool
 }
 
-// aggregable returns if descendants can be aggregated into the current prefix,
-// it considers the `isActive` attributes of all nodes under consideration and
-// only aggregates where active nodes can be joined together in aggregation. It
-// also only aggregates nodes whose data compare equal.
+// trieCallback defines the signature of a function you can pass to Walk or
+// Aggregate to handle each key / value pair found while iterating.
 //
-// returns true and the data used to compare with if they are aggregable, false
-// otherwise (and data must be ignored).
-func (me *trieNode) aggregable(data dataContainer) (bool, dataContainer) {
-	// Note that me != nil by design
-
-	if me.isActive {
-		return true, dataContainer{valid: true, data: me.Data}
-	}
-
-	// Thoughts on aggregation.
-	//
-	// If a parent node's data compares equal to that of descendent nodes, then
-	// the descendent nodes should not be included in the aggregation. If there
-	// is an intermediate descendent between two nodes that doesn't compare
-	// equal, then all of them should be included. Another way to put this is
-	// that each time a descendent doesn't compare equal to its direct ancestor
-	// then it should be included in the aggregation. To accomplish this, each
-	// parent passes its data to its children to make the comparison.
-	//
-	// Aggregation gets a little more complicated when peers are considered. If
-	// a node's peer has the same length prefix and compare equal then they
-	// should be aggregated together. However, it should be aware of their
-	// joint direct ancestor and whether they should be aggrated into the
-	// ancestor as discussed above.
-
-	// NOTE that we know that BOTH children exist since me.isActive is false. If
-	// less than one child existed, the tree would have been compacted to
-	// eliminate this node (me).
-	left, right := me.children[0], me.children[1]
-	leftAggegable, leftData := left.aggregable(data)
-	rightAggegable, rightData := right.aggregable(data)
-
-	arePeers := (me.Prefix.length+1) == left.Prefix.length && left.Prefix.length == right.Prefix.length
-	if arePeers && leftAggegable && rightAggegable && dataContainerEqual(leftData, rightData) {
-		return true, leftData
-	}
-	return false, dataContainer{}
-}
-
-// trieCallback defines the signature of a function you can pass to Iterate or
-// Aggregate to handle each key / value pair found while iterating. Each
-// invocation of your callback should return true if iteration should continue
-// (as long as another key / value pair exists) or false to stop iterating and
-// return immediately (meaning your callback will not be called again).
+// Each invocation of your callback should return true if iteration should
+// continue (as long as another key / value pair exists) or false to stop
+// iterating and return immediately (meaning your callback will not be called
+// again).
 type trieCallback func(Prefix, interface{}) bool
 
-// Iterate walks the entire tree and calls the given function for each active
+// Walk walks the entire tree and calls the given function for each active
 // node. The order of visiting nodes is essentially lexigraphical:
 // - disjoint prefixes are visited in lexigraphical order
 // - shorter prefixes are visited immediately before longer prefixes that they contain
-func (me *trieNode) Iterate(callback trieCallback) bool {
-	if me == nil {
+//
+// It returns false if iteration was stopped due to a callback return false or
+// true if it iterated all items.
+func (me *trieNode) Walk(callback trieCallback) bool {
+	if callback == nil {
+		callback = func(Prefix, interface{}) bool {
+			return true
+		}
+	}
+
+	var empty *trieNode
+	handler := trieDiffHandler{
+		Added: func(n *trieNode) bool {
+			return callback(n.Prefix, n.Data)
+		},
+	}
+	return empty.Diff(me, handler)
+}
+
+type trieDiffHandler struct {
+	Removed  func(left *trieNode) bool
+	Added    func(right *trieNode) bool
+	Modified func(left, right *trieNode) bool
+}
+
+func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) bool {
+	if left == right {
 		return true
 	}
 
-	if me.isActive && callback != nil {
-		if !callback(me.Prefix, me.Data) {
+	// Compare the two nodes.
+	// If one of them is nil, we treat it as if it is contained by the non-nil one.
+	// In that case, `child` doesn't matter so we leave it initialized at zero.
+	// If both are nil, there is nothing to do.
+	var result, child int
+	switch {
+	case left != nil && right != nil:
+		result, _, _, child = compare(left.Prefix, right.Prefix)
+
+	case left != nil:
+		result = compareContains
+
+	case right != nil:
+		result = compareIsContained
+
+	default:
+		return true
+	}
+
+	// Call handlers. If the nodes are disjoint, nothing is called yet.
+	switch result {
+	case compareSame:
+		// They have the same key
+		if !handler.Modified(left, right) {
+			return false
+		}
+
+	case compareContains:
+		// Left node's key contains the right node's key
+		if !handler.Removed(left) {
+			return false
+		}
+
+	case compareIsContained:
+		// Right node's key contains the left node's key
+		if !handler.Added(right) {
 			return false
 		}
 	}
-	for _, child := range me.children {
-		if !child.Iterate(callback) {
-			return false
+
+	// Based on the comparison above, determine where to descend to child nodes
+	// before recursing.
+	//
+	// The side that doesn't descend is included in the pair of nodes as either
+	// the first (0) or second (1) element based on the comparison (child) with
+	// the other side being an empty set (nil by default).
+	//
+	// If the two sides are disjoint, neither one descends and the two sides
+	// are split apart to compare each independently with an empty set.
+
+	var newLeft, newRight [2]*trieNode
+	switch result {
+	case compareSame:
+		newLeft = left.children
+		newRight = right.children
+
+	case compareIsContained:
+		newLeft[child] = left
+		newRight = right.children
+
+	case compareContains:
+		newLeft = left.children
+		newRight[child] = right
+
+	case compareDisjoint:
+		// Divide and conquer. Compare each with an empty set. Order based on
+		// the comparison.
+		if child == 0 {
+			newLeft[1] = left
+			newRight[0] = right
+		} else {
+			newLeft[0] = left
+			newRight[1] = right
 		}
+	}
+
+	// Recurse into children
+	if !newLeft[0].diff(newRight[0], handler) {
+		return false
+	}
+	if !newLeft[1].diff(newRight[1], handler) {
+		return false
 	}
 	return true
 }
 
-// aggregate is the recursive implementation for Aggregate
-// `data`:     the data value from nodes above to use for equal comparison. If
-//             the current node is active and its data compares different to
-//             this value then its key is not aggregable with containing
-//             prefixes.
-// `callback`: function to call with each key/data pair found.
-func (me *trieNode) aggregate(data dataContainer, callback trieCallback) bool {
-	if me == nil {
+// Diff compares the two tries to find entries that are removed, added, or
+// changed between the two. It calls the appropriate callback
+func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler) bool {
+	noop := func(*trieNode) bool {
 		return true
 	}
 
-	aggregable, d := me.aggregable(data)
-	if aggregable && !dataContainerEqual(data, d) {
-		if callback != nil {
-			if !callback(me.Prefix, d.data) {
-				return false
-			}
-		}
-		for _, child := range me.children {
-			if !child.aggregate(d, callback) {
-				return false
-			}
-		}
-	} else {
-		// Don't visit the current node but descend to children
-		for _, child := range me.children {
-			if !child.aggregate(data, callback) {
-				return false
-			}
+	// Ensure I don't have to check for nil everywhere.
+	if handler.Removed == nil {
+		handler.Removed = noop
+	}
+	if handler.Added == nil {
+		handler.Added = noop
+	}
+	if handler.Modified == nil {
+		handler.Modified = func(l, r *trieNode) bool {
+			return true
 		}
 	}
-	return true
+
+	return left.diff(right, trieDiffHandler{
+		Removed: func(left *trieNode) bool {
+			if left.isActive {
+				return handler.Removed(left)
+			}
+			return true
+		},
+		Added: func(right *trieNode) bool {
+			if right.isActive {
+				return handler.Added(right)
+			}
+			return true
+		},
+		Modified: func(left, right *trieNode) bool {
+			switch {
+			case left.isActive && right.isActive:
+				if !dataEqual(left.Data, right.Data) {
+					return handler.Modified(left, right)
+				}
+			case left.isActive:
+				return handler.Removed(left)
+			case right.isActive:
+				return handler.Added(right)
+			}
+			return true
+		},
+	})
 }
 
-// Aggregate is like iterate except that it has the capability of aggregating
-// prefixes that are either adjacent to each other with the same prefix length
-// or contained within another prefix with a shorter length.
+type umbrella struct {
+	Data interface{}
+}
 
-// Aggregation visits the minimum set of prefix/data pairs needed to return the
-// same data for any longest prefix match as would be returned by the the
-// original trie, non-aggregated. This can be useful, for example, to minimize
-// the number of prefixes needed to install into a router's datapath to
-// guarantee that all of the next hops are correct.
-//
-// In general, routing protocols should not aggregate and then pass on the
-// aggregates to neighbors as this will likely lead to poor comparisions by
-// neighboring routers who receive routes aggregated differently from different
-// peers.
-//
-// Prefixes are only considered aggregable if their data compare equal. This is
-// useful for aggregating prefixes where the next hop is the same but not where
-// they're different.
-func (me *trieNode) Aggregate(callback trieCallback) bool {
-	return me.aggregate(dataContainer{}, callback)
+func (me *trieNode) aggregate(parentUmbrella *umbrella) (result *trieNode) {
+	if me == nil {
+		return me
+	}
+
+	isActive := me.isActive
+	data := me.Data
+	children := me.children
+	createReturnValue := func() *trieNode {
+		if isActive == me.isActive && children == me.children && dataEqual(data, me.Data) {
+			return me
+		}
+		return me.copyMutate(func(n *trieNode) {
+			n.isActive = isActive
+			n.Data = data
+			n.children = children
+		})
+	}
+
+	u := parentUmbrella
+	if isActive {
+		if parentUmbrella == nil || !dataEqual(parentUmbrella.Data, data) {
+			u = &umbrella{data}
+		} else {
+			isActive = false
+			data = nil
+		}
+	}
+	children = [2]*trieNode{
+		children[0].aggregate(u),
+		children[1].aggregate(u),
+	}
+
+	childrenAggregate := func(a, b *trieNode) bool {
+		if a.active() && b.active() {
+			if a.Prefix.Length() == (me.Prefix.Length() + 1) {
+				if a.Prefix.Length() == b.Prefix.Length() {
+					if dataEqual(a.Data, b.Data) {
+						return true
+					}
+				}
+			}
+		}
+		return false
+	}(children[0], children[1])
+
+	if childrenAggregate {
+		isActive = true
+		data = children[0].Data
+		children = [2]*trieNode{}
+	}
+
+	if isActive {
+		return createReturnValue()
+	}
+
+	if children[0] == nil {
+		return children[1]
+	}
+
+	if children[1] == nil {
+		return children[0]
+	}
+
+	return createReturnValue()
+}
+
+func (me *trieNode) Aggregate() *trieNode {
+	return me.aggregate(nil)
 }

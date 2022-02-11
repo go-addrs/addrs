@@ -5,26 +5,32 @@ import (
 )
 
 // Range represents a range of addresses that don't have to be aligned to
-// powers of 2 like prefixes
+// powers of 2 like a Prefix does.
+//
+// Note that there is no instantiation of an empty range (.Size() == 0) because
+// .First() and .Last() would not make sense.
+//
+// The zero value of a Range is "[0.0.0.0, 0.0.0.0]" (.Size() == 1)
 type Range struct {
 	first, last Address
 }
 
 // NewRange returns a new range from the given first and last addresses. If
-// first > last, then an empty range is returned
-func NewRange(first, last Address) (Range, error) {
-	if last.LessThan(first) {
-		return Range{}, fmt.Errorf("failed to create invalid range: [%s,%s]", first, last)
+// first > last, then empty is set to true and the returned range must be
+// ignored. There is no valid instantiation of an empty range.
+func NewRange(first, last Address) (r Range, empty bool) {
+	if last.lessThan(first) {
+		return Range{}, true
 	}
 	return Range{
 		first: first,
 		last:  last,
-	}, nil
+	}, false
 }
 
 // Size returns the number of addresses in the range
-func (me Range) Size() int {
-	return 1 + int(me.last.ui-me.first.ui)
+func (me Range) Size() int64 {
+	return 1 + int64(me.last.ui-me.first.ui)
 }
 
 // First returns the first address in the range
@@ -42,36 +48,53 @@ func (me Range) String() string {
 }
 
 // Contains returns true iff this range entirely contains the given other range
-func (me Range) Contains(other Range) bool {
-	if me.Size() == 0 {
-		return other.Size() == 0
-	}
-
-	return me.first.ui <= other.first.ui && other.last.ui <= me.last.ui
+func (me Range) Contains(other SetI) bool {
+	return me.FixedSet().Contains(other)
 }
 
 // Minus returns a slice of ranges resulting from subtracting the given range
 // The slice will contain from 0 to 2 new ranges depending on how they overlap
 func (me Range) Minus(other Range) []Range {
 	result := []Range{}
-	if me.first.LessThan(other.first) {
+	if me.first.lessThan(other.first) {
 		result = append(result, Range{
 			me.first,
-			MinAddress(other.prev(), me.last),
+			minAddress(other.prev(), me.last),
 		})
 	}
-	if other.last.LessThan(me.last) {
+	if other.last.lessThan(me.last) {
 		result = append(result, Range{
-			MaxAddress(me.first, other.next()),
+			maxAddress(me.first, other.next()),
 			me.last,
 		})
 	}
 	return result
 }
 
-// Set returns a Set containing the same ips as this range
-func (me Range) Set() Set {
-	return Set{setNodeFromRange(me)}
+// Plus returns a slice of ranges resulting from adding the given range to this
+// one. The slice will contain 1 or 2 new ranges depending on how/if they
+// overlap. If two ranges are returned, they will be returned sorted
+// lexigraphically by their first address.
+func (me Range) Plus(other Range) []Range {
+	plus := func(a, b Range) []Range {
+		if a.next().lessThan(b.first) {
+			return []Range{a, b}
+		}
+		return []Range{
+			Range{a.first, maxAddress(a.last, b.last)},
+		}
+	}
+	if me.first.lessThan(other.first) {
+		return plus(me, other)
+	}
+	return plus(other, me)
+}
+
+// FixedSet returns a Set containing the same ips as this range
+func (me Range) FixedSet() FixedSet {
+	return FixedSet{
+		trie: setNodeFromRange(me),
+	}
 }
 
 // prev returns the address just before the range (or maxint) if the range

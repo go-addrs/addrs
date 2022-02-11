@@ -6,7 +6,9 @@ import (
 	"testing"
 	"unsafe"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestActive(t *testing.T) {
@@ -68,14 +70,12 @@ func TestInsertOrUpdateChangeValue(t *testing.T) {
 
 	key := Prefix{}
 
-	trie, err := trie.InsertOrUpdate(key, true)
+	trie = trie.InsertOrUpdate(key, true)
 	assert.True(t, trie.isValid())
-	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 
-	trie, err = trie.InsertOrUpdate(key, false)
+	trie = trie.InsertOrUpdate(key, false)
 	assert.True(t, trie.isValid())
-	assert.Nil(t, err)
 	assert.False(t, trie.Match(key).Data.(bool))
 }
 
@@ -84,15 +84,13 @@ func TestInsertOrUpdateNewKey(t *testing.T) {
 
 	key := Prefix{}
 
-	trie, err := trie.InsertOrUpdate(key, true)
+	trie = trie.InsertOrUpdate(key, true)
 	assert.True(t, trie.isValid())
-	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{Address{0}, 1}
-	trie, err = trie.InsertOrUpdate(newKey, false)
+	trie = trie.InsertOrUpdate(newKey, false)
 	assert.True(t, trie.isValid())
-	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
 }
@@ -102,15 +100,13 @@ func TestInsertOrUpdateNarrowerKey(t *testing.T) {
 
 	key := Prefix{Address{0}, 1}
 
-	trie, err := trie.InsertOrUpdate(key, true)
+	trie = trie.InsertOrUpdate(key, true)
 	assert.True(t, trie.isValid())
-	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{}
-	trie, err = trie.InsertOrUpdate(newKey, false)
+	trie = trie.InsertOrUpdate(newKey, false)
 	assert.True(t, trie.isValid())
-	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
 }
@@ -120,15 +116,13 @@ func TestInsertOrUpdateDisjointKeys(t *testing.T) {
 
 	key := Prefix{Address{0}, 1}
 
-	trie, err := trie.InsertOrUpdate(key, true)
+	trie = trie.InsertOrUpdate(key, true)
 	assert.True(t, trie.isValid())
-	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{Address{0x80000000}, 1}
-	trie, err = trie.InsertOrUpdate(newKey, false)
+	trie = trie.InsertOrUpdate(newKey, false)
 	assert.True(t, trie.isValid())
-	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
 }
@@ -138,22 +132,19 @@ func TestInsertOrUpdateInactive(t *testing.T) {
 
 	key := Prefix{Address{0}, 1}
 
-	trie, err := trie.InsertOrUpdate(key, true)
+	trie = trie.InsertOrUpdate(key, true)
 	assert.True(t, trie.isValid())
-	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{Address{0x80000000}, 1}
-	trie, err = trie.InsertOrUpdate(newKey, false)
+	trie = trie.InsertOrUpdate(newKey, false)
 	assert.True(t, trie.isValid())
-	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
 
 	inactiveKey := Prefix{}
-	trie, err = trie.InsertOrUpdate(inactiveKey, "value")
+	trie = trie.InsertOrUpdate(inactiveKey, "value")
 	assert.True(t, trie.isValid())
-	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
 	assert.Equal(t, "value", trie.Match(inactiveKey).Data.(string))
@@ -275,14 +266,14 @@ func TestMatchZeroLength(t *testing.T) {
 	assert.Equal(t, 1, trie.height())
 
 	assert.Equal(t, trie, trie.Match(Prefix{
-		unsafeParseAddress("10.0.0.0"),
+		_a("10.0.0.0"),
 		0,
 	}))
 }
 
 func TestGetOrInsertTrivial(t *testing.T) {
 	var trie *trieNode
-	assert.Equal(t, 0, trie.NumNodes())
+	assert.Equal(t, int64(0), trie.NumNodes())
 	assert.True(t, trie.isValid())
 
 	key := Prefix{Address{0}, 0}
@@ -312,12 +303,12 @@ func TestGetOrInsertExists(t *testing.T) {
 func TestGetOrInsertBroader(t *testing.T) {
 	var trie *trieNode
 
-	existingKey := Prefix{unsafeParseAddress("10.224.0.0"), 16}
+	existingKey := Prefix{_a("10.224.0.0"), 16}
 	trie, err := trie.Insert(existingKey, true)
 	assert.Nil(t, err)
 	assert.True(t, trie.isValid())
 
-	broaderKey := Prefix{unsafeParseAddress("10.0.0.0"), 8}
+	broaderKey := Prefix{_a("10.0.0.0"), 8}
 	trie, node := trie.GetOrInsert(broaderKey, false)
 
 	assert.True(t, trie.isValid())
@@ -331,12 +322,12 @@ func TestGetOrInsertBroader(t *testing.T) {
 func TestGetOrInsertNarrower(t *testing.T) {
 	var trie *trieNode
 
-	existingKey := Prefix{unsafeParseAddress("10.224.0.0"), 16}
+	existingKey := Prefix{_a("10.224.0.0"), 16}
 	trie, err := trie.Insert(existingKey, true)
 	assert.Nil(t, err)
 	assert.True(t, trie.isValid())
 
-	narrowerKey := Prefix{unsafeParseAddress("10.224.24.0"), 24}
+	narrowerKey := Prefix{_a("10.224.24.0"), 24}
 	trie, node := trie.GetOrInsert(narrowerKey, false)
 
 	assert.True(t, trie.isValid())
@@ -350,12 +341,12 @@ func TestGetOrInsertNarrower(t *testing.T) {
 func TestGetOrInsertDisjoint(t *testing.T) {
 	var trie *trieNode
 
-	existingKey := Prefix{unsafeParseAddress("10.224.0.0"), 16}
+	existingKey := Prefix{_a("10.224.0.0"), 16}
 	trie, err := trie.Insert(existingKey, true)
 	assert.Nil(t, err)
 	assert.True(t, trie.isValid())
 
-	disjointKey := Prefix{unsafeParseAddress("10.225.0.0"), 16}
+	disjointKey := Prefix{_a("10.225.0.0"), 16}
 	trie, node := trie.GetOrInsert(disjointKey, false)
 
 	assert.True(t, trie.isValid())
@@ -368,11 +359,11 @@ func TestGetOrInsertDisjoint(t *testing.T) {
 func TestGetOrInsertInActive(t *testing.T) {
 	var trie *trieNode
 
-	trie, _ = trie.Insert(Prefix{unsafeParseAddress("10.224.0.0"), 16}, true)
-	trie, _ = trie.Insert(Prefix{unsafeParseAddress("10.225.0.0"), 16}, true)
+	trie, _ = trie.Insert(Prefix{_a("10.224.0.0"), 16}, true)
+	trie, _ = trie.Insert(Prefix{_a("10.225.0.0"), 16}, true)
 	assert.True(t, trie.isValid())
 
-	trie, node := trie.GetOrInsert(Prefix{unsafeParseAddress("10.224.0.0"), 15}, false)
+	trie, node := trie.GetOrInsert(Prefix{_a("10.224.0.0"), 15}, false)
 	assert.True(t, trie.isValid())
 	assert.Equal(t, trie, node)
 	assert.False(t, node.Data.(bool))
@@ -382,7 +373,7 @@ func TestNoMatchTooBroad(t *testing.T) {
 	var trie *trieNode
 
 	trie, err := trie.Insert(Prefix{
-		unsafeParseAddress("10.0.0.0"),
+		_a("10.0.0.0"),
 		24,
 	}, nil)
 	assert.Nil(t, err)
@@ -391,7 +382,7 @@ func TestNoMatchTooBroad(t *testing.T) {
 	assert.Equal(t, 1, trie.height())
 
 	assert.Nil(t, trie.Match(Prefix{
-		unsafeParseAddress("10.0.0.0"),
+		_a("10.0.0.0"),
 		23,
 	}))
 }
@@ -406,44 +397,44 @@ func TestNoMatchPrefixMisMatch(t *testing.T) {
 	}{
 		{
 			desc:          "full bytes, mismatch in last byte",
-			nodeAddress:   unsafeParseAddress("10.0.0.0"),
+			nodeAddress:   _a("10.0.0.0"),
 			nodeLength:    24,
-			searchAddress: unsafeParseAddress("10.0.1.0"),
+			searchAddress: _a("10.0.1.0"),
 			searchLength:  32,
 		},
 		{
 			desc:          "full bytes, mismatch in earlier byte",
-			nodeAddress:   unsafeParseAddress("10.0.0.0"),
+			nodeAddress:   _a("10.0.0.0"),
 			nodeLength:    24,
-			searchAddress: unsafeParseAddress("10.1.0.0"),
+			searchAddress: _a("10.1.0.0"),
 			searchLength:  32,
 		},
 		{
 			desc:          "full bytes, mismatch in first byte",
-			nodeAddress:   unsafeParseAddress("10.0.0.0"),
+			nodeAddress:   _a("10.0.0.0"),
 			nodeLength:    24,
-			searchAddress: unsafeParseAddress("11.0.0.0"),
+			searchAddress: _a("11.0.0.0"),
 			searchLength:  32,
 		},
 		{
 			desc:          "mismatch in partial byte",
-			nodeAddress:   unsafeParseAddress("10.0.0.0"),
+			nodeAddress:   _a("10.0.0.0"),
 			nodeLength:    27,
-			searchAddress: unsafeParseAddress("10.0.0.128"),
+			searchAddress: _a("10.0.0.128"),
 			searchLength:  32,
 		},
 		{
 			desc:          "only one partial byte",
 			nodeAddress:   Address{},
 			nodeLength:    7,
-			searchAddress: unsafeParseAddress("2.0.0.0"),
+			searchAddress: _a("2.0.0.0"),
 			searchLength:  8,
 		},
 		{
 			desc:          "only one full byte",
 			nodeAddress:   Address{},
 			nodeLength:    8,
-			searchAddress: unsafeParseAddress("10.0.0.0"),
+			searchAddress: _a("10.0.0.0"),
 			searchLength:  16,
 		},
 	}
@@ -477,22 +468,22 @@ func TestMatchSimplePrefixMatch(t *testing.T) {
 	}{
 		{
 			desc:        "full bytes, mismatch in last byte",
-			nodeAddress: unsafeParseAddress("10.0.0.0"),
+			nodeAddress: _a("10.0.0.0"),
 			nodeLength:  24,
 		},
 		{
 			desc:        "full bytes, mismatch in earlier byte",
-			nodeAddress: unsafeParseAddress("10.0.0.0"),
+			nodeAddress: _a("10.0.0.0"),
 			nodeLength:  24,
 		},
 		{
 			desc:        "full bytes, mismatch in first byte",
-			nodeAddress: unsafeParseAddress("10.0.0.0"),
+			nodeAddress: _a("10.0.0.0"),
 			nodeLength:  24,
 		},
 		{
 			desc:        "mismatch in partial byte",
-			nodeAddress: unsafeParseAddress("10.0.0.0"),
+			nodeAddress: _a("10.0.0.0"),
 			nodeLength:  27,
 		},
 		{
@@ -606,21 +597,21 @@ func TestInsertOverlapping(t *testing.T) {
 	}{
 		{
 			desc: "16 and 24",
-			a:    Prefix{unsafeParseAddress("10.200.0.0"), 16},
-			b:    Prefix{unsafeParseAddress("10.200.20.0"), 24},
-			c:    Prefix{unsafeParseAddress("10.200.20.0"), 32},
+			a:    Prefix{_a("10.200.0.0"), 16},
+			b:    Prefix{_a("10.200.20.0"), 24},
+			c:    Prefix{_a("10.200.20.0"), 32},
 		},
 		{
 			desc: "17 and 27",
-			a:    Prefix{unsafeParseAddress("10.200.0.0"), 17},
+			a:    Prefix{_a("10.200.0.0"), 17},
 			b:    Prefix{Address{0x0ac800e0}, 27},
 			c:    Prefix{Address{0x0ac800f8}, 31},
 		},
 		{
 			desc: "0 and 8",
 			a:    Prefix{Address{0}, 0},
-			b:    Prefix{unsafeParseAddress("10.0.0.0"), 8},
-			c:    Prefix{unsafeParseAddress("10.10.0.0"), 16},
+			b:    Prefix{_a("10.0.0.0"), 8},
+			c:    Prefix{_a("10.10.0.0"), 16},
 		},
 	}
 
@@ -688,20 +679,20 @@ func TestInsertDisjoint(t *testing.T) {
 		{
 			desc:  "first bit",
 			a:     Prefix{Address{0}, 1},
-			b:     Prefix{unsafeParseAddress("128.0.0.0"), 1},
+			b:     Prefix{_a("128.0.0.0"), 1},
 			super: Prefix{Address{0}, 0},
 		},
 		{
 			desc:  "seventeenth bit",
-			a:     Prefix{unsafeParseAddress("10.224.0.0"), 17},
-			b:     Prefix{unsafeParseAddress("10.224.128.0"), 17},
-			super: Prefix{unsafeParseAddress("10.224.0.0"), 16},
+			a:     Prefix{_a("10.224.0.0"), 17},
+			b:     Prefix{_a("10.224.128.0"), 17},
+			super: Prefix{_a("10.224.0.0"), 16},
 		},
 		{
 			desc:  "partial b bit",
-			a:     Prefix{unsafeParseAddress("10.224.0.0"), 23},
-			b:     Prefix{unsafeParseAddress("10.224.8.0"), 23},
-			super: Prefix{unsafeParseAddress("10.224.0.0"), 20},
+			a:     Prefix{_a("10.224.0.0"), 23},
+			b:     Prefix{_a("10.224.8.0"), 23},
+			super: Prefix{_a("10.224.0.0"), 20},
 		},
 	}
 
@@ -802,7 +793,8 @@ func TestContains(t *testing.T) {
 		desc           string
 		a, b           Prefix
 		matches, exact bool
-		common, child  uint32
+		common         uint32
+		child          int
 	}{
 		{
 			desc:    "trivial",
@@ -814,15 +806,15 @@ func TestContains(t *testing.T) {
 		},
 		{
 			desc:    "exact",
-			a:       Prefix{unsafeParseAddress("10.0.0.0"), 16},
-			b:       Prefix{unsafeParseAddress("10.0.0.0"), 16},
+			a:       Prefix{_a("10.0.0.0"), 16},
+			b:       Prefix{_a("10.0.0.0"), 16},
 			matches: true,
 			exact:   true,
 			common:  16,
 		},
 		{
 			desc:    "exact partial",
-			a:       Prefix{unsafeParseAddress("10.0.0.0"), 19},
+			a:       Prefix{_a("10.0.0.0"), 19},
 			b:       Prefix{Address{0x0a001f00}, 19},
 			matches: true,
 			exact:   true,
@@ -831,7 +823,7 @@ func TestContains(t *testing.T) {
 		{
 			desc:    "empty prefix match",
 			a:       Prefix{Address{0}, 0},
-			b:       Prefix{unsafeParseAddress("10.10.0.0"), 16},
+			b:       Prefix{_a("10.10.0.0"), 16},
 			matches: true,
 			exact:   false,
 			common:  0,
@@ -840,7 +832,7 @@ func TestContains(t *testing.T) {
 		{
 			desc:    "empty prefix match backwards",
 			a:       Prefix{Address{0}, 0},
-			b:       Prefix{unsafeParseAddress("130.10.0.0"), 16},
+			b:       Prefix{_a("130.10.0.0"), 16},
 			matches: true,
 			exact:   false,
 			common:  0,
@@ -848,8 +840,8 @@ func TestContains(t *testing.T) {
 		},
 		{
 			desc:    "matches",
-			a:       Prefix{unsafeParseAddress("10.0.0.0"), 8},
-			b:       Prefix{unsafeParseAddress("10.10.0.0"), 16},
+			a:       Prefix{_a("10.0.0.0"), 8},
+			b:       Prefix{_a("10.10.0.0"), 16},
 			matches: true,
 			exact:   false,
 			common:  8,
@@ -857,8 +849,8 @@ func TestContains(t *testing.T) {
 		},
 		{
 			desc:    "matches partial",
-			a:       Prefix{unsafeParseAddress("10.200.0.0"), 9},
-			b:       Prefix{unsafeParseAddress("10.129.0.0"), 16},
+			a:       Prefix{_a("10.200.0.0"), 9},
+			b:       Prefix{_a("10.129.0.0"), 16},
 			matches: true,
 			exact:   false,
 			common:  9,
@@ -866,8 +858,8 @@ func TestContains(t *testing.T) {
 		},
 		{
 			desc:    "matches backwards",
-			a:       Prefix{unsafeParseAddress("10.0.0.0"), 8},
-			b:       Prefix{unsafeParseAddress("10.200.0.0"), 16},
+			a:       Prefix{_a("10.0.0.0"), 8},
+			b:       Prefix{_a("10.200.0.0"), 16},
 			matches: true,
 			exact:   false,
 			common:  8,
@@ -875,8 +867,8 @@ func TestContains(t *testing.T) {
 		},
 		{
 			desc:    "matches backwards partial",
-			a:       Prefix{unsafeParseAddress("10.240.0.0"), 9},
-			b:       Prefix{unsafeParseAddress("10.200.0.0"), 16},
+			a:       Prefix{_a("10.240.0.0"), 9},
+			b:       Prefix{_a("10.200.0.0"), 16},
 			matches: true,
 			exact:   false,
 			common:  9,
@@ -885,30 +877,30 @@ func TestContains(t *testing.T) {
 		{
 			desc:    "disjoint",
 			a:       Prefix{Address{0}, 1},
-			b:       Prefix{unsafeParseAddress("128.0.0.0"), 1},
+			b:       Prefix{_a("128.0.0.0"), 1},
 			matches: false,
 			common:  0,
 			child:   1,
 		},
 		{
 			desc:    "disjoint longer",
-			a:       Prefix{unsafeParseAddress("0.0.0.0"), 17},
-			b:       Prefix{unsafeParseAddress("0.0.128.0"), 17},
+			a:       Prefix{_a("0.0.0.0"), 17},
+			b:       Prefix{_a("0.0.128.0"), 17},
 			matches: false,
 			common:  16,
 			child:   1,
 		},
 		{
 			desc:    "disjoint longer partial",
-			a:       Prefix{unsafeParseAddress("0.0.0.0"), 17},
-			b:       Prefix{unsafeParseAddress("0.1.0.0"), 17},
+			a:       Prefix{_a("0.0.0.0"), 17},
+			b:       Prefix{_a("0.1.0.0"), 17},
 			matches: false,
 			common:  15,
 			child:   1,
 		},
 		{
 			desc:    "disjoint backwards",
-			a:       Prefix{unsafeParseAddress("128.0.0.0"), 1},
+			a:       Prefix{_a("128.0.0.0"), 1},
 			b:       Prefix{Address{0}, 1},
 			matches: false,
 			common:  0,
@@ -916,32 +908,32 @@ func TestContains(t *testing.T) {
 		},
 		{
 			desc:    "disjoint backwards longer",
-			a:       Prefix{unsafeParseAddress("0.0.128.0"), 19},
-			b:       Prefix{unsafeParseAddress("0.0.0.0"), 19},
+			a:       Prefix{_a("0.0.128.0"), 19},
+			b:       Prefix{_a("0.0.0.0"), 19},
 			matches: false,
 			common:  16,
 			child:   0,
 		},
 		{
 			desc:    "disjoint backwards longer partial",
-			a:       Prefix{unsafeParseAddress("0.1.0.0"), 19},
-			b:       Prefix{unsafeParseAddress("0.0.0.0"), 19},
+			a:       Prefix{_a("0.1.0.0"), 19},
+			b:       Prefix{_a("0.0.0.0"), 19},
 			matches: false,
 			common:  15,
 			child:   0,
 		},
 		{
 			desc:    "disjoint with common",
-			a:       Prefix{unsafeParseAddress("10.0.0.0"), 16},
-			b:       Prefix{unsafeParseAddress("10.10.0.0"), 16},
+			a:       Prefix{_a("10.0.0.0"), 16},
+			b:       Prefix{_a("10.10.0.0"), 16},
 			matches: false,
 			common:  12,
 			child:   1,
 		},
 		{
 			desc:    "disjoint with more disjoint bytes",
-			a:       Prefix{unsafeParseAddress("0.255.255.0"), 24},
-			b:       Prefix{unsafeParseAddress("128.0.0.0"), 24},
+			a:       Prefix{_a("0.255.255.0"), 24},
+			b:       Prefix{_a("128.0.0.0"), 24},
 			matches: false,
 			common:  0,
 			child:   1,
@@ -969,45 +961,6 @@ func TestContains(t *testing.T) {
 	}
 }
 
-func TestBitsToBytes(t *testing.T) {
-	tests := []struct {
-		bits, bytes uint32
-	}{
-		{bits: 0, bytes: 0},
-		{bits: 1, bytes: 1},
-		{bits: 8, bytes: 1},
-		{bits: 9, bytes: 2},
-		{bits: 16, bytes: 2},
-		{bits: 17, bytes: 3},
-		{bits: 24, bytes: 3},
-		{bits: 25, bytes: 4},
-		{bits: 32, bytes: 4},
-		{bits: 33, bytes: 5},
-		{bits: 40, bytes: 5},
-		{bits: 41, bytes: 6},
-		{bits: 48, bytes: 6},
-		{bits: 49, bytes: 7},
-		{bits: 64, bytes: 8},
-		{bits: 65, bytes: 9},
-		{bits: 128, bytes: 16},
-		{bits: 129, bytes: 17},
-		{bits: 256, bytes: 32},
-		{bits: 257, bytes: 33},
-		{bits: 512, bytes: 64},
-		{bits: 513, bytes: 65},
-		{bits: 1024, bytes: 128},
-		{bits: 1025, bytes: 129},
-		{bits: 4096, bytes: 512},
-		{bits: 4097, bytes: 513},
-	}
-
-	for _, tt := range tests {
-		t.Run(fmt.Sprintf("%d", tt.bits), func(t *testing.T) {
-			assert.Equal(t, tt.bytes, bitsToBytes(tt.bits))
-		})
-	}
-}
-
 func TestDeleteFromNilTree(t *testing.T) {
 	var trie *trieNode
 
@@ -1021,7 +974,7 @@ func TestDeleteSimple(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		24,
 	}
 	trie, err := trie.Insert(key, nil)
@@ -1034,12 +987,12 @@ func TestDeleteLeftChild(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		24,
 	}
 	trie, err := trie.Insert(key, nil)
 	childKey := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		25,
 	}
 	trie, err = trie.Insert(childKey, nil)
@@ -1055,12 +1008,12 @@ func TestDeleteRightChild(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		24,
 	}
 	trie, err := trie.Insert(key, nil)
 	childKey := Prefix{
-		unsafeParseAddress("172.16.200.128"),
+		_a("172.16.200.128"),
 		25,
 	}
 	trie, err = trie.Insert(childKey, nil)
@@ -1076,17 +1029,17 @@ func TestDeleteBothChildren(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		24,
 	}
 	trie, err := trie.Insert(key, nil)
 	leftChild := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		25,
 	}
 	trie, err = trie.Insert(leftChild, nil)
 	rightChild := Prefix{
-		unsafeParseAddress("172.16.200.128"),
+		_a("172.16.200.128"),
 		25,
 	}
 	trie, err = trie.Insert(rightChild, nil)
@@ -1103,12 +1056,12 @@ func TestDeleteRecursiveNil(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		24,
 	}
 	trie, err := trie.Insert(key, nil)
 	childKey := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		25,
 	}
 	trie, err = trie.Delete(childKey)
@@ -1126,12 +1079,12 @@ func TestDeleteRecursiveLeftChild(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		24,
 	}
 	trie, err := trie.Insert(key, nil)
 	childKey := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		25,
 	}
 	trie, err = trie.Insert(childKey, nil)
@@ -1150,12 +1103,12 @@ func TestDeleteRecursiveLeftChild32Promote(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.128"),
+		_a("172.16.200.128"),
 		25,
 	}
 	trie, err := trie.Insert(key, nil)
 	childKey := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		25,
 	}
 	trie, err = trie.Insert(childKey, nil)
@@ -1167,20 +1120,20 @@ func TestDeleteRecursiveLeftChild32Promote(t *testing.T) {
 	match := trie.Match(childKey)
 	assert.Nil(t, match)
 	assert.Equal(t, 1, trie.height())
-	assert.Equal(t, 1, trie.NumNodes())
+	assert.Equal(t, int64(1), trie.NumNodes())
 }
 
 func TestDeleteKeyTooBroad(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		25,
 	}
 	trie, err := trie.Insert(key, nil)
 
 	broadKey := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		24,
 	}
 	trie, err = trie.Delete(broadKey)
@@ -1195,13 +1148,13 @@ func TestDeleteKeyDisjoint(t *testing.T) {
 	var trie *trieNode
 
 	key := Prefix{
-		unsafeParseAddress("172.16.200.0"),
+		_a("172.16.200.0"),
 		25,
 	}
 	trie, err := trie.Insert(key, nil)
 
 	disjointKey := Prefix{
-		unsafeParseAddress("172.16.200.128"),
+		_a("172.16.200.128"),
 		25,
 	}
 	trie, err = trie.Delete(disjointKey)
@@ -1216,19 +1169,19 @@ func TestSuccessivelyBetter(t *testing.T) {
 	var trie *trieNode
 
 	keys := []Prefix{
-		Prefix{unsafeParseAddress("10.224.24.0"), 0},
-		Prefix{unsafeParseAddress("10.224.24.0"), 1},
-		Prefix{unsafeParseAddress("10.224.24.0"), 8},
-		Prefix{unsafeParseAddress("10.224.24.0"), 12},
-		Prefix{unsafeParseAddress("10.224.24.0"), 16},
-		Prefix{unsafeParseAddress("10.224.24.0"), 18},
-		Prefix{unsafeParseAddress("10.224.24.0"), 20},
-		Prefix{unsafeParseAddress("10.224.24.0"), 21},
-		Prefix{unsafeParseAddress("10.224.24.0"), 22},
-		Prefix{unsafeParseAddress("10.224.24.0"), 24},
-		Prefix{unsafeParseAddress("10.224.24.0"), 27},
-		Prefix{unsafeParseAddress("10.224.24.0"), 30},
-		Prefix{unsafeParseAddress("10.224.24.0"), 32},
+		Prefix{_a("10.224.24.0"), 0},
+		Prefix{_a("10.224.24.0"), 1},
+		Prefix{_a("10.224.24.0"), 8},
+		Prefix{_a("10.224.24.0"), 12},
+		Prefix{_a("10.224.24.0"), 16},
+		Prefix{_a("10.224.24.0"), 18},
+		Prefix{_a("10.224.24.0"), 20},
+		Prefix{_a("10.224.24.0"), 21},
+		Prefix{_a("10.224.24.0"), 22},
+		Prefix{_a("10.224.24.0"), 24},
+		Prefix{_a("10.224.24.0"), 27},
+		Prefix{_a("10.224.24.0"), 30},
+		Prefix{_a("10.224.24.0"), 32},
 	}
 
 	// Add successively more specific keys to the trie and assert that exact
@@ -1238,7 +1191,7 @@ func TestSuccessivelyBetter(t *testing.T) {
 		var err error
 		trie, err = trie.Insert(key, nil)
 		assert.Nil(t, err)
-		assert.Equal(t, index+1, trie.NumNodes())
+		assert.Equal(t, int64(index+1), trie.NumNodes())
 		assert.True(t, trie.isValid())
 		assert.Equal(t, index+1, trie.height())
 
@@ -1259,7 +1212,7 @@ func TestSuccessivelyBetter(t *testing.T) {
 		var err error
 		trie, err = trie.Delete(key)
 		assert.Nil(t, err)
-		assert.Equal(t, len(keys)-index-1, trie.NumNodes())
+		assert.Equal(t, int64(len(keys)-index-1), trie.NumNodes())
 		assert.True(t, trie.isValid())
 		assert.Equal(t, len(keys)-index-1, trie.height())
 
@@ -1274,61 +1227,61 @@ func TestSuccessivelyBetter(t *testing.T) {
 	}
 }
 
-func TestIterate(t *testing.T) {
+func TestWalk(t *testing.T) {
 	keys := []Prefix{
-		Prefix{unsafeParseAddress("172.21.0.0"), 20},
-		Prefix{unsafeParseAddress("192.68.27.0"), 25},
-		Prefix{unsafeParseAddress("192.168.26.128"), 25},
-		Prefix{unsafeParseAddress("10.224.24.0"), 32},
-		Prefix{unsafeParseAddress("192.68.24.0"), 24},
-		Prefix{unsafeParseAddress("172.16.0.0"), 12},
-		Prefix{unsafeParseAddress("192.68.26.0"), 24},
-		Prefix{unsafeParseAddress("10.224.24.0"), 30},
-		Prefix{unsafeParseAddress("192.168.24.0"), 24},
-		Prefix{unsafeParseAddress("192.168.25.0"), 24},
-		Prefix{unsafeParseAddress("192.168.26.0"), 25},
-		Prefix{unsafeParseAddress("192.68.25.0"), 24},
-		Prefix{unsafeParseAddress("192.168.27.0"), 24},
-		Prefix{unsafeParseAddress("172.20.128.0"), 19},
-		Prefix{unsafeParseAddress("192.68.27.128"), 25},
+		Prefix{_a("172.21.0.0"), 20},
+		Prefix{_a("192.68.27.0"), 25},
+		Prefix{_a("192.168.26.128"), 25},
+		Prefix{_a("10.224.24.0"), 32},
+		Prefix{_a("192.68.24.0"), 24},
+		Prefix{_a("172.16.0.0"), 12},
+		Prefix{_a("192.68.26.0"), 24},
+		Prefix{_a("10.224.24.0"), 30},
+		Prefix{_a("192.168.24.0"), 24},
+		Prefix{_a("192.168.25.0"), 24},
+		Prefix{_a("192.168.26.0"), 25},
+		Prefix{_a("192.68.25.0"), 24},
+		Prefix{_a("192.168.27.0"), 24},
+		Prefix{_a("172.20.128.0"), 19},
+		Prefix{_a("192.68.27.128"), 25},
 	}
 
 	golden := []Prefix{
-		Prefix{unsafeParseAddress("10.224.24.0"), 30},
-		Prefix{unsafeParseAddress("10.224.24.0"), 32},
-		Prefix{unsafeParseAddress("172.16.0.0"), 12},
-		Prefix{unsafeParseAddress("172.20.128.0"), 19},
-		Prefix{unsafeParseAddress("172.21.0.0"), 20},
-		Prefix{unsafeParseAddress("192.68.24.0"), 24},
-		Prefix{unsafeParseAddress("192.68.25.0"), 24},
-		Prefix{unsafeParseAddress("192.68.26.0"), 24},
-		Prefix{unsafeParseAddress("192.68.27.0"), 25},
-		Prefix{unsafeParseAddress("192.68.27.128"), 25},
-		Prefix{unsafeParseAddress("192.168.24.0"), 24},
-		Prefix{unsafeParseAddress("192.168.25.0"), 24},
-		Prefix{unsafeParseAddress("192.168.26.0"), 25},
-		Prefix{unsafeParseAddress("192.168.26.128"), 25},
-		Prefix{unsafeParseAddress("192.168.27.0"), 24},
+		Prefix{_a("10.224.24.0"), 30},
+		Prefix{_a("10.224.24.0"), 32},
+		Prefix{_a("172.16.0.0"), 12},
+		Prefix{_a("172.20.128.0"), 19},
+		Prefix{_a("172.21.0.0"), 20},
+		Prefix{_a("192.68.24.0"), 24},
+		Prefix{_a("192.68.25.0"), 24},
+		Prefix{_a("192.68.26.0"), 24},
+		Prefix{_a("192.68.27.0"), 25},
+		Prefix{_a("192.68.27.128"), 25},
+		Prefix{_a("192.168.24.0"), 24},
+		Prefix{_a("192.168.25.0"), 24},
+		Prefix{_a("192.168.26.0"), 25},
+		Prefix{_a("192.168.26.128"), 25},
+		Prefix{_a("192.168.27.0"), 24},
 	}
 
 	var trie *trieNode
 	check := func(t *testing.T) {
 		result := []Prefix{}
-		trie.Iterate(func(key Prefix, _ interface{}) bool {
+		trie.Walk(func(key Prefix, _ interface{}) bool {
 			result = append(result, key)
 			return true
 		})
 		assert.Equal(t, golden, result)
 
 		iterations := 0
-		trie.Iterate(func(key Prefix, _ interface{}) bool {
+		trie.Walk(func(key Prefix, _ interface{}) bool {
 			iterations++
 			return false
 		})
 		assert.Equal(t, 1, iterations)
 
 		// Just ensure that iterating with a nil callback doesn't crash
-		trie.Iterate(nil)
+		trie.Walk(nil)
 	}
 
 	t.Run("normal insert", func(t *testing.T) {
@@ -1353,6 +1306,10 @@ type pair32 struct {
 }
 
 func printTrie(trie *trieNode) {
+	if trie == nil {
+		fmt.Println("<nil>")
+		return
+	}
 	var recurse func(trie *trieNode, level int)
 
 	recurse = func(trie *trieNode, level int) {
@@ -1360,7 +1317,7 @@ func printTrie(trie *trieNode) {
 			return
 		}
 		for i := 0; i < level; i++ {
-			fmt.Printf(" ")
+			fmt.Printf("   ")
 		}
 		fmt.Printf("%+v, %v, %d\n", trie, trie.isActive, trie.size)
 		recurse(trie.children[0], level+1)
@@ -1384,52 +1341,52 @@ func TestAggregate(t *testing.T) {
 		{
 			desc: "simple aggregation",
 			pairs: []pair32{
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.2"), 31}},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.1"), 32}},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 32}},
+				pair32{key: Prefix{_a("10.224.24.2"), 31}},
+				pair32{key: Prefix{_a("10.224.24.1"), 32}},
+				pair32{key: Prefix{_a("10.224.24.0"), 32}},
 			},
 			golden: []pair32{
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 30}},
+				pair32{key: Prefix{_a("10.224.24.0"), 30}},
 			},
 		},
 		{
 			desc: "same as iterate",
 			pairs: []pair32{
-				pair32{key: Prefix{unsafeParseAddress("172.21.0.0"), 20}},
-				pair32{key: Prefix{unsafeParseAddress("192.68.27.0"), 25}},
-				pair32{key: Prefix{unsafeParseAddress("192.168.26.128"), 25}},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 32}},
-				pair32{key: Prefix{unsafeParseAddress("192.68.24.0"), 24}},
-				pair32{key: Prefix{unsafeParseAddress("172.16.0.0"), 12}},
-				pair32{key: Prefix{unsafeParseAddress("192.68.26.0"), 24}},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 30}},
-				pair32{key: Prefix{unsafeParseAddress("192.168.24.0"), 24}},
-				pair32{key: Prefix{unsafeParseAddress("192.168.25.0"), 24}},
-				pair32{key: Prefix{unsafeParseAddress("192.168.26.0"), 25}},
-				pair32{key: Prefix{unsafeParseAddress("192.68.25.0"), 24}},
-				pair32{key: Prefix{unsafeParseAddress("192.168.27.0"), 24}},
-				pair32{key: Prefix{unsafeParseAddress("172.20.128.0"), 19}},
-				pair32{key: Prefix{unsafeParseAddress("192.68.27.128"), 25}},
+				pair32{key: Prefix{_a("172.21.0.0"), 20}},
+				pair32{key: Prefix{_a("192.68.27.0"), 25}},
+				pair32{key: Prefix{_a("192.168.26.128"), 25}},
+				pair32{key: Prefix{_a("10.224.24.0"), 32}},
+				pair32{key: Prefix{_a("192.68.24.0"), 24}},
+				pair32{key: Prefix{_a("172.16.0.0"), 12}},
+				pair32{key: Prefix{_a("192.68.26.0"), 24}},
+				pair32{key: Prefix{_a("10.224.24.0"), 30}},
+				pair32{key: Prefix{_a("192.168.24.0"), 24}},
+				pair32{key: Prefix{_a("192.168.25.0"), 24}},
+				pair32{key: Prefix{_a("192.168.26.0"), 25}},
+				pair32{key: Prefix{_a("192.68.25.0"), 24}},
+				pair32{key: Prefix{_a("192.168.27.0"), 24}},
+				pair32{key: Prefix{_a("172.20.128.0"), 19}},
+				pair32{key: Prefix{_a("192.68.27.128"), 25}},
 			},
 			golden: []pair32{
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 30}},
-				pair32{key: Prefix{unsafeParseAddress("172.16.0.0"), 12}},
-				pair32{key: Prefix{unsafeParseAddress("192.68.24.0"), 22}},
-				pair32{key: Prefix{unsafeParseAddress("192.168.24.0"), 22}},
+				pair32{key: Prefix{_a("10.224.24.0"), 30}},
+				pair32{key: Prefix{_a("172.16.0.0"), 12}},
+				pair32{key: Prefix{_a("192.68.24.0"), 22}},
+				pair32{key: Prefix{_a("192.168.24.0"), 22}},
 			},
 		},
 		{
 			desc: "mixed umbrellas",
 			pairs: []pair32{
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 30}, data: true},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 31}, data: false},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.1"), 32}, data: true},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 32}, data: false},
+				pair32{key: Prefix{_a("10.224.24.0"), 30}, data: true},
+				pair32{key: Prefix{_a("10.224.24.0"), 31}, data: false},
+				pair32{key: Prefix{_a("10.224.24.1"), 32}, data: true},
+				pair32{key: Prefix{_a("10.224.24.0"), 32}, data: false},
 			},
 			golden: []pair32{
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 30}, data: true},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 31}, data: false},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.1"), 32}, data: true},
+				pair32{key: Prefix{_a("10.224.24.0"), 30}, data: true},
+				pair32{key: Prefix{_a("10.224.24.0"), 31}, data: false},
+				pair32{key: Prefix{_a("10.224.24.1"), 32}, data: true},
 			},
 		},
 	}
@@ -1440,7 +1397,7 @@ func TestAggregate(t *testing.T) {
 			check := func(t *testing.T) {
 				expectedIterations := 0
 				result := []pair32{}
-				trie.Aggregate(
+				trie.Aggregate().Walk(
 					func(key Prefix, data interface{}) bool {
 						result = append(result, pair32{key: key, data: data})
 						expectedIterations = 1
@@ -1450,7 +1407,7 @@ func TestAggregate(t *testing.T) {
 				assert.Equal(t, tt.golden, result)
 
 				iterations := 0
-				trie.Aggregate(
+				trie.Aggregate().Walk(
 					func(key Prefix, data interface{}) bool {
 						result = append(result, pair32{key: key, data: data})
 						iterations++
@@ -1498,15 +1455,15 @@ func TestAggregateEqualComparable(t *testing.T) {
 		{
 			desc: "mixed umbrellas",
 			pairs: []pair32{
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 30}, data: NextHop1},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 31}, data: NextHop2},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.1"), 32}, data: NextHop1},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 32}, data: NextHop2},
+				pair32{key: Prefix{_a("10.224.24.0"), 30}, data: NextHop1},
+				pair32{key: Prefix{_a("10.224.24.0"), 31}, data: NextHop2},
+				pair32{key: Prefix{_a("10.224.24.1"), 32}, data: NextHop1},
+				pair32{key: Prefix{_a("10.224.24.0"), 32}, data: NextHop2},
 			},
 			golden: []pair32{
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 30}, data: NextHop1},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.0"), 31}, data: NextHop2},
-				pair32{key: Prefix{unsafeParseAddress("10.224.24.1"), 32}, data: NextHop1},
+				pair32{key: Prefix{_a("10.224.24.0"), 30}, data: NextHop1},
+				pair32{key: Prefix{_a("10.224.24.0"), 31}, data: NextHop2},
+				pair32{key: Prefix{_a("10.224.24.1"), 32}, data: NextHop1},
 			},
 		},
 	}
@@ -1519,7 +1476,7 @@ func TestAggregateEqualComparable(t *testing.T) {
 			}
 
 			result := []pair32{}
-			trie.Aggregate(
+			trie.Aggregate().Walk(
 				func(key Prefix, data interface{}) bool {
 					result = append(result, pair32{key: key, data: data})
 					return true
@@ -1614,7 +1571,7 @@ func TestTrieNodeEqual(t *testing.T) {
 
 func TestFlatten(t *testing.T) {
 	t.Run("active node needs no children", func(t *testing.T) {
-		prefix := unsafeParsePrefix("1.2.3.0/24")
+		prefix := _p("1.2.3.0/24")
 		n := trieNode{
 			Prefix:   prefix,
 			isActive: true,
@@ -1625,16 +1582,14 @@ func TestFlatten(t *testing.T) {
 		}
 		n.flatten()
 		assert.Equal(t, prefix, n.Prefix)
-		assert.Equal(t, uint32(1), n.size)
-		assert.Equal(t, uint16(1), n.h)
 		assert.True(t, n.isActive)
 		assert.Nil(t, n.children[0])
 		assert.Nil(t, n.children[1])
 	})
 	t.Run("children of unequal size", func(t *testing.T) {
-		prefix := unsafeParsePrefix("1.2.3.0/24")
-		left := unsafeParsePrefix("1.2.3.0/26")
-		right := unsafeParsePrefix("1.2.3.128/25")
+		prefix := _p("1.2.3.0/24")
+		left := _p("1.2.3.0/26")
+		right := _p("1.2.3.128/25")
 		n := trieNode{
 			Prefix: prefix,
 			children: [2]*trieNode{
@@ -1649,9 +1604,9 @@ func TestFlatten(t *testing.T) {
 		assert.Equal(t, right, n.children[1].Prefix)
 	})
 	t.Run("children smaller than half", func(t *testing.T) {
-		prefix := unsafeParsePrefix("1.2.3.0/24")
-		left := unsafeParsePrefix("1.2.3.0/26")
-		right := unsafeParsePrefix("1.2.3.128/26")
+		prefix := _p("1.2.3.0/24")
+		left := _p("1.2.3.0/26")
+		right := _p("1.2.3.128/26")
 		n := trieNode{
 			Prefix: prefix,
 			children: [2]*trieNode{
@@ -1667,9 +1622,9 @@ func TestFlatten(t *testing.T) {
 	})
 
 	t.Run("children not both active (left)", func(t *testing.T) {
-		prefix := unsafeParsePrefix("1.2.3.0/24")
-		left := unsafeParsePrefix("1.2.3.0/25")
-		right := unsafeParsePrefix("1.2.3.128/25")
+		prefix := _p("1.2.3.0/24")
+		left := _p("1.2.3.0/25")
+		right := _p("1.2.3.128/25")
 		n := trieNode{
 			Prefix: prefix,
 			children: [2]*trieNode{
@@ -1690,9 +1645,9 @@ func TestFlatten(t *testing.T) {
 	})
 
 	t.Run("children not both active (right)", func(t *testing.T) {
-		prefix := unsafeParsePrefix("1.2.3.0/24")
-		left := unsafeParsePrefix("1.2.3.0/25")
-		right := unsafeParsePrefix("1.2.3.128/25")
+		prefix := _p("1.2.3.0/24")
+		left := _p("1.2.3.0/25")
+		right := _p("1.2.3.128/25")
 		n := trieNode{
 			Prefix: prefix,
 			children: [2]*trieNode{
@@ -1712,9 +1667,9 @@ func TestFlatten(t *testing.T) {
 		assert.Equal(t, right, n.children[1].Prefix)
 	})
 	t.Run("children both active", func(t *testing.T) {
-		prefix := unsafeParsePrefix("1.2.3.0/24")
-		left := unsafeParsePrefix("1.2.3.0/25")
-		right := unsafeParsePrefix("1.2.3.128/25")
+		prefix := _p("1.2.3.0/24")
+		left := _p("1.2.3.0/25")
+		right := _p("1.2.3.128/25")
 		n := trieNode{
 			Prefix: prefix,
 			children: [2]*trieNode{
@@ -1731,9 +1686,441 @@ func TestFlatten(t *testing.T) {
 		n.flatten()
 		assert.Equal(t, prefix, n.Prefix)
 		assert.True(t, n.isActive)
-		assert.Equal(t, uint32(1), n.size)
-		assert.Equal(t, uint16(1), n.h)
 		assert.Nil(t, n.children[0])
 		assert.Nil(t, n.children[1])
 	})
+}
+
+type actionType int
+
+const (
+	actionTypeRemove actionType = iota
+	actionTypeAdd
+	actionTypeChange
+)
+
+type diffAction struct {
+	t    actionType
+	pair pair32
+	val  interface{}
+}
+
+func TestDiff(t *testing.T) {
+	tests := []struct {
+		desc        string
+		left, right []pair32
+		actions     []diffAction
+		aggregated  []diffAction
+	}{
+		{
+			desc: "empty",
+		}, {
+			desc: "right_empty",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+			},
+		}, {
+			desc: "right_empty_with_subprefixes",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+			},
+		}, {
+			desc: "right_empty_with_subprefix_on_left",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.64"), 26}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.64"), 26}}, nil},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+			},
+		}, {
+			desc: "right_empty_with_subprefix_on_right",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.192"), 26}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.192"), 26}}, nil},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+			},
+		}, {
+			desc: "no_diff",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+			},
+		}, {
+			desc: "different_data",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 2},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 3},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeChange, pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 2}, 3},
+			},
+		}, {
+			desc: "right_side_aggregable",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 2},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}, data: 3},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}, data: 3},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 2}, nil},
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.0"), 25}, data: 3}, nil},
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.128"), 25}, data: 3}, nil},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeChange, pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 2}, 3},
+			},
+		}, {
+			desc: "both_sides_aggregable",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}, data: 2},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}, data: 2},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}, data: 3},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}, data: 3},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeChange, pair32{key: Prefix{_a("203.0.113.0"), 25}, data: 2}, 3},
+				diffAction{actionTypeChange, pair32{key: Prefix{_a("203.0.113.128"), 25}, data: 2}, 3},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeChange, pair32{key: Prefix{_a("203.0.113.0"), 24}, data: 2}, 3},
+			},
+		}, {
+			desc: "disjoint",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.128"), 25}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
+			},
+		}, {
+			desc: "contained_right",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.128"), 25}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
+			},
+		}, {
+			desc: "contained_right_subprefix",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.128"), 25}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
+			},
+		}, {
+			desc: "contained_left",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
+			},
+		}, {
+			desc: "contained_left_subprefix",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			left, right := func() (left, right *trieNode) {
+				fill := func(pairs []pair32) (trie *trieNode) {
+					var err error
+					for _, p := range pairs {
+						trie, err = trie.Insert(p.key, p.data)
+						require.Nil(t, err)
+					}
+					return
+				}
+				return fill(tt.left), fill(tt.right)
+			}()
+
+			var actions []diffAction
+			getHandler := func(ret bool) trieDiffHandler {
+				actions = nil
+				return trieDiffHandler{
+					Removed: func(left *trieNode) bool {
+						require.True(t, left.isActive)
+						actions = append(actions, diffAction{actionTypeRemove, pair32{key: left.Prefix, data: left.Data}, nil})
+						return ret
+					},
+					Added: func(right *trieNode) bool {
+						require.True(t, right.isActive)
+						actions = append(actions, diffAction{actionTypeAdd, pair32{key: right.Prefix, data: right.Data}, nil})
+						return ret
+					},
+					Modified: func(left, right *trieNode) bool {
+						require.True(t, left.isActive)
+						require.True(t, right.isActive)
+						actions = append(actions, diffAction{actionTypeChange, pair32{key: left.Prefix, data: left.Data}, right.Data})
+						return ret
+					},
+				}
+			}
+
+			aggregatedExpected := tt.aggregated
+			if aggregatedExpected == nil {
+				aggregatedExpected = tt.actions
+			}
+
+			t.Run("forward", func(t *testing.T) {
+				t.Run("normal", func(t *testing.T) {
+					left.Diff(right, getHandler(true))
+					assert.True(t,
+						reflect.DeepEqual(tt.actions, actions),
+						cmp.Diff(tt.actions, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
+					)
+					if len(tt.actions) >= 1 {
+						// Run the same thing but return false to stop iteration
+						t.Run("stop", func(t *testing.T) {
+							left.Diff(right, getHandler(false))
+							assert.True(t, reflect.DeepEqual(tt.actions[:1], actions))
+						})
+					}
+				})
+
+				t.Run("aggregated", func(t *testing.T) {
+					left.Aggregate().Diff(right.Aggregate(), getHandler(true))
+					assert.True(t,
+						reflect.DeepEqual(aggregatedExpected, actions),
+						cmp.Diff(aggregatedExpected, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
+					)
+				})
+			})
+
+			t.Run("backward", func(t *testing.T) {
+				t.Run("normal", func(t *testing.T) {
+					right.Diff(left, getHandler(true))
+
+					var expected []diffAction
+					for _, action := range tt.actions {
+						var t actionType
+						pair := action.pair
+						val := action.val
+						switch action.t {
+						case actionTypeRemove:
+							t = actionTypeAdd
+						case actionTypeAdd:
+							t = actionTypeRemove
+						default:
+							t = action.t
+							pair.data, val = val, pair.data
+						}
+						expected = append(expected, diffAction{t, pair, val})
+					}
+					assert.True(t,
+						reflect.DeepEqual(expected, actions),
+						cmp.Diff(expected, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
+					)
+				})
+
+				t.Run("aggregated", func(t *testing.T) {
+					right.Aggregate().Diff(left.Aggregate(), getHandler(true))
+
+					var expected []diffAction
+					for _, action := range aggregatedExpected {
+						var t actionType
+						pair := action.pair
+						val := action.val
+						switch action.t {
+						case actionTypeRemove:
+							t = actionTypeAdd
+						case actionTypeAdd:
+							t = actionTypeRemove
+						default:
+							t = action.t
+							pair.data, val = val, pair.data
+						}
+						expected = append(expected, diffAction{t, pair, val})
+					}
+					assert.True(t,
+						reflect.DeepEqual(expected, actions),
+						cmp.Diff(expected, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
+					)
+				})
+			})
+		})
+	}
+}
+
+func TestNewAggregate(t *testing.T) {
+	tests := []struct {
+		desc              string
+		table, aggregated []pair32
+	}{
+		{
+			desc:       "empty",
+			table:      []pair32{},
+			aggregated: []pair32{},
+		}, {
+			desc: "trivial",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+			},
+		}, {
+			desc: "sub_prefix_left",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+			},
+		}, {
+			desc: "different_data",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.0"), 25}, data: true},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.0"), 25}, data: true},
+			},
+		}, {
+			desc: "disjoint",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 26}},
+				pair32{key: Prefix{_a("203.0.113.128"), 26}},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 26}},
+				pair32{key: Prefix{_a("203.0.113.128"), 26}},
+			},
+		}, {
+			desc: "subprefix_different_data",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.0"), 26}, data: true},
+				pair32{key: Prefix{_a("203.0.113.64"), 26}},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.0"), 26}, data: true},
+			},
+		}, {
+			desc: "aggregated_children",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+			},
+		}, {
+			desc: "adjacent_different_data",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}, data: true},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}, data: true},
+			},
+		}, {
+			desc: "adjacent_different_lengths",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+				pair32{key: Prefix{_a("203.0.113.128"), 26}},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+				pair32{key: Prefix{_a("203.0.113.128"), 26}},
+			},
+		}, {
+			desc: "aggregated_children_have_precedence",
+			table: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+				pair32{key: Prefix{_a("203.0.113.0"), 25}, data: true},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}, data: true},
+			},
+			aggregated: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}, data: true},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			table, aggregated := func() (a, b *trieNode) {
+				fill := func(pairs []pair32) (trie *trieNode) {
+					var err error
+					for _, p := range pairs {
+						trie, err = trie.Insert(p.key, p.data)
+						require.Nil(t, err)
+					}
+					return
+				}
+				return fill(tt.table), fill(tt.aggregated)
+			}()
+
+			assert.True(t, table.Aggregate().Equal(aggregated))
+		})
+	}
 }
