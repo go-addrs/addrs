@@ -284,7 +284,7 @@ func TestRangeSet(t *testing.T) {
 	r := Range{_a("7.0.37.17"), _a("13.8.222.113")}
 
 	// I calculated this manually from the above arbitrarily chosen range.
-	golden := NewSet()
+	golden := NewSet_()
 	golden.Insert(_p("7.0.37.17/32"))
 	golden.Insert(_p("7.0.37.18/31"))
 	golden.Insert(_p("7.0.37.20/30"))
@@ -319,7 +319,7 @@ func TestRangeSet(t *testing.T) {
 	golden.Insert(_p("13.8.222.96/28"))
 	golden.Insert(_p("13.8.222.112/31"))
 
-	assert.True(t, golden.Equal(r.FixedSet()))
+	assert.True(t, golden.Equal(r.Set()))
 }
 
 func TestRangePlus(t *testing.T) {

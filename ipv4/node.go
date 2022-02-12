@@ -555,7 +555,7 @@ func (me *trieNode) active() bool {
 
 func dataEqual(a, b interface{}) bool {
 	// If the data stored are EqualComparable, compare it using its method.
-	// This is useful to allow mapping to a more complex type (e.g. Set) that
+	// This is useful to allow mapping to a more complex type (e.g. Set_) that
 	// is not comparable by normal means.
 	switch t := a.(type) {
 	case EqualComparable:

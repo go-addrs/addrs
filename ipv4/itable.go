@@ -1,34 +1,26 @@
 package ipv4
 
-// ITable is a structure that maps IP prefixes to values. For example, you can
-// insert the following values and they will all exist as distinct prefix/value
-// pairs in the table.
+// ITable_ is a mutable version of ITable, allowing inserting, replacing, or
+// removing elements in various ways. You can use it as an ITable builder or on
+// its own.
 //
-// 10.0.0.0/16 -> 1
-// 10.0.0.0/24 -> 1
-// 10.0.0.0/32 -> 2
-//
-// The table supports looking up values based on a longest prefix match and also
-// supports efficient aggregation of prefix/value pairs based on equality of
-// values. See the README.md file for a more detailed discussion..
-//
-// The zero value of a ITable is unitialized. Reading it is equivalent to
-// reading an empty ITable. Attempts to modify it will result in a panic. Always
-// use NewITable() to get a modifyable ITable.
-type ITable struct {
-	// This is an abuse of FixedITable because it uses its package privileges
+// The zero value of a ITable_ is unitialized. Reading it is equivalent to
+// reading an empty ITable_. Attempts to modify it will result in a panic.
+// Always use NewITable_() to get an initialized ITable_.
+type ITable_ struct {
+	// This is an abuse of ITable because it uses its package privileges
 	// to turn it into a mutable one. This could be refactored to be cleaner
 	// without changing the interface.
 
-	// Be careful not to take an FixedITable from outside the package and turn
+	// Be careful not to take an ITable from outside the package and turn
 	// it into a mutable one. That would break the contract.
-	m *FixedITable
+	m *ITable
 }
 
-// NewITable returns a new fully-initialized ITable
-func NewITable() ITable {
-	return ITable{
-		m: &FixedITable{},
+// NewITable_ returns a new fully-initialized ITable_
+func NewITable_() ITable_ {
+	return ITable_{
+		m: &ITable{},
 	}
 }
 
@@ -45,7 +37,7 @@ const (
 )
 
 // Size returns the number of exact prefixes stored in the table
-func (me ITable) Size() int64 {
+func (me ITable_) Size() int64 {
 	if me.m == nil {
 		return 0
 	}
@@ -53,12 +45,12 @@ func (me ITable) Size() int64 {
 }
 
 // mutate should be called by any method that modifies the table in any way
-func (me ITable) mutate(mutator func() (ok bool, node *trieNode)) {
+func (me ITable_) mutate(mutator func() (ok bool, node *trieNode)) {
 	oldNode := me.m.trie
 	ok, newNode := mutator()
 	if ok && oldNode != newNode {
 		if !swapTrieNodePtr(&me.m.trie, oldNode, newNode) {
-			panic("concurrent modification of Table detected")
+			panic("concurrent modification of Table_ detected")
 		}
 	}
 }
@@ -66,9 +58,9 @@ func (me ITable) mutate(mutator func() (ok bool, node *trieNode)) {
 // Insert inserts the given prefix with the given value into the table.
 // If an entry with the same prefix already exists, it will not overwrite it
 // and return false.
-func (me ITable) Insert(prefix PrefixI, value interface{}) (succeeded bool) {
+func (me ITable_) Insert(prefix PrefixI, value interface{}) (succeeded bool) {
 	if me.m == nil {
-		panic("cannot modify an unitialized Table")
+		panic("cannot modify an unitialized Table_")
 	}
 	if prefix == nil {
 		prefix = Prefix{}
@@ -88,9 +80,9 @@ func (me ITable) Insert(prefix PrefixI, value interface{}) (succeeded bool) {
 // Update inserts the given prefix with the given value into the table. If the
 // prefix already existed, it updates the associated value in place and return
 // true. Otherwise, it returns false.
-func (me ITable) Update(prefix PrefixI, value interface{}) (succeeded bool) {
+func (me ITable_) Update(prefix PrefixI, value interface{}) (succeeded bool) {
 	if me.m == nil {
-		panic("cannot modify an unitialized Table")
+		panic("cannot modify an unitialized Table_")
 	}
 	if prefix == nil {
 		prefix = Prefix{}
@@ -109,9 +101,9 @@ func (me ITable) Update(prefix PrefixI, value interface{}) (succeeded bool) {
 
 // InsertOrUpdate inserts the given prefix with the given value into the table.
 // If the prefix already existed, it updates the associated value in place.
-func (me ITable) InsertOrUpdate(prefix PrefixI, value interface{}) {
+func (me ITable_) InsertOrUpdate(prefix PrefixI, value interface{}) {
 	if me.m == nil {
-		panic("cannot modify an unitialized Table")
+		panic("cannot modify an unitialized Table_")
 	}
 	if prefix == nil {
 		prefix = Prefix{}
@@ -125,7 +117,7 @@ func (me ITable) InsertOrUpdate(prefix PrefixI, value interface{}) {
 // with an exact match: both the IP and the prefix length must match. If an
 // exact match is not found, found is false and value is nil and should be
 // ignored.
-func (me ITable) Get(prefix PrefixI) (interface{}, bool) {
+func (me ITable_) Get(prefix PrefixI) (interface{}, bool) {
 	if me.m == nil {
 		return nil, false
 	}
@@ -135,9 +127,9 @@ func (me ITable) Get(prefix PrefixI) (interface{}, bool) {
 // GetOrInsert returns the value associated with the given prefix if it already
 // exists. If it does not exist, it inserts it with the given value and returns
 // that.
-func (me ITable) GetOrInsert(prefix PrefixI, value interface{}) interface{} {
+func (me ITable_) GetOrInsert(prefix PrefixI, value interface{}) interface{} {
 	if me.m == nil {
-		panic("cannot modify an unitialized Table")
+		panic("cannot modify an unitialized Table_")
 	}
 	if prefix == nil {
 		prefix = Prefix{}
@@ -155,7 +147,7 @@ func (me ITable) GetOrInsert(prefix PrefixI, value interface{}) interface{} {
 // prefix using a longest prefix match. If a match is found, it returns a
 // Prefix representing the longest prefix matched. If a match is *not* found,
 // matched is MatchNone and the other fields should be ignored
-func (me ITable) LongestMatch(prefix PrefixI) (value interface{}, matched Match, matchPrefix Prefix) {
+func (me ITable_) LongestMatch(prefix PrefixI) (value interface{}, matched Match, matchPrefix Prefix) {
 	if me.m == nil {
 		return nil, MatchNone, Prefix{}
 	}
@@ -166,9 +158,9 @@ func (me ITable) LongestMatch(prefix PrefixI) (value interface{}, matched Match,
 // returns true if it was found. Only a prefix with an exact match will be
 // removed. If no entry with the given prefix exists, it will do nothing and
 // return false.
-func (me ITable) Remove(prefix PrefixI) (succeeded bool) {
+func (me ITable_) Remove(prefix PrefixI) (succeeded bool) {
 	if me.m == nil {
-		panic("cannot modify an unitialized Table")
+		panic("cannot modify an unitialized Table_")
 	}
 	if prefix == nil {
 		prefix = Prefix{}
@@ -182,37 +174,48 @@ func (me ITable) Remove(prefix PrefixI) (succeeded bool) {
 	return err == nil
 }
 
-// FixedTable returns an immutable snapshot of this ITable. Due to the COW
+// Table returns an immutable snapshot of this ITable_. Due to the COW
 // nature of the underlying datastructure, it is very cheap to create these --
 // effectively a pointer copy.
-func (me ITable) FixedTable() FixedITable {
+func (me ITable_) Table() ITable {
 	if me.m == nil {
-		return FixedITable{}
+		return ITable{}
 	}
-	return FixedITable{
+	return ITable{
 		trie: me.m.trie,
 	}
 }
 
-// FixedITable is like a ITable except this its contents are frozen
-// The zero value of a FixedITable is an empty table
-type FixedITable struct {
+// ITable is a structure that maps IP prefixes to values. For example, the
+// following values can all exist as distinct prefix/value pairs in the table.
+//
+//     10.0.0.0/16 -> 1
+//     10.0.0.0/24 -> 1
+//     10.0.0.0/32 -> 2
+//
+// The table supports looking up values based on a longest prefix match and also
+// supports efficient aggregation of prefix/value pairs based on equality of
+// values. See the README.md file for a more detailed discussion.
+//
+// The zero value of a ITable is an empty table
+// ITable is immutable. For a mutable equivalent, see ITable_.
+type ITable struct {
 	trie *trieNode
 }
 
-// Table returns a mutable table initialized with the contents of this one. Due to
+// Table_ returns a mutable table initialized with the contents of this one. Due to
 // the COW nature of the underlying datastructure, it is very cheap to copy
 // these -- effectively a pointer copy.
-func (me FixedITable) Table() ITable {
-	return ITable{
-		m: &FixedITable{
+func (me ITable) Table_() ITable_ {
+	return ITable_{
+		m: &ITable{
 			trie: me.trie,
 		},
 	}
 }
 
 // Size returns the number of exact prefixes stored in the table
-func (me FixedITable) Size() int64 {
+func (me ITable) Size() int64 {
 	return me.trie.NumNodes()
 }
 
@@ -220,7 +223,7 @@ func (me FixedITable) Size() int64 {
 // with an exact match: both the IP and the prefix length must match. If an
 // exact match is not found, found is false and value is nil and should be
 // ignored.
-func (me FixedITable) Get(prefix PrefixI) (interface{}, bool) {
+func (me ITable) Get(prefix PrefixI) (interface{}, bool) {
 	value, match, _ := me.LongestMatch(prefix)
 
 	if match == MatchExact {
@@ -234,7 +237,7 @@ func (me FixedITable) Get(prefix PrefixI) (interface{}, bool) {
 // prefix using a longest prefix match. If a match is found, it returns a
 // Prefix representing the longest prefix matched. If a match is *not* found,
 // matched is MatchNone and the other fields should be ignored
-func (me FixedITable) LongestMatch(prefix PrefixI) (value interface{}, matched Match, matchPrefix Prefix) {
+func (me ITable) LongestMatch(prefix PrefixI) (value interface{}, matched Match, matchPrefix Prefix) {
 	if prefix == nil {
 		prefix = Prefix{}
 	}
@@ -279,8 +282,8 @@ func (me FixedITable) LongestMatch(prefix PrefixI) (value interface{}, matched M
 // aggregates to neighbors as this will likely lead to poor comparisions by
 // neighboring routers who receive routes aggregated differently from different
 // peers.
-func (me FixedITable) Aggregate() FixedITable {
-	return FixedITable{
+func (me ITable) Aggregate() ITable {
+	return ITable{
 		trie: me.trie.Aggregate(),
 	}
 }
@@ -299,7 +302,7 @@ type ITableCallback func(Prefix, interface{}) bool
 //
 // It returns false if iteration was stopped due to a callback returning false
 // or true if it iterated all items.
-func (me FixedITable) Walk(callback ITableCallback) bool {
+func (me ITable) Walk(callback ITableCallback) bool {
 	return me.trie.Walk(trieCallback(callback))
 }
 
@@ -332,7 +335,7 @@ type IDiffHandler struct {
 //
 // It returns false if iteration was stopped due to a callback returning false
 // or true if it iterated all items.
-func (me FixedITable) Diff(other FixedITable, handler IDiffHandler) bool {
+func (me ITable) Diff(other ITable, handler IDiffHandler) bool {
 	trieHandler := trieDiffHandler{}
 	if handler.Removed != nil {
 		trieHandler.Removed = func(n *trieNode) bool {

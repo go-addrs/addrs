@@ -167,7 +167,7 @@ func (me Prefix) Host() Prefix {
 // Prefix. If the two Prefixes are equal, true is returned. The host bits in
 // the address are ignored when testing containership.
 func (me Prefix) Contains(other SetI) bool {
-	return me.FixedSet().Contains(other)
+	return me.Set().Contains(other)
 }
 
 // Size returns the number of addresses in the prefix, including network and
@@ -236,10 +236,10 @@ func (me Prefix) Halves() (a, b Prefix) {
 	return
 }
 
-// FixedSet returns the set that includes the same addresses as the prefix
+// Set returns the set that includes the same addresses as the prefix
 // It ignores any bits set in the host part of the address.
-func (me Prefix) FixedSet() FixedSet {
-	return FixedSet{
+func (me Prefix) Set() Set {
+	return Set{
 		trie: setNodeFromPrefix(me),
 	}
 }

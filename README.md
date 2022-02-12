@@ -48,52 +48,56 @@ address in it (`Address{}` - `Address{}`).
 
 ## Mutable Types
 
-The two most complex types in this library are mutable -- `Set` and `Table`.
+The two most complex types in this library have both mutable and immutable
+representations -- `Set` and `Table`. The mutable types are marked with a
+trailing underbar -- `Set_` and `Table_`.
 
-These behave like Go maps in a few ways:
+Unlike the simpler, immutable types mentioned above, Memory for `Set`s and
+`Table`s is allocated from the heap.
 
-1. They are reference types where each instance points to a share data
-   structure. These can be efficiently passed and returned to and from functions
-   and methods without using pointers.
+`Set_` and `Table_` behave like Go maps in a couple of ways:
 
-2. They must be initialized to be modifiable. An unitialized `Set` or `Table`
-   will behave like it is empty when you read from it but any attempt to modify
-   it (e.g. insert entries) will result in a panic. Each provides a factory
+1. They are reference types where each instance points to a shared data
+   structure. Passing and returning them by value is efficient. Changes to any
+   of the copies are reflected in all of them.
+
+2. They must be initialized to be modifiable. An unitialized instance will
+   behave like it is empty when you read from it but any attempt to modify it
+   (e.g. insert entries) will result in a panic. Each provides a factory
    function which will return a fully-initialized instance which can then be
    modified.
 
-3. Unlike the simpler, immutable types mentioned above, The memory for `Set` and
-   `Table` is allocated from the heap.
-
 There are a few ways in which these types do not behave like a Go `map`:
 
-1. Both types have a corresponding immutable represation. Converting between
-   mutable and immutable instances is as efficient as copying a pointer. If you
-   convert from mutable -> immutable -> mutable you end up with a mutable clone
-   which is independent from the original.
+1. Converting between mutable and immutable instances is as efficient as copying
+   a pointer. If you convert from mutable -> immutable -> mutable you end up
+   with a mutable clone which is detached from the original, meaning
+   modifications to it will not modify the original.
 
 2. They are safe to read and write concurrently. All read operations work on a
    consistent representation of the underlying datastructure which is not
    affected by concurrent writes. However, subsequent reads on the same instance
-   may, depending on timing, reflect concurrent writes from other goroutines.
+   may -- depending on timing -- reflect concurrent writes from other
+   goroutines.
 
 3. Multiple concurrent writes *will* cause a panic.
 
 A nice pattern to ensure consistency is to reserve writing to a single goroutine
-and then send fixed snapshots of the `Set` or `Table` through channels to other
-goroutines to consume it.
+and then send fixed `Set`s or `Table`s through channels to other goroutines to
+consume it.
 
-### Set and FixedSet
+### Set
 
 A `Set` contains any arbitrary collection of individual, distinct `Address`
 values. `Address`, `Prefix`, and `Range` are similar to sets but are more
 constrained. The API provides methods to convert freely between these types.
 
-The fixed representation of a `Set` is called `FixedSet`. One can be efficiently
-obtained by calling `.FixedSet()` on an `Address`, `Prefix`, `Range`, or `Set`.
+`Set`s are immutable and `Set_`s are mutable. A fixed `Set` can be efficiently
+obtained by calling `.Set()` on an `Address`, `Prefix`, `Range`, or `Set_`. A
+mutable `Set_` can be obtained by calling `.Set_()` on a `Set`.
 
 The memory required to store a `Set` is proportional to the minimum number of
-`Prefix`es required to exactly cover all of its `Address`es. This
+minimal length `Prefix`es required to exactly cover all of its `Address`es. This
 proportionality is maintained as modifications occur. For example,
 subsequentially inserting two equally sized, and properly aligned `Prefix`es
 will result in changes to the underlying structure to represent them both with a
@@ -103,17 +107,20 @@ The above is especially important when it comes to storing IPv6 addresses. For
 example, an entire `/64` `Prefix` has a massive number of distinct `Address`es
 but is stored in a very small space.
 
-### Table and FixedTable
+### Table
 
 A `Table` maps `Prefix`es to arbitrary values. They use Go generics so that any
 type of value can be stored and retreived in a type-safe manner. Bits in the
 `Address` part that would be masked off by 0s in the `Mask` are ignored when
-using it as a key in a `Table`.
+using it as a key in a `Table_`.
+
+`Table`s are immutable and `Table_`s are mutable. One can be efficiently
+obtained a fixed table by calling `.Table()` on a `Table_` and vice-versa.
 
 `ITable` is equivalent but does not require generics. If you do not have at
 least Go version `1.18`, you can use this type to map to `interface{}`es
-instead. Arbitrary types can still be stored but it is up to you to dynamically
-cast them to the type you want.
+instead. Arbitrary value types can still be stored but it is up to you to
+dynamically cast them to the type you want.
 
 At first glance, `Table` may seem similar but more restrictive than Go's `map`.
 Afterall, a `Prefix` can be used as a `map` key so why is it necessary?
@@ -141,7 +148,7 @@ ones mentioned above.
 4. It supports an efficient diff operation so that you can iterate the entries
    removed, added, or changed from one to the other.
 
-   Starting with a large `Table`, if you make a small number of modifications to
+   Starting with a large `Table_`, if you make a small number of modifications to
    it and then diff the before and after snapshots, the diff operation
    efficiency will be very good -- proportional to the changes made between the
-   two snapshots.
+   two.

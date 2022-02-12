@@ -1,77 +1,75 @@
 package ipv4
 
-// Set is a structure that efficiently stores sets of addresses and
-// supports testing if an address or prefix is contained (entirely) in it. It
-// supports the standard set operations: union, intersection, and difference.
-// It supports conversion to/and from Ranges and Prefixes
-// The zero value of a Set is unitialized. Reading it is equivalent to reading
+// Set_ is the mutable version of a Set, allowing insertion and deletion of
+// elements.
+// The zero value of a Set_ is unitialized. Reading it is equivalent to reading
 // an empty set. Attempts to modify it will result in a panic. Always use
-// NewSet() to get a modifyable Set.
-type Set struct {
-	// See the note on Table
-	s *FixedSet
+// NewSet_() to get an initialized Set_.
+type Set_ struct {
+	// See the note on Table_
+	s *Set
 }
 
-// NewSet returns a new fully-initialized Set
-func NewSet() Set {
-	return Set{
-		s: &FixedSet{},
+// NewSet_ returns a new fully-initialized Set_
+func NewSet_() Set_ {
+	return Set_{
+		s: &Set{},
 	}
 }
 
-// FixedSet returns the immutable set initialized with the contents of this
+// Set returns the immutable set initialized with the contents of this
 // set, effectively freezing it.
-func (me Set) FixedSet() FixedSet {
+func (me Set_) Set() Set {
 	if me.s == nil {
-		return FixedSet{}
+		return Set{}
 	}
-	return FixedSet{
+	return Set{
 		trie: me.s.trie,
 	}
 }
 
 // mutate should be called by any method that modifies the set in any way
-func (me Set) mutate(mutator func() (ok bool, newNode *setNode)) {
+func (me Set_) mutate(mutator func() (ok bool, newNode *setNode)) {
 	oldNode := me.s.trie
 	ok, newNode := mutator()
 	if ok && oldNode != newNode {
 		if !swapSetNodePtr(&me.s.trie, oldNode, newNode) {
-			panic("concurrent modification of Set detected")
+			panic("concurrent modification of Set_ detected")
 		}
 	}
 }
 
 // Insert inserts all IPs from the given set into this one. It is
 // effectively a Union with the other set in place.
-func (me Set) Insert(other SetI) {
+func (me Set_) Insert(other SetI) {
 	if me.s == nil {
-		panic("cannot modify an unitialized Set")
+		panic("cannot modify an unitialized Set_")
 	}
 	if other == nil {
-		other = FixedSet{}
+		other = Set{}
 	}
 	me.mutate(func() (bool, *setNode) {
-		return true, me.s.trie.Union(other.FixedSet().trie)
+		return true, me.s.trie.Union(other.Set().trie)
 	})
 }
 
 // Remove removes the given set (all of its addreses) from the set. It ignores
 // any addresses in the other set which were not already in the set. It is
 // effectively a Difference with the other set in place.
-func (me Set) Remove(other SetI) {
+func (me Set_) Remove(other SetI) {
 	if me.s == nil {
-		panic("cannot modify an unitialized Set")
+		panic("cannot modify an unitialized Set_")
 	}
 	if other == nil {
-		other = FixedSet{}
+		other = Set{}
 	}
 	me.mutate(func() (bool, *setNode) {
-		return true, me.s.trie.Difference(other.FixedSet().trie)
+		return true, me.s.trie.Difference(other.Set().trie)
 	})
 }
 
 // Size returns the number of IP addresses
-func (me Set) Size() int64 {
+func (me Set_) Size() int64 {
 	if me.s == nil {
 		return 0
 	}
@@ -79,26 +77,26 @@ func (me Set) Size() int64 {
 }
 
 // Contains tests if the given prefix is entirely contained in the set
-func (me Set) Contains(other SetI) bool {
+func (me Set_) Contains(other SetI) bool {
 	if me.s == nil {
-		return other == nil || other.FixedSet().Size() == 0
+		return other == nil || other.Set().Size() == 0
 	}
 	return me.s.Contains(other)
 }
 
 // Equal returns true if this set is equal to other
-func (me Set) Equal(other SetI) bool {
+func (me Set_) Equal(other SetI) bool {
 	if other == nil {
-		other = FixedSet{}
+		other = Set{}
 	}
 	if me.s == nil {
-		return other.FixedSet().Size() == 0
+		return other.Set().Size() == 0
 	}
-	return me.s.Equal(other.FixedSet())
+	return me.s.Equal(other.Set())
 }
 
 // EqualInterface returns true if this set is equal to other
-func (me Set) EqualInterface(other interface{}) bool {
+func (me Set_) EqualInterface(other interface{}) bool {
 	switch o := other.(type) {
 	case SetI:
 		return me.Equal(o)
@@ -107,80 +105,83 @@ func (me Set) EqualInterface(other interface{}) bool {
 	}
 }
 
-func (me Set) isValid() bool {
+func (me Set_) isValid() bool {
 	return me.s.isValid()
 }
 
 // Union returns a new fixed set with all addresses from both sets
-func (me Set) Union(other SetI) FixedSet {
+func (me Set_) Union(other SetI) Set {
 	if other == nil {
-		other = FixedSet{}
+		other = Set{}
 	}
 	if me.s == nil {
-		return other.FixedSet()
+		return other.Set()
 	}
 	return me.s.Union(other)
 }
 
 // Intersection returns a new fixed set with all addresses that appear in both sets
-func (me Set) Intersection(other SetI) FixedSet {
+func (me Set_) Intersection(other SetI) Set {
 	if other == nil {
-		other = FixedSet{}
+		other = Set{}
 	}
 	if me.s == nil {
-		return FixedSet{}
+		return Set{}
 	}
 	return me.s.Intersection(other)
 }
 
 // Difference returns a new fixed set with all addresses that appear in this set
 // excluding any that also appear in the other set
-func (me Set) Difference(other SetI) FixedSet {
+func (me Set_) Difference(other SetI) Set {
 	if other == nil {
-		other = FixedSet{}
+		other = Set{}
 	}
 	if me.s == nil {
-		return FixedSet{}
+		return Set{}
 	}
 	return me.s.Difference(other)
 }
 
-// FixedSet is like a Set except that its contents are frozen
-// The zero value of a FixedSet is an empty set
-type FixedSet struct {
+// Set is a structure that efficiently stores sets of addresses and supports
+// testing if an address or prefix is contained (entirely) in it. It supports
+// the standard set operations: union, intersection, and difference. It
+// supports conversion to/and from Ranges and Prefixes. The zero value of a Set
+// is an empty set
+// Set is immutable. For a mutable equivalent, see Set_.
+type Set struct {
 	trie *setNode
 }
 
-// SetI represents something that can be treated as a FixedSet by calling
-// .FixedSet(). It is possible to be nil. In that case, it will be treated as
-// if a default zero-value FixedSet{} were passed which is an empty set.
-// This includes the following types: Address, Prefix, Range, Set, and FixedSet
+// SetI represents something that can be treated as a Set by calling .Set() --
+// Address, Prefix, Range, Set, and Set_. It is possible to be nil in which
+// case, it will be treated as a zero-value Set{} which is empty.
 type SetI interface {
-	FixedSet() FixedSet
+	Set() Set
 }
 
 var _ SetI = Address{}
 var _ SetI = Prefix{}
 var _ SetI = Range{}
+var _ SetI = Set_{}
 var _ SetI = Set{}
-var _ SetI = FixedSet{}
 
-// Set returns a Set initialized with the contents of the fixed set
-func (me FixedSet) Set() Set {
-	return Set{
-		s: &FixedSet{
+// Set_ returns a Set_ initialized with the contents of the fixed set
+func (me Set) Set_() Set_ {
+	return Set_{
+		s: &Set{
 			trie: me.trie,
 		},
 	}
 }
 
-// FixedSet implements SetI
-func (me FixedSet) FixedSet() FixedSet {
+// Set implements SetI
+func (me Set) Set() Set {
 	return me
 }
 
 // Size returns the number of IP addresses
-func (me FixedSet) Size() int64 {
+func (me Set) Size() int64 {
 	return me.trie.Size()
 }
 
@@ -199,7 +200,7 @@ type PrefixCallback func(Prefix) bool
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me FixedSet) WalkPrefixes(callback PrefixCallback) bool {
+func (me Set) WalkPrefixes(callback PrefixCallback) bool {
 	return me.trie.Walk(func(prefix Prefix, data interface{}) bool {
 		return callback(prefix)
 	})
@@ -210,7 +211,7 @@ func (me FixedSet) WalkPrefixes(callback PrefixCallback) bool {
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me FixedSet) WalkAddresses(callback AddressCallback) bool {
+func (me Set) WalkAddresses(callback AddressCallback) bool {
 	return me.WalkPrefixes(func(prefix Prefix) bool {
 		return prefix.walkAddresses(callback)
 	})
@@ -229,7 +230,7 @@ type RangeCallback func(Range) bool
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me FixedSet) WalkRanges(callback RangeCallback) bool {
+func (me Set) WalkRanges(callback RangeCallback) bool {
 	ranges := []Range{}
 	finished := me.WalkPrefixes(func(p Prefix) bool {
 		if len(ranges) != 0 {
@@ -257,7 +258,7 @@ func (me FixedSet) WalkRanges(callback RangeCallback) bool {
 }
 
 // EqualInterface returns true if this set is equal to other
-func (me FixedSet) EqualInterface(other interface{}) bool {
+func (me Set) EqualInterface(other interface{}) bool {
 	switch o := other.(type) {
 	case SetI:
 		return me.Equal(o)
@@ -267,53 +268,53 @@ func (me FixedSet) EqualInterface(other interface{}) bool {
 }
 
 // Equal returns true if this set is equal to other
-func (me FixedSet) Equal(other SetI) bool {
+func (me Set) Equal(other SetI) bool {
 	if other == nil {
-		other = FixedSet{}
+		other = Set{}
 	}
-	return me.trie.Equal(other.FixedSet().trie)
+	return me.trie.Equal(other.Set().trie)
 }
 
 // Contains tests if the given prefix is entirely contained in the set
-func (me FixedSet) Contains(other SetI) bool {
+func (me Set) Contains(other SetI) bool {
 	if other == nil {
-		other = FixedSet{}
+		other = Set{}
 	}
 	// NOTE This is the not the most efficient way to do this
-	return other.FixedSet().Difference(me).Size() == 0
+	return other.Set().Difference(me).Size() == 0
 }
 
 // Union returns a new set with all addresses from both sets
-func (me FixedSet) Union(other SetI) FixedSet {
+func (me Set) Union(other SetI) Set {
 	if other == nil {
-		other = FixedSet{}
+		other = Set{}
 	}
-	return FixedSet{
-		trie: me.trie.Union(other.FixedSet().trie),
+	return Set{
+		trie: me.trie.Union(other.Set().trie),
 	}
 }
 
 // Intersection returns a new set with all addresses that appear in both sets
-func (me FixedSet) Intersection(other SetI) FixedSet {
+func (me Set) Intersection(other SetI) Set {
 	if other == nil {
-		other = FixedSet{}
+		other = Set{}
 	}
-	return FixedSet{
-		trie: me.trie.Intersect(other.FixedSet().trie),
+	return Set{
+		trie: me.trie.Intersect(other.Set().trie),
 	}
 }
 
 // Difference returns a new set with all addresses that appear in this set
 // excluding any that also appear in the other set
-func (me FixedSet) Difference(other SetI) FixedSet {
+func (me Set) Difference(other SetI) Set {
 	if other == nil {
-		other = FixedSet{}
+		other = Set{}
 	}
-	return FixedSet{
-		trie: me.trie.Difference(other.FixedSet().trie),
+	return Set{
+		trie: me.trie.Difference(other.Set().trie),
 	}
 }
 
-func (me FixedSet) isValid() bool {
+func (me Set) isValid() bool {
 	return me.trie.isValid()
 }

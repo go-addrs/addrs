@@ -84,9 +84,9 @@ func (me Address) Prefix() Prefix {
 	return Prefix{me, uint32(addressSize)}
 }
 
-// FixedSet returns a set with only this address in it
-func (me Address) FixedSet() FixedSet {
-	return me.Prefix().FixedSet()
+// Set returns a set with only this address in it
+func (me Address) Set() Set {
+	return me.Prefix().Set()
 }
 
 // String returns a string representing the address in dotted-quad notation
