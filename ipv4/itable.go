@@ -288,33 +288,14 @@ func (me ITable) Aggregate() ITable {
 	}
 }
 
-// ITableCallback is the signature of the callback functions that can be passed
-// to Walk to handle each prefix/value combination.
-//
-// Each invocation of your callback should return true if iteration should
-// continue (as long as another key / value pair exists) or false to stop
-// iterating and return immediately (meaning your callback will not be called
-// again).
-type ITableCallback func(Prefix, interface{}) bool
-
 // Walk invokes the given callback function for each prefix/value pair in
 // the table in lexigraphical order.
 //
 // It returns false if iteration was stopped due to a callback returning false
 // or true if it iterated all items.
-func (me ITable) Walk(callback ITableCallback) bool {
-	return me.trie.Walk(trieCallback(callback))
+func (me ITable) Walk(callback func(Prefix, interface{}) bool) bool {
+	return me.trie.Walk(callback)
 }
-
-// ITableModifiedCallback is the signature of the callback functions to handle
-// a modified entry when diffing. It is passed the prefix and the values before
-// and after the change.
-//
-// Each invocation of your callback should return true if iteration should
-// continue (as long as another key / value pair exists) or false to stop
-// iterating and return immediately (meaning your callback will not be called
-// again).
-type ITableModifiedCallback func(p Prefix, left, right interface{}) bool
 
 // IDiffHandler is a struct passed to Diff to handle changes found between the
 // left and right tables. Removed is called for prefixes that appear in
@@ -325,9 +306,9 @@ type ITableModifiedCallback func(p Prefix, left, right interface{}) bool
 // Any of the handlers can be left out safely -- they will default to nil. In
 // that case, Diff will skip those cases.
 type IDiffHandler struct {
-	Removed  ITableCallback
-	Added    ITableCallback
-	Modified ITableModifiedCallback
+	Removed  func(p Prefix, left interface{}) bool
+	Added    func(p Prefix, right interface{}) bool
+	Modified func(p Prefix, left, right interface{}) bool
 }
 
 // Diff invokes the given callback functions for each prefix/value pair in the

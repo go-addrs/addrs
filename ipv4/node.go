@@ -571,15 +571,6 @@ type EqualComparable interface {
 	EqualInterface(interface{}) bool
 }
 
-// trieCallback defines the signature of a function you can pass to Walk or
-// Aggregate to handle each key / value pair found while iterating.
-//
-// Each invocation of your callback should return true if iteration should
-// continue (as long as another key / value pair exists) or false to stop
-// iterating and return immediately (meaning your callback will not be called
-// again).
-type trieCallback func(Prefix, interface{}) bool
-
 // Walk walks the entire tree and calls the given function for each active
 // node. The order of visiting nodes is essentially lexigraphical:
 // - disjoint prefixes are visited in lexigraphical order
@@ -587,7 +578,7 @@ type trieCallback func(Prefix, interface{}) bool
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me *trieNode) Walk(callback trieCallback) bool {
+func (me *trieNode) Walk(callback func(Prefix, interface{}) bool) bool {
 	if callback == nil {
 		callback = func(Prefix, interface{}) bool {
 			return true

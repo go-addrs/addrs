@@ -189,20 +189,12 @@ func (me Prefix) Uint32() (address, mask uint32) {
 	return
 }
 
-// AddressCallback is the type of function passed to walk individual addresses
-//
-// Each invocation of your callback should return true if iteration should
-// continue (as long as another key / value pair exists) or false to stop
-// iterating and return immediately (meaning your callback will not be called
-// again).
-type AddressCallback func(Address) bool
-
 // walkAddresses visits all of the addresses in the prefix in lexigraphical
 // order
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me Prefix) walkAddresses(callback AddressCallback) bool {
+func (me Prefix) walkAddresses(callback func(Address) bool) bool {
 	for a := me.Network().addr.Uint32(); a <= me.Broadcast().addr.Uint32(); a++ {
 		if !callback(Address{a}) {
 			return false

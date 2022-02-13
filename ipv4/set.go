@@ -185,14 +185,6 @@ func (me Set) Size() int64 {
 	return me.trie.Size()
 }
 
-// PrefixCallback is the type of function you pass to iterate prefixes
-//
-// Each invocation of your callback should return true if iteration should
-// continue (as long as another key / value pair exists) or false to stop
-// iterating and return immediately (meaning your callback will not be called
-// again).
-type PrefixCallback func(Prefix) bool
-
 // WalkPrefixes calls `callback` for each prefix stored in lexographical
 // order. It stops iteration immediately if callback returns false. It always
 // uses the largest prefixes possible so if two prefixes are adjacent and can
@@ -200,7 +192,7 @@ type PrefixCallback func(Prefix) bool
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me Set) WalkPrefixes(callback PrefixCallback) bool {
+func (me Set) WalkPrefixes(callback func(Prefix) bool) bool {
 	return me.trie.Walk(func(prefix Prefix, data interface{}) bool {
 		return callback(prefix)
 	})
@@ -211,26 +203,18 @@ func (me Set) WalkPrefixes(callback PrefixCallback) bool {
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me Set) WalkAddresses(callback AddressCallback) bool {
+func (me Set) WalkAddresses(callback func(Address) bool) bool {
 	return me.WalkPrefixes(func(prefix Prefix) bool {
 		return prefix.walkAddresses(callback)
 	})
 }
-
-// RangeCallback is the type of function passed to walk individual ranges
-//
-// Each invocation of your callback should return true if iteration should
-// continue (as long as another key / value pair exists) or false to stop
-// iterating and return immediately (meaning your callback will not be called
-// again).
-type RangeCallback func(Range) bool
 
 // WalkRanges calls `callback` for each address stored in lexographical
 // order. It stops iteration immediately if callback returns false.
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me Set) WalkRanges(callback RangeCallback) bool {
+func (me Set) WalkRanges(callback func(Range) bool) bool {
 	ranges := []Range{}
 	finished := me.WalkPrefixes(func(p Prefix) bool {
 		if len(ranges) != 0 {

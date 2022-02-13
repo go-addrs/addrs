@@ -295,6 +295,6 @@ func (me *setNode) active() bool {
 	return (*trieNode)(me).active()
 }
 
-func (me *setNode) Walk(callback trieCallback) bool {
+func (me *setNode) Walk(callback func(Prefix, interface{}) bool) bool {
 	return (*trieNode)(me).Walk(callback)
 }
