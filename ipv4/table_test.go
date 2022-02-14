@@ -757,26 +757,26 @@ func TestTableTDiff(t *testing.T) {
 	}
 
 	var actions []action
-	getHandler := func() DiffHandler[bool] {
+	getHandlers := func() (left, right func(Prefix, bool) bool, changed func(p Prefix, left, right bool) bool) {
 		actions = nil
-		return DiffHandler[bool]{
-			Removed: func(p Prefix, v bool) bool {
-				actions = append(actions, action{p, v, false})
-				return true
-			},
-			Added: func(p Prefix, v bool) bool {
-				actions = append(actions, action{p, false, v})
-				return true
-			},
-			Modified: func(p Prefix, l, r bool) bool {
-				actions = append(actions, action{p, l, r})
-				return true
-			},
+		left = func(p Prefix, v bool) bool {
+			actions = append(actions, action{p, v, false})
+			return true
 		}
+		right = func(p Prefix, v bool) bool {
+			actions = append(actions, action{p, false, v})
+			return true
+		}
+		changed = func(p Prefix, l, r bool) bool {
+			actions = append(actions, action{p, l, r})
+			return true
+		}
+		return
 	}
 
 	t.Run("forward", func(t *testing.T) {
-		a.Table().Diff(b.Table(), getHandler())
+		left, right, changed := getHandlers()
+		a.Table().Diff(b.Table(), left, right, changed)
 		assert.Equal(t, []action{
 			action{_p("203.0.113.0/25"), true, false},
 			action{_p("203.0.113.64/27"), true, false},
@@ -785,7 +785,8 @@ func TestTableTDiff(t *testing.T) {
 	})
 
 	t.Run("backward", func(t *testing.T) {
-		b.Table().Diff(a.Table(), getHandler())
+		left, right, changed := getHandlers()
+		b.Table().Diff(a.Table(), left, right, changed)
 		assert.Equal(t, []action{
 			action{_p("203.0.113.0/25"), false, true},
 			action{_p("203.0.113.64/27"), false, true},

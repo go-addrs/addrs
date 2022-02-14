@@ -207,47 +207,38 @@ func (me Table[T]) Walk(callback func(Prefix, T) bool) bool {
 	})
 }
 
-// DiffHandler is a struct passed to Diff to handle changes found between the
-// left and right tables. Removed is called for prefixes that appear in
-// the left table but not the right, Added is called for prefixes that appear
-// in the right but not the left, and Modified is called for prefixes that
-// appear in both but have different values.
-//
-// Any of the handlers can be left out safely -- they will default to nil. In
-// that case, Diff will skip those cases.
-type DiffHandler[T any] struct {
-	Removed  func(p Prefix, left T) bool
-	Added    func(p Prefix, right T) bool
-	Modified func(p Prefix, left, right T) bool
-}
-
 // Diff invokes the given callback functions for each prefix/value pair in the
 // table in lexigraphical order.
 //
+// It takes three callbacks, the first two handle prefixes that only exist on
+// the left and right side tables respectively. The third callback handles
+// prefixes that exist in both tables but with different values. No callback is
+// called for prefixes that exist in both tables with the same values.
+//
 // It returns false if iteration was stopped due to a callback returning false
 // or true if it iterated all items.
-func (me Table[T]) Diff(other Table[T], handler DiffHandler[T]) bool {
+func (me Table[T]) Diff(other Table[T], left, right func(Prefix, T) bool, changed func(p Prefix, left, right T) bool) bool {
 	trieHandler := trieDiffHandler{}
-	if handler.Removed != nil {
+	if left != nil {
 		trieHandler.Removed = func(n *trieNode) bool {
 			var t T
 			t, _ = n.Data.(T)
-			return handler.Removed(n.Prefix, t)
+			return left(n.Prefix, t)
 		}
 	}
-	if handler.Added != nil {
+	if right != nil {
 		trieHandler.Added = func(n *trieNode) bool {
 			var t T
 			t, _ = n.Data.(T)
-			return handler.Added(n.Prefix, t)
+			return right(n.Prefix, t)
 		}
 	}
-	if handler.Modified != nil {
+	if changed != nil {
 		trieHandler.Modified = func(l, r *trieNode) bool {
 			var lt, rt T
 			lt, _ = l.Data.(T)
 			rt, _ = r.Data.(T)
-			return handler.Modified(l.Prefix, lt, rt)
+			return changed(l.Prefix, lt, rt)
 		}
 	}
 	return me.t.trie.Diff(other.t.trie, trieHandler)
