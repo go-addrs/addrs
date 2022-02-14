@@ -100,7 +100,8 @@ func TestMatchLongestPrefixMatch(t *testing.T) {
 	assert.Equal(t, int64(2), m.Size())
 
 	data, matched, n := m.LongestMatch(_a("10.224.24.1"))
-	assert.Equal(t, MatchContains, matched)
+	assert.NotEqual(t, matchContains, n)
+	assert.True(t, matched)
 	assert.Equal(t, _p("10.224.24.0/24"), n)
 	assert.Equal(t, 3, data)
 }
@@ -112,7 +113,7 @@ func TestMatchNotFound(t *testing.T) {
 	assert.Equal(t, int64(1), m.Size())
 
 	_, matched, _ := m.LongestMatch(_a("10.225.24.1"))
-	assert.Equal(t, MatchNone, matched)
+	assert.False(t, matched)
 }
 
 func TestRemove(t *testing.T) {
@@ -190,8 +191,10 @@ func TestMatchPrefixLongestPrefixMatch(t *testing.T) {
 	m.Insert(_p("10.224.0.0/16"), 4)
 	assert.Equal(t, int64(2), m.Size())
 
-	data, matched, n := m.LongestMatch(_p("10.224.24.0/27"))
-	assert.Equal(t, MatchContains, matched)
+	key := _p("10.224.24.0/27")
+	data, matched, n := m.LongestMatch(key)
+	assert.NotEqual(t, key, n)
+	assert.True(t, matched)
 	assert.Equal(t, 3, data)
 	assert.Equal(t, _p("10.224.24.0/24"), n)
 }
@@ -202,7 +205,7 @@ func TestMatchPrefixNotFound(t *testing.T) {
 	assert.Equal(t, int64(1), m.Size())
 
 	_, matched, _ := m.LongestMatch(_p("10.225.24.0/24"))
-	assert.Equal(t, MatchNone, matched)
+	assert.False(t, matched)
 }
 
 func TestExample1(t *testing.T) {
@@ -389,14 +392,16 @@ func TestITablensertOrUpdate(t *testing.T) {
 	m.InsertOrUpdate(key, true)
 	assert.Equal(t, int64(1), m.m.trie.NumNodes())
 	value, match, matchedKey := m.LongestMatch(key)
-	assert.Equal(t, MatchExact, match)
+	assert.Equal(t, key, matchedKey)
+	assert.True(t, match)
 	assert.Equal(t, key, matchedKey)
 	assert.True(t, value.(bool))
 
 	m.InsertOrUpdate(key, false)
 	assert.Equal(t, int64(1), m.m.trie.NumNodes())
 	value, match, matchedKey = m.LongestMatch(key)
-	assert.Equal(t, MatchExact, match)
+	assert.Equal(t, key, matchedKey)
+	assert.True(t, match)
 	assert.Equal(t, key, matchedKey)
 	assert.False(t, value.(bool))
 	assert.True(t, m.m.trie.isValid())
@@ -413,7 +418,8 @@ func TestTableUpdate(t *testing.T) {
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.m.trie.NumNodes())
 	value, match, matchedKey := m.LongestMatch(key)
-	assert.Equal(t, MatchExact, match)
+	assert.Equal(t, key, matchedKey)
+	assert.True(t, match)
 	assert.Equal(t, key, matchedKey)
 	assert.True(t, value.(bool))
 
@@ -421,7 +427,8 @@ func TestTableUpdate(t *testing.T) {
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.m.trie.NumNodes())
 	value, match, matchedKey = m.LongestMatch(key)
-	assert.Equal(t, MatchExact, match)
+	assert.Equal(t, key, matchedKey)
+	assert.True(t, match)
 	assert.Equal(t, key, matchedKey)
 	assert.False(t, value.(bool))
 	assert.True(t, m.m.trie.isValid())
@@ -445,22 +452,26 @@ func TestTableMatch(t *testing.T) {
 	m.Insert(insertKey, true)
 
 	t.Run("None", func(t *testing.T) {
-		_, level, _ := m.LongestMatch(Prefix{Address{0x0ae01000}, 24})
-		assert.Equal(t, MatchNone, level)
+		_, found, _ := m.LongestMatch(Prefix{Address{0x0ae01000}, 24})
+		assert.False(t, found)
 		assert.True(t, m.m.trie.isValid())
 	})
 
 	t.Run("Exact", func(t *testing.T) {
-		value, level, key := m.LongestMatch(Prefix{Address{0x0ae01800}, 24})
-		assert.Equal(t, MatchExact, level)
+		prefix := Prefix{Address{0x0ae01800}, 24}
+		value, found, key := m.LongestMatch(prefix)
+		assert.Equal(t, prefix, key)
+		assert.True(t, found)
 		assert.Equal(t, insertKey, key)
 		assert.True(t, value.(bool))
 		assert.True(t, m.m.trie.isValid())
 	})
 
 	t.Run("Contains", func(t *testing.T) {
-		value, level, key := m.LongestMatch(Prefix{Address{0x0ae01817}, 32})
-		assert.Equal(t, MatchContains, level)
+		prefix := Prefix{Address{0x0ae01817}, 32}
+		value, found, key := m.LongestMatch(prefix)
+		assert.True(t, found)
+		assert.NotEqual(t, prefix, key)
 		assert.Equal(t, insertKey, key)
 		assert.True(t, value.(bool))
 		assert.True(t, m.m.trie.isValid())
@@ -623,7 +634,7 @@ func TestNilITable(t *testing.T) {
 	_, found := table.Get(_a("203.0.113.0"))
 	assert.False(t, found)
 	_, matched, _ := table.LongestMatch(_a("203.0.113.0"))
-	assert.Equal(t, MatchNone, matched)
+	assert.False(t, matched)
 
 	// Walk
 	assert.True(t, table.Table().Walk(func(Prefix, interface{}) bool {
@@ -712,7 +723,8 @@ func TestITableLongestMatch(t *testing.T) {
 
 	value, matched, prefix := m.LongestMatch(nil)
 	assert.Equal(t, 10, value)
-	assert.Equal(t, MatchExact, matched)
+	assert.True(t, matched)
+	assert.Equal(t, prefix, Prefix{})
 	assert.Equal(t, _p("0.0.0.0/0"), prefix)
 }
 

@@ -24,16 +24,16 @@ func NewITable_() ITable_ {
 	}
 }
 
-// Match indicates how closely the given key matches the search result
-type Match int
+// match indicates how closely the given key matches the search result
+type match int
 
 const (
-	// MatchNone indicates that no match was found
-	MatchNone Match = iota
-	// MatchContains indicates that a match was found that contains the search key but isn't exact
-	MatchContains
-	// MatchExact indicates that a match with the same prefix
-	MatchExact
+	// matchNone indicates that no match was found
+	matchNone match = iota
+	// matchContains indicates that a match was found that contains the search key but isn't exact
+	matchContains
+	// matchExact indicates that a match with the same prefix
+	matchExact
 )
 
 // Size returns the number of exact prefixes stored in the table
@@ -143,13 +143,13 @@ func (me ITable_) GetOrInsert(prefix PrefixI, value interface{}) interface{} {
 	return node.Data
 }
 
-// LongestMatch returns the value in the table associated with the given network
-// prefix using a longest prefix match. If a match is found, it returns a
-// Prefix representing the longest prefix matched. If a match is *not* found,
-// matched is MatchNone and the other fields should be ignored
-func (me ITable_) LongestMatch(prefix PrefixI) (value interface{}, matched Match, matchPrefix Prefix) {
+// LongestMatch returns the value associated with the given network prefix
+// using a longest prefix match. If a match is found, it returns true and the
+// Prefix matched, which may be equal to or shorter than the one passed. If no
+// match is found, returns false and the other fields must be ignored.
+func (me ITable_) LongestMatch(prefix PrefixI) (value interface{}, found bool, matchPrefix Prefix) {
 	if me.m == nil {
-		return nil, MatchNone, Prefix{}
+		return nil, false, Prefix{}
 	}
 	return me.m.LongestMatch(prefix)
 }
@@ -224,20 +224,29 @@ func (me ITable) Size() int64 {
 // exact match is not found, found is false and value is nil and should be
 // ignored.
 func (me ITable) Get(prefix PrefixI) (interface{}, bool) {
-	value, match, _ := me.LongestMatch(prefix)
+	value, matched, _ := me.longestMatch(prefix)
 
-	if match == MatchExact {
+	if matched == matchExact {
 		return value, true
 	}
 
 	return nil, false
 }
 
-// LongestMatch returns the value in the table associated with the given network
-// prefix using a longest prefix match. If a match is found, it returns a
-// Prefix representing the longest prefix matched. If a match is *not* found,
-// matched is MatchNone and the other fields should be ignored
-func (me ITable) LongestMatch(prefix PrefixI) (value interface{}, matched Match, matchPrefix Prefix) {
+// LongestMatch returns the value associated with the given network prefix
+// using a longest prefix match. If a match is found, it returns true and the
+// Prefix matched, which may be equal to or shorter than the one passed. If no
+// match is found, returns false and the other fields must be ignored.
+func (me ITable) LongestMatch(prefix PrefixI) (value interface{}, found bool, matchPrefix Prefix) {
+	var matched match
+	value, matched, matchPrefix = me.longestMatch(prefix)
+	if matched != matchNone {
+		return value, true, matchPrefix
+	}
+	return nil, false, Prefix{}
+}
+
+func (me ITable) longestMatch(prefix PrefixI) (value interface{}, matched match, matchPrefix Prefix) {
 	if prefix == nil {
 		prefix = Prefix{}
 	}
@@ -245,16 +254,16 @@ func (me ITable) LongestMatch(prefix PrefixI) (value interface{}, matched Match,
 	var node *trieNode
 	node = me.trie.Match(sp)
 	if node == nil {
-		return nil, MatchNone, Prefix{}
+		return nil, matchNone, Prefix{}
 	}
 
 	var resultKey Prefix
 	resultKey = node.Prefix
 
 	if node.Prefix.length == sp.length {
-		return node.Data, MatchExact, resultKey
+		return node.Data, matchExact, resultKey
 	}
-	return node.Data, MatchContains, resultKey
+	return node.Data, matchContains, resultKey
 }
 
 // Aggregate returns a new aggregated table as described below.

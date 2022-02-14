@@ -70,18 +70,18 @@ func (me Table_[T]) GetOrInsert(prefix PrefixI, value T) T {
 	return rv
 }
 
-// LongestMatch returns the value in the table associated with the given network
-// prefix using a longest prefix match. If a match is found, it returns a
-// Prefix representing the longest prefix matched. If a match is *not* found,
-// matched is MatchNone and the other fields should be ignored
-func (me Table_[T]) LongestMatch(searchPrefix PrefixI) (t T, matched Match, prefix Prefix) {
+// LongestMatch returns the value associated with the given network prefix
+// using a longest prefix match. If a match is found, it returns true and the
+// Prefix matched, which may be equal to or shorter than the one passed. If no
+// match is found, returns false and the other fields must be ignored.
+func (me Table_[T]) LongestMatch(searchPrefix PrefixI) (value T, found bool, prefix Prefix) {
 	if me.t.m == nil {
-		return t, MatchNone, Prefix{}
+		return value, found, Prefix{}
 	}
-	var value interface{}
-	value, matched, prefix = me.t.LongestMatch(searchPrefix)
-	t, _ = value.(T)
-	return t, matched, prefix
+	var v interface{}
+	v, found, prefix = me.t.LongestMatch(searchPrefix)
+	value, _ = v.(T)
+	return value, found, prefix
 }
 
 // Remove removes the given prefix from the table with its associated value and
@@ -150,17 +150,17 @@ func (me Table[T]) Get(prefix PrefixI) (t T, ok bool) {
 	return t, b
 }
 
-// LongestMatch returns the value in the table associated with the given network
-// prefix using a longest prefix match. If a match is found, it returns a
-// Prefix representing the longest prefix matched. If a match is *not* found,
-// matched is MatchNone and the other fields should be ignored
-func (me Table[T]) LongestMatch(searchPrefix PrefixI) (t T, matched Match, prefix Prefix) {
-	i, matched, prefix := me.t.LongestMatch(searchPrefix)
-	if matched == MatchNone {
-		return t, matched, prefix
+// LongestMatch returns the value associated with the given network prefix
+// using a longest prefix match. If a match is found, it returns true and the
+// Prefix matched, which may be equal to or shorter than the one passed. If no
+// match is found, returns false and the other fields must be ignored.
+func (me Table[T]) LongestMatch(searchPrefix PrefixI) (value T, found bool, prefix Prefix) {
+	v, found, prefix := me.t.LongestMatch(searchPrefix)
+	if !found {
+		return value, false, prefix
 	}
-	t, _ = i.(T)
-	return t, matched, prefix
+	value, _ = v.(T)
+	return value, true, prefix
 }
 
 // Aggregate returns a new aggregated table as described below.
