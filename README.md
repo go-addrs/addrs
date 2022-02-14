@@ -141,9 +141,9 @@ ones mentioned above.
    entries required such that any search using an `Address` as the search key
    will return the same value as it would on the original. (This operation
    requires that the values be of a comparable type, either by using a type that
-   is inherently comparable with `==` and `!=` or by implementing the
-   `EqualComparable` interface (e.g. `Set` implements this interface so they can
-   be stored as values in a `Table`).
+   is inherently comparable with `==` and `!=` or by implementing
+   `IEqual(interface{})` (e.g. `Set` implements this so they can be stored as
+   values in a `Table`).
 
 4. It supports an efficient diff operation so that you can iterate the entries
    removed, added, or changed from one to the other.

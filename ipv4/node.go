@@ -554,21 +554,21 @@ func (me *trieNode) active() bool {
 }
 
 func dataEqual(a, b interface{}) bool {
-	// If the data stored are EqualComparable, compare it using its method.
+	// If the data stored implement IEqual, compare it using its method.
 	// This is useful to allow mapping to a more complex type (e.g. Set_) that
 	// is not comparable by normal means.
 	switch t := a.(type) {
-	case EqualComparable:
-		return t.EqualInterface(b)
+	case equalComparable:
+		return t.IEqual(b)
 	default:
 		return a == b
 	}
 }
 
-// EqualComparable is an interface used to compare data. If the datatype you
+// equalComparable is an interface used to compare data. If the datatype you
 // store implements it, it can be used to aggregate prefixes.
-type EqualComparable interface {
-	EqualInterface(interface{}) bool
+type equalComparable interface {
+	IEqual(interface{}) bool
 }
 
 // Walk walks the entire tree and calls the given function for each active

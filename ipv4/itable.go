@@ -272,10 +272,10 @@ func (me ITable) longestMatch(prefix PrefixI) (value interface{}, matched match,
 // the same prefix length or contained within another prefix with a shorter
 // length.
 //
-// Prefixes are only considered aggregable if their values compare equal. This is
-// useful for aggregating prefixes where the next hop is the same but not where
-// they're different. Values that can be compared with == or implement the
-// EqualComparable interface can be used.
+// Prefixes are only considered aggregable if their values compare equal. This
+// is useful for aggregating prefixes where the next hop is the same but not
+// where they're different. Values that can be compared with == or implement
+// `IEqual(interface{})` can be used in aggregation.
 //
 // The aggregated table has the minimum set of prefix/value pairs needed to
 // return the same value for any longest prefix match using a host route  as

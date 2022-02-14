@@ -95,8 +95,8 @@ func (me Set_) Equal(other SetI) bool {
 	return me.s.Equal(other.Set())
 }
 
-// EqualInterface returns true if this set is equal to other
-func (me Set_) EqualInterface(other interface{}) bool {
+// IEqual returns true if this set is equal to other
+func (me Set_) IEqual(other interface{}) bool {
 	switch o := other.(type) {
 	case SetI:
 		return me.Equal(o)
@@ -241,8 +241,8 @@ func (me Set) WalkRanges(callback func(Range) bool) bool {
 	return true
 }
 
-// EqualInterface returns true if this set is equal to other
-func (me Set) EqualInterface(other interface{}) bool {
+// IEqual returns true if this set is equal to other
+func (me Set) IEqual(other interface{}) bool {
 	switch o := other.(type) {
 	case SetI:
 		return me.Equal(o)

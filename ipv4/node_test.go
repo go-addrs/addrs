@@ -1438,12 +1438,12 @@ type comparable struct {
 	data []string
 }
 
-func (me *comparable) EqualInterface(other interface{}) bool {
+func (me *comparable) IEqual(other interface{}) bool {
 	return reflect.DeepEqual(me, other)
 }
 
 // Like the TestAggregate above but using a type that is comparable through the
-// EqualComparable interface.
+// equalComparable interface.
 func TestAggregateEqualComparable(t *testing.T) {
 	NextHop1 := &comparable{data: []string{"10.224.24.1"}}
 	NextHop2 := &comparable{data: []string{"10.224.24.111"}}
@@ -1488,7 +1488,7 @@ func TestAggregateEqualComparable(t *testing.T) {
 }
 
 // Like the TestAggregate above but using a type that is comparable through the
-// EqualComparable interface.
+// equalComparable interface.
 func TestTrieNodeEqual(t *testing.T) {
 	node := &trieNode{}
 	tests := []struct {
