@@ -319,7 +319,7 @@ func TestRangeSet(t *testing.T) {
 	golden.Insert(_p("13.8.222.96/28"))
 	golden.Insert(_p("13.8.222.112/31"))
 
-	assert.True(t, golden.Equal(r.Set()))
+	assert.True(t, golden.Set().Equal(r.Set()))
 }
 
 func TestRangePlus(t *testing.T) {

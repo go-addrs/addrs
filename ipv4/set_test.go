@@ -138,8 +138,8 @@ func TestNilSet(t *testing.T) {
 	assert.False(t, _p("203.0.113.0/24").Set().Set_().IEqual(set))
 
 	// Union
-	assert.True(t, set.Union(nonEmptySet).Equal(nonEmptySet))
-	assert.True(t, nonEmptySet.Union(set).Equal(nonEmptySet))
+	assert.True(t, set.Union(nonEmptySet).Equal(nonEmptySet.Set()))
+	assert.True(t, nonEmptySet.Union(set).Equal(nonEmptySet.Set()))
 
 	// Intersection
 	assert.Equal(t, int64(0), set.Intersection(nonEmptySet).Size())
@@ -184,11 +184,6 @@ func TestNilSet(t *testing.T) {
 		}()
 		assert.True(t, panicked)
 	})
-}
-
-func TestSetEqualNil(t *testing.T) {
-	assert.True(t, Set_{}.Equal(nil))
-	assert.True(t, Set{}.Equal(nil))
 }
 
 func TestSetContainsNil(t *testing.T) {
@@ -677,7 +672,7 @@ func testIntersection(t *testing.T, input1 []string, input2 []string, output []s
 		interSect.Insert(cidr)
 	}
 	set := set1.Intersection(set2)
-	assert.True(t, interSect.IEqual(set))
+	assert.True(t, interSect.Set().Equal(set))
 	assert.True(t, set1.isValid())
 	assert.True(t, set2.isValid())
 	assert.True(t, set.isValid())

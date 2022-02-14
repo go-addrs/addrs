@@ -85,12 +85,9 @@ func (me Set_) Contains(other SetI) bool {
 }
 
 // Equal returns true if this set is equal to other
-func (me Set_) Equal(other SetI) bool {
-	if other == nil {
-		other = Set{}
-	}
+func (me Set_) Equal(other Set_) bool {
 	if me.s == nil {
-		return other.Set().Size() == 0
+		return other.Size() == 0
 	}
 	return me.s.Equal(other.Set())
 }
@@ -98,7 +95,7 @@ func (me Set_) Equal(other SetI) bool {
 // IEqual returns true if this set is equal to other
 func (me Set_) IEqual(other interface{}) bool {
 	switch o := other.(type) {
-	case SetI:
+	case Set_:
 		return me.Equal(o)
 	default:
 		return false
@@ -244,7 +241,7 @@ func (me Set) WalkRanges(callback func(Range) bool) bool {
 // IEqual returns true if this set is equal to other
 func (me Set) IEqual(other interface{}) bool {
 	switch o := other.(type) {
-	case SetI:
+	case Set:
 		return me.Equal(o)
 	default:
 		return false
@@ -252,11 +249,8 @@ func (me Set) IEqual(other interface{}) bool {
 }
 
 // Equal returns true if this set is equal to other
-func (me Set) Equal(other SetI) bool {
-	if other == nil {
-		other = Set{}
-	}
-	return me.trie.Equal(other.Set().trie)
+func (me Set) Equal(other Set) bool {
+	return me.trie.Equal(other.trie)
 }
 
 // Contains tests if the given prefix is entirely contained in the set
