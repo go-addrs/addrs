@@ -33,7 +33,7 @@ func AddressFromUint16(a, b, c, d, e, f, g, h uint16) Address {
 	return Address{uint128{high, low}}
 }
 
-// AddressFromNetIP converts
+// AddressFromNetIP converts a NetIP to an Address
 func AddressFromNetIP(ip net.IP) (Address, error) {
 	return fromSlice(ip)
 }
@@ -72,12 +72,7 @@ func maxAddress(a, b Address) Address {
 
 // ToNetIP returns a net.IP representation of the address which always has 4 bytes
 func (me Address) ToNetIP() net.IP {
-	return me.toBytes()
-}
-
-// Equal reports whether this IPv6 address is the same as other
-func (me Address) Equal(other Address) bool {
-	return me == other
+	return me.ui.toBytes()
 }
 
 // lessThan reports whether this IPv6 address comes strictly before `other`
@@ -96,18 +91,9 @@ func (me Address) Size() int {
 	return addressSize
 }
 
-// uint128 returns the address as uint128
-func (me Address) uint128() uint128 {
-	return me.ui
-}
-
 // Uint64 returns the address as two uint64
 func (me Address) Uint64() (uint64, uint64) {
 	return me.ui.uint64()
-}
-
-func (me Address) toBytes() []byte {
-	return me.ui.toBytes()
 }
 
 // fromSlice returns the IPv6 address from a slice with 16 bytes or an error

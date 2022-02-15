@@ -14,7 +14,6 @@ package ipv6
 
 import (
 	"fmt"
-	"math/bits"
 )
 
 type uint128 struct {
@@ -77,20 +76,6 @@ func (me uint128) uint64() (uint64, uint64) {
 	return me.high, me.low
 }
 
-// onesCount returns the number of one bits ("population count") in x.
-func (me uint128) onesCount() int {
-	return bits.OnesCount64(me.high) + bits.OnesCount64(me.low)
-}
-
-// leadingZeros returns the number of leading zero bits in x; the result is 128 for x == 0.
-func (me uint128) leadingZeros() int {
-	leadingZeros := bits.LeadingZeros64(me.high)
-	if leadingZeros == 64 {
-		leadingZeros += bits.LeadingZeros64(me.low)
-	}
-	return leadingZeros
-}
-
 // compare returns comparison of two uint128s and returns:
 //  O if equal
 // -1 if me is less than other
@@ -98,105 +83,9 @@ func (me uint128) leadingZeros() int {
 func (me uint128) compare(other uint128) int {
 	if me == other {
 		return 0
-	} else if me.high < other.high || (me.high == other.high && me.low < other.low) {
+	}
+	if me.high < other.high || (me.high == other.high && me.low < other.low) {
 		return -1
-	} else {
-		return 1
 	}
-}
-
-// subtractUint64 returns the difference of uint128 with x (uint64)
-func (me uint128) subtractUint64(x uint64) uint128 {
-	low := me.low - x
-	high := me.high
-	if me.low < low {
-		high--
-	}
-	return uint128{high, low}
-}
-
-// subtractUint128 returns the difference of uint128 with x (uint128)
-func (me uint128) subtractUint128(x uint128) uint128 {
-	low := me.low - x.low
-	high := me.high - x.high
-	if me.low < low {
-		high--
-	}
-	return uint128{high, low}
-}
-
-// addUint64 returns sum of uint128 with x (uint64)
-func (me uint128) addUint64(x uint64) uint128 {
-	low := me.low + x
-	high := me.high
-	if me.low > low {
-		high++
-	}
-	return uint128{high, low}
-}
-
-// addUint128 returns sum of uint128 with x (uint128)
-func (me uint128) addUint128(x uint128) uint128 {
-	low := me.low + x.low
-	high := me.high + x.high
-	if me.low > low {
-		high++
-	}
-	return uint128{high, low}
-}
-
-// and returns a bitwise AND with x
-func (me uint128) and(x uint128) uint128 {
-	return uint128{me.high & x.high, me.low & x.low}
-}
-
-// xor returns a bitwise XOR with x
-func (me uint128) xor(x uint128) uint128 {
-	return uint128{me.high ^ x.high, me.low ^ x.low}
-}
-
-// or returns a bitwise OR with x
-func (me uint128) or(x uint128) uint128 {
-	return uint128{me.high | x.high, me.low | x.low}
-}
-
-// complement returns the bitwise complement
-func (me uint128) complement() uint128 {
-	return uint128{^me.high, ^me.low}
-}
-
-// leftShift returns the bitwise shift left by bits
-func (me uint128) leftShift(bits int) uint128 {
-	high := me.high
-	low := me.low
-	if bits >= 128 {
-		high = 0
-		low = 0
-	} else if bits >= 64 {
-		high = low << (bits - 64)
-		low = 0
-	} else {
-		high <<= bits
-		high |= low >> (64 - bits)
-		low <<= bits
-	}
-	return uint128{high, low}
-}
-
-// rightShift returns the bitwise shift right by bits
-func (me uint128) rightShift(bits int) uint128 {
-	high := me.high
-	low := me.low
-	if bits >= 128 {
-		high = 0
-		low = 0
-	} else if bits >= 64 {
-		low = high >> (bits - 64)
-		high = 0
-	} else {
-		low >>= bits
-		low |= high << (64 - bits)
-		high >>= bits
-	}
-	return uint128{high, low}
+	return 1
 }

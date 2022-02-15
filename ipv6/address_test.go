@@ -98,13 +98,11 @@ func TestAddressFromNetIP(t *testing.T) {
 func TestAddressEquality(t *testing.T) {
 	first, second := AddressFromUint64(0x20010db885a30000, 0x8a2e03707334), AddressFromUint64(0x20010db885a30000, 0x8a2e03707334)
 	assert.Equal(t, first, second)
-	assert.True(t, first.Equal(second))
 	assert.True(t, first == second)
 	assert.True(t, reflect.DeepEqual(first, second))
 
 	third := AddressFromUint64(0x20010db885a30000, 0x8a2e03707434)
 	assert.NotEqual(t, third, second)
-	assert.False(t, third.Equal(first))
 	assert.False(t, third == first)
 	assert.False(t, reflect.DeepEqual(third, first))
 }
@@ -144,11 +142,6 @@ func TestAddressAsMapKey(t *testing.T) {
 	m[_a("2001:db8:85a3::8a2e:370:7335")] = true
 
 	assert.True(t, m[_a("2001:db8:85a3::8a2e:370:7335")])
-}
-
-func TestAddressToBytes(t *testing.T) {
-	ip := AddressFromUint64(0x20010db885a30000, 0x8a2e03707434)
-	assert.Equal(t, ip.toBytes(), []byte{0x20, 0x1, 0xd, 0xb8, 0x85, 0xa3, 0x0, 0x0, 0x0, 0x0, 0x8a, 0x2e, 0x3, 0x70, 0x74, 0x34})
 }
 
 func TestAddressToString(t *testing.T) {
