@@ -15,12 +15,12 @@ type Address struct {
 	ui uint128
 }
 
-// AddressFromUint64 returns the IPv6 address from its two 64 bit unsigned representation
+// AddressFromUint64 returns the Address from its unsigned int representation
 func AddressFromUint64(high, low uint64) Address {
 	return Address{uint128{high, low}}
 }
 
-// AddressFromUint16 returns the IPv6 address from its eight 16 bit unsigned representation
+// AddressFromUint16 returns the Address from its eight 16 bit unsigned representation
 func AddressFromUint16(a, b, c, d, e, f, g, h uint16) Address {
 	high := uint64(a)<<48 |
 		uint64(b)<<32 |
@@ -38,19 +38,20 @@ func AddressFromNetIP(ip net.IP) (Address, error) {
 	return fromSlice(ip)
 }
 
-// ParseAddress returns the ip represented by `addr` in colon notation. If
-// the address cannot be parsed, then error is non-nil and the address returned
-// must be ignored.
+// ParseAddress returns the Address represented by `addr` in colon
+// notation. If it cannot be parsed, then error is non-nil and the Address
+// returned must be ignored.
 func ParseAddress(address string) (Address, error) {
 	netIP := net.ParseIP(address)
 	if netIP == nil {
-		return Address{}, fmt.Errorf("failed to parse IPv6: %s", address)
+		return Address{}, fmt.Errorf("failed to parse address: %s", address)
 	}
 
 	netIPv4 := netIP.To4()
 	if netIPv4 != nil {
 		return Address{}, fmt.Errorf("address is not IPv6: %s", address)
 	}
+
 	return AddressFromNetIP(netIP)
 }
 
@@ -75,7 +76,7 @@ func (me Address) ToNetIP() net.IP {
 	return me.ui.toBytes()
 }
 
-// lessThan reports whether this IPv6 address comes strictly before `other`
+// lessThan reports whether this Address comes strictly before `other`
 // lexigraphically.
 func (me Address) lessThan(other Address) bool {
 	return me.ui.compare(other.ui) < 0
@@ -96,8 +97,8 @@ func (me Address) Uint64() (uint64, uint64) {
 	return me.ui.uint64()
 }
 
-// fromSlice returns the IPv6 address from a slice with 16 bytes or an error
-// if the slice is the wrong size.
+// fromSlice returns the Address from a slice or an error if the slice is the
+// wrong length.
 func fromSlice(s []byte) (Address, error) {
 	if s == nil {
 		return Address{}, fmt.Errorf("failed to parse nil ip")

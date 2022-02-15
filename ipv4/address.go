@@ -16,7 +16,7 @@ type Address struct {
 	ui uint32
 }
 
-// AddressFromUint32 returns the Address from its 32 bit unsigned representation
+// AddressFromUint32 returns the Address from its unsigned int representation
 func AddressFromUint32(ui uint32) Address {
 	return Address{ui}
 }
