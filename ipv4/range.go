@@ -49,7 +49,7 @@ func (me Range) String() string {
 
 // Contains returns true iff this range entirely contains the given other range
 func (me Range) Contains(other SetI) bool {
-	return me.FixedSet().Contains(other)
+	return me.Set().Contains(other)
 }
 
 // Minus returns a slice of ranges resulting from subtracting the given range
@@ -90,9 +90,9 @@ func (me Range) Plus(other Range) []Range {
 	return plus(other, me)
 }
 
-// FixedSet returns a Set containing the same ips as this range
-func (me Range) FixedSet() FixedSet {
-	return FixedSet{
+// Set returns a Set_ containing the same ips as this range
+func (me Range) Set() Set {
+	return Set{
 		trie: setNodeFromRange(me),
 	}
 }

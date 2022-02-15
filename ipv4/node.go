@@ -554,31 +554,22 @@ func (me *trieNode) active() bool {
 }
 
 func dataEqual(a, b interface{}) bool {
-	// If the data stored are EqualComparable, compare it using its method.
-	// This is useful to allow mapping to a more complex type (e.g. Set) that
+	// If the data stored implement IEqual, compare it using its method.
+	// This is useful to allow mapping to a more complex type (e.g. Set_) that
 	// is not comparable by normal means.
 	switch t := a.(type) {
-	case EqualComparable:
-		return t.EqualInterface(b)
+	case equalComparable:
+		return t.IEqual(b)
 	default:
 		return a == b
 	}
 }
 
-// EqualComparable is an interface used to compare data. If the datatype you
+// equalComparable is an interface used to compare data. If the datatype you
 // store implements it, it can be used to aggregate prefixes.
-type EqualComparable interface {
-	EqualInterface(interface{}) bool
+type equalComparable interface {
+	IEqual(interface{}) bool
 }
-
-// trieCallback defines the signature of a function you can pass to Walk or
-// Aggregate to handle each key / value pair found while iterating.
-//
-// Each invocation of your callback should return true if iteration should
-// continue (as long as another key / value pair exists) or false to stop
-// iterating and return immediately (meaning your callback will not be called
-// again).
-type trieCallback func(Prefix, interface{}) bool
 
 // Walk walks the entire tree and calls the given function for each active
 // node. The order of visiting nodes is essentially lexigraphical:
@@ -587,7 +578,7 @@ type trieCallback func(Prefix, interface{}) bool
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me *trieNode) Walk(callback trieCallback) bool {
+func (me *trieNode) Walk(callback func(Prefix, interface{}) bool) bool {
 	if callback == nil {
 		callback = func(Prefix, interface{}) bool {
 			return true

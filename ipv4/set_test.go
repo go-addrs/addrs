@@ -10,7 +10,7 @@ import (
 )
 
 func TestSetInsertPrefix(t *testing.T) {
-	s := NewSet()
+	s := NewSet_()
 	s.Insert(_p("10.0.0.0/24"))
 
 	assert.True(t, s.Contains(_p("10.0.0.0/24")))
@@ -23,7 +23,7 @@ func TestSetInsertPrefix(t *testing.T) {
 }
 
 func TestSetRemovePrefix(t *testing.T) {
-	s := FixedSet{}.Set()
+	s := Set{}.Set_()
 	s.Insert(_p("10.0.0.0/16"))
 
 	assert.True(t, s.Contains(_p("10.0.0.0/24")))
@@ -37,16 +37,16 @@ func TestSetRemovePrefix(t *testing.T) {
 }
 
 func TestSetAsReferenceType(t *testing.T) {
-	s := NewSet()
+	s := NewSet_()
 
-	func(s Set) {
+	func(s Set_) {
 		s.Insert(_p("10.0.0.0/24"))
 	}(s)
 
 	assert.True(t, s.Contains(_p("10.0.0.0/24")))
 	assert.False(t, s.Contains(_p("10.0.0.0/16")))
 
-	func(s Set) {
+	func(s Set_) {
 		s.Insert(_p("10.0.0.0/16"))
 	}(s)
 
@@ -55,7 +55,7 @@ func TestSetAsReferenceType(t *testing.T) {
 }
 
 func TestSetInsertSet(t *testing.T) {
-	a, b := NewSet(), NewSet()
+	a, b := NewSet_(), NewSet_()
 	a.Insert(_p("10.0.0.0/25"))
 	b.Insert(_p("10.0.0.128/25"))
 
@@ -67,7 +67,7 @@ func TestSetInsertSet(t *testing.T) {
 }
 
 func TestSetRemoveSet(t *testing.T) {
-	a, b := NewSet(), NewSet()
+	a, b := NewSet_(), NewSet_()
 	a.Insert(_p("10.0.0.0/24"))
 	b.Insert(_p("10.0.0.128/25"))
 
@@ -79,7 +79,7 @@ func TestSetRemoveSet(t *testing.T) {
 }
 
 func TestSetConcurrentModification(t *testing.T) {
-	set := NewSet()
+	set := NewSet_()
 
 	wg := new(sync.WaitGroup)
 	wg.Add(2)
@@ -99,14 +99,14 @@ func TestSetConcurrentModification(t *testing.T) {
 		defer wrap()
 		set.mutate(func() (bool, *setNode) {
 			ch <- true
-			return true, set.s.trie.Union(_a("10.0.0.1").FixedSet().trie)
+			return true, set.s.trie.Union(_a("10.0.0.1").Set().trie)
 		})
 	}()
 	go func() {
 		defer wrap()
 		set.mutate(func() (bool, *setNode) {
 			<-ch
-			return true, set.s.trie.Union(_a("10.0.0.2").FixedSet().trie)
+			return true, set.s.trie.Union(_a("10.0.0.2").Set().trie)
 		})
 	}()
 	wg.Wait()
@@ -114,32 +114,32 @@ func TestSetConcurrentModification(t *testing.T) {
 }
 
 func TestNilSet(t *testing.T) {
-	var set Set
+	var set Set_
 
-	nonEmptySet := _p("203.0.113.0/24").FixedSet().Set()
+	nonEmptySet := _p("203.0.113.0/24").Set().Set_()
 
 	// On-offs
 	assert.Equal(t, int64(0), set.Size())
-	assert.Equal(t, int64(0), set.FixedSet().Size())
+	assert.Equal(t, int64(0), set.Set().Size())
 	assert.False(t, set.Contains(_p("203.0.113.0/24")))
 
 	// Equal
 	assert.True(t, set.Equal(set))
-	assert.True(t, set.Equal(NewSet()))
-	assert.True(t, NewSet().Equal(set))
+	assert.True(t, set.Equal(NewSet_()))
+	assert.True(t, NewSet_().Equal(set))
 	assert.False(t, set.Equal(nonEmptySet))
 	assert.False(t, nonEmptySet.Equal(set))
 
-	// EqualInterface
-	assert.True(t, set.EqualInterface(set))
-	assert.True(t, set.EqualInterface(NewSet()))
-	assert.True(t, NewSet().EqualInterface(set))
-	assert.False(t, set.EqualInterface(_p("203.0.113.0/24")))
-	assert.False(t, _p("203.0.113.0/24").FixedSet().Set().EqualInterface(set))
+	// IEqual
+	assert.True(t, set.IEqual(set))
+	assert.True(t, set.IEqual(NewSet_()))
+	assert.True(t, NewSet_().IEqual(set))
+	assert.False(t, set.IEqual(_p("203.0.113.0/24")))
+	assert.False(t, _p("203.0.113.0/24").Set().Set_().IEqual(set))
 
 	// Union
-	assert.True(t, set.Union(nonEmptySet).Equal(nonEmptySet))
-	assert.True(t, nonEmptySet.Union(set).Equal(nonEmptySet))
+	assert.True(t, set.Union(nonEmptySet).Equal(nonEmptySet.Set()))
+	assert.True(t, nonEmptySet.Union(set).Equal(nonEmptySet.Set()))
 
 	// Intersection
 	assert.Equal(t, int64(0), set.Intersection(nonEmptySet).Size())
@@ -150,13 +150,13 @@ func TestNilSet(t *testing.T) {
 	assert.Equal(t, int64(256), nonEmptySet.Difference(set).Size())
 
 	// Walk
-	assert.True(t, set.FixedSet().WalkAddresses(func(Address) bool {
+	assert.True(t, set.Set().WalkAddresses(func(Address) bool {
 		panic("should not be called")
 	}))
-	assert.True(t, set.FixedSet().WalkPrefixes(func(Prefix) bool {
+	assert.True(t, set.Set().WalkPrefixes(func(Prefix) bool {
 		panic("should not be called")
 	}))
-	assert.True(t, set.FixedSet().WalkRanges(func(Range) bool {
+	assert.True(t, set.Set().WalkRanges(func(Range) bool {
 		panic("should not be called")
 	}))
 
@@ -186,52 +186,47 @@ func TestNilSet(t *testing.T) {
 	})
 }
 
-func TestSetEqualNil(t *testing.T) {
-	assert.True(t, Set{}.Equal(nil))
-	assert.True(t, FixedSet{}.Equal(nil))
-}
-
 func TestSetContainsNil(t *testing.T) {
+	assert.True(t, Set_{}.Contains(nil))
 	assert.True(t, Set{}.Contains(nil))
-	assert.True(t, FixedSet{}.Contains(nil))
 }
 
 func TestSetUnionNil(t *testing.T) {
+	assert.Equal(t, int64(0), Set_{}.Union(nil).Size())
 	assert.Equal(t, int64(0), Set{}.Union(nil).Size())
-	assert.Equal(t, int64(0), FixedSet{}.Union(nil).Size())
 }
 
 func TestSetIntesectionNil(t *testing.T) {
+	assert.Equal(t, int64(0), Set_{}.Intersection(nil).Size())
 	assert.Equal(t, int64(0), Set{}.Intersection(nil).Size())
-	assert.Equal(t, int64(0), FixedSet{}.Intersection(nil).Size())
 }
 
 func TestSetDifferenceNil(t *testing.T) {
+	assert.Equal(t, int64(0), Set_{}.Difference(nil).Size())
 	assert.Equal(t, int64(0), Set{}.Difference(nil).Size())
-	assert.Equal(t, int64(0), FixedSet{}.Difference(nil).Size())
 }
 
 func TestSetInsertNil(t *testing.T) {
-	s := NewSet()
+	s := NewSet_()
 	s.Insert(nil)
 	assert.Equal(t, int64(0), s.Size())
 }
 
 func TestSetRemoveNil(t *testing.T) {
-	s := NewSet()
+	s := NewSet_()
 	s.Remove(nil)
 	assert.Equal(t, int64(0), s.Size())
 }
 
 func TestFixedSetContainsPrefix(t *testing.T) {
-	s := NewSet()
+	s := NewSet_()
 	s.Insert(_p("10.0.0.0/16"))
-	assert.True(t, s.FixedSet().Contains(_p("10.0.0.0/24")))
-	assert.True(t, s.FixedSet().Contains(_p("10.0.30.0/27")))
-	assert.True(t, s.FixedSet().Contains(_p("10.0.128.0/17")))
-	assert.False(t, s.FixedSet().Contains(_p("10.224.0.0/24")))
-	assert.False(t, s.FixedSet().Contains(_p("10.1.30.0/27")))
-	assert.False(t, s.FixedSet().Contains(_p("10.0.128.0/15")))
+	assert.True(t, s.Set().Contains(_p("10.0.0.0/24")))
+	assert.True(t, s.Set().Contains(_p("10.0.30.0/27")))
+	assert.True(t, s.Set().Contains(_p("10.0.128.0/17")))
+	assert.False(t, s.Set().Contains(_p("10.224.0.0/24")))
+	assert.False(t, s.Set().Contains(_p("10.1.30.0/27")))
+	assert.False(t, s.Set().Contains(_p("10.0.128.0/15")))
 }
 
 func TestWalkRanges(t *testing.T) {
@@ -318,12 +313,12 @@ func TestWalkRanges(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
 			t.Run("finish", func(t *testing.T) {
-				s := func() FixedSet {
-					s := NewSet()
+				s := func() Set {
+					s := NewSet_()
 					for _, p := range tt.prefixes {
 						s.Insert(p)
 					}
-					return s.FixedSet()
+					return s.Set()
 				}()
 				ranges := []Range{}
 				finished := s.WalkRanges(func(r Range) bool {
@@ -338,12 +333,12 @@ func TestWalkRanges(t *testing.T) {
 			})
 
 			t.Run("don't finish", func(t *testing.T) {
-				s := func() FixedSet {
-					s := NewSet()
+				s := func() Set {
+					s := NewSet_()
 					for _, p := range tt.prefixes {
 						s.Insert(p)
 					}
-					return s.FixedSet()
+					return s.Set()
 				}()
 				if s.Size() != 0 {
 					ranges := []Range{}
@@ -361,10 +356,10 @@ func TestWalkRanges(t *testing.T) {
 }
 
 func TestFixedSetContainsSet(t *testing.T) {
-	s := NewSet()
+	s := NewSet_()
 	s.Insert(_p("10.0.0.0/16"))
 
-	other := NewSet()
+	other := NewSet_()
 	other.Insert(_p("10.0.0.0/24"))
 	other.Insert(_p("10.0.30.0/27"))
 	other.Insert(_p("10.0.128.0/17"))
@@ -392,14 +387,14 @@ var (
 )
 
 func TestOldSetInit(t *testing.T) {
-	set := FixedSet{}
+	set := Set{}
 
 	assert.Equal(t, int64(0), set.Size())
 	assert.True(t, set.isValid())
 }
 
 func TestOldSetContains(t *testing.T) {
-	set := FixedSet{}
+	set := Set{}
 
 	assert.Equal(t, int64(0), set.Size())
 	assert.False(t, set.Contains(Eights))
@@ -408,7 +403,7 @@ func TestOldSetContains(t *testing.T) {
 }
 
 func TestOldSetInsert(t *testing.T) {
-	s := NewSet()
+	s := NewSet_()
 
 	s.Insert(Nines)
 	assert.Equal(t, int64(1), s.Size())
@@ -421,7 +416,7 @@ func TestOldSetInsert(t *testing.T) {
 }
 
 func TestOldSetInsertPrefixwork(t *testing.T) {
-	s := NewSet()
+	s := NewSet_()
 
 	s.Insert(Ten24)
 	assert.Equal(t, int64(1), s.s.trie.NumNodes())
@@ -434,7 +429,7 @@ func TestOldSetInsertPrefixwork(t *testing.T) {
 }
 
 func TestOldSetInsertSequential(t *testing.T) {
-	s := NewSet()
+	s := NewSet_()
 
 	s.Insert(_a("192.168.1.0"))
 	assert.Equal(t, int64(1), s.s.trie.NumNodes())
@@ -477,7 +472,7 @@ func TestOldSetInsertSequential(t *testing.T) {
 }
 
 func TestOldSetRemove(t *testing.T) {
-	s := NewSet()
+	s := NewSet_()
 
 	s.Insert(Ten24)
 	assert.Equal(t, int64(1), s.s.trie.NumNodes())
@@ -496,7 +491,7 @@ func TestOldSetRemove(t *testing.T) {
 }
 
 func TestOldSetRemovePrefixworkBroadcast(t *testing.T) {
-	s := NewSet()
+	s := NewSet_()
 
 	s.Insert(Ten24)
 	assert.Equal(t, int64(1), s.s.trie.NumNodes())
@@ -520,7 +515,7 @@ func TestOldSetRemovePrefixworkBroadcast(t *testing.T) {
 }
 
 func TestOldSetRemoveAll(t *testing.T) {
-	s := NewSet()
+	s := NewSet_()
 
 	s.Insert(Ten24)
 	cidr1 := _p("192.168.0.0/25")
@@ -537,7 +532,7 @@ func TestOldSetRemoveAll(t *testing.T) {
 }
 
 func TestOldSet_RemoveTop(t *testing.T) {
-	testSet := NewSet()
+	testSet := NewSet_()
 	ip1 := _a("10.0.0.1")
 	ip2 := _a("10.0.0.2")
 
@@ -551,7 +546,7 @@ func TestOldSet_RemoveTop(t *testing.T) {
 }
 
 func TestOldSetInsertOverlapping(t *testing.T) {
-	s := NewSet()
+	s := NewSet_()
 
 	s.Insert(Ten24128)
 	assert.False(t, s.Contains(Ten24))
@@ -567,8 +562,8 @@ func TestOldSetInsertOverlapping(t *testing.T) {
 }
 
 func TestOldSetUnion(t *testing.T) {
-	set1 := NewSet()
-	set2 := NewSet()
+	set1 := NewSet_()
+	set2 := NewSet_()
 
 	set1.Insert(Ten24)
 	cidr := _p("192.168.0.248/29")
@@ -582,8 +577,8 @@ func TestOldSetUnion(t *testing.T) {
 }
 
 func TestOldSetDifference(t *testing.T) {
-	set1 := NewSet()
-	set2 := NewSet()
+	set1 := NewSet_()
+	set2 := NewSet_()
 
 	set1.Insert(Ten24)
 	cidr := _p("192.168.0.248/29")
@@ -661,9 +656,9 @@ func TestOldIntersectionAinB9(t *testing.T) {
 }
 
 func testIntersection(t *testing.T, input1 []string, input2 []string, output []string) {
-	set1 := NewSet()
-	set2 := NewSet()
-	interSect := NewSet()
+	set1 := NewSet_()
+	set2 := NewSet_()
+	interSect := NewSet_()
 	for i := 0; i < len(input1); i++ {
 		cidr := _p(input1[i])
 		set1.Insert(cidr)
@@ -677,7 +672,7 @@ func testIntersection(t *testing.T, input1 []string, input2 []string, output []s
 		interSect.Insert(cidr)
 	}
 	set := set1.Intersection(set2)
-	assert.True(t, interSect.EqualInterface(set))
+	assert.True(t, interSect.Set().Equal(set))
 	assert.True(t, set1.isValid())
 	assert.True(t, set2.isValid())
 	assert.True(t, set.isValid())
@@ -687,7 +682,7 @@ func testIntersection(t *testing.T, input1 []string, input2 []string, output []s
 func TestOldSetAllocateDeallocate(t *testing.T) {
 	rand.Seed(29)
 
-	s := NewSet()
+	s := NewSet_()
 
 	bigNet := _p("15.1.0.0/16")
 	s.Insert(bigNet)
@@ -695,24 +690,24 @@ func TestOldSetAllocateDeallocate(t *testing.T) {
 	assert.Equal(t, int64(65536), s.Size())
 
 	ips := make([]Address, 0, s.Size())
-	s.FixedSet().WalkAddresses(func(ip Address) bool {
+	s.Set().WalkAddresses(func(ip Address) bool {
 		ips = append(ips, ip)
 		return true
 	})
 
-	allocated := NewSet()
+	allocated := NewSet_()
 	for i := 0; i != 16384; i++ {
 		allocated.Insert(ips[rand.Intn(65536)])
 	}
 	assert.Equal(t, int64(14500), allocated.Size())
-	allocated.FixedSet().WalkAddresses(func(ip Address) bool {
+	allocated.Set().WalkAddresses(func(ip Address) bool {
 		assert.True(t, s.Contains(ip))
 		return true
 	})
 
 	available := s.Difference(allocated)
 	assert.Equal(t, int64(51036), available.Size())
-	available.FixedSet().WalkAddresses(func(ip Address) bool {
+	available.Set().WalkAddresses(func(ip Address) bool {
 		assert.True(t, s.Contains(ip))
 		assert.False(t, allocated.Contains(ip))
 		return true
@@ -724,35 +719,35 @@ func TestOldSetAllocateDeallocate(t *testing.T) {
 }
 
 func TestOldEqualTrivial(t *testing.T) {
-	a := NewSet()
-	b := NewSet()
-	assert.True(t, a.EqualInterface(b))
+	a := NewSet_()
+	b := NewSet_()
+	assert.True(t, a.IEqual(b))
 
 	a.Insert(_p("10.0.0.0/24"))
-	assert.False(t, a.EqualInterface(b))
-	assert.False(t, b.EqualInterface(a))
-	assert.True(t, a.EqualInterface(a))
-	assert.True(t, b.EqualInterface(b))
+	assert.False(t, a.IEqual(b))
+	assert.False(t, b.IEqual(a))
+	assert.True(t, a.IEqual(a))
+	assert.True(t, b.IEqual(b))
 	assert.True(t, a.isValid())
 	assert.True(t, b.isValid())
 }
 
 func TestOldEqualSingleNode(t *testing.T) {
-	a := NewSet()
-	b := NewSet()
+	a := NewSet_()
+	b := NewSet_()
 	a.Insert(_p("10.0.0.0/24"))
 	b.Insert(_p("10.0.0.0/24"))
 
-	assert.True(t, a.EqualInterface(b))
-	assert.True(t, b.EqualInterface(a))
+	assert.True(t, a.IEqual(b))
+	assert.True(t, b.IEqual(a))
 	assert.True(t, a.isValid())
 	assert.True(t, b.isValid())
 }
 
 func TestOldEqualAllIPv4(t *testing.T) {
-	a := NewSet()
-	b := NewSet()
-	c := NewSet()
+	a := NewSet_()
+	b := NewSet_()
+	c := NewSet_()
 	// Insert the entire IPv4 space into set a in one shot
 	a.Insert(_p("0.0.0.0/0"))
 
@@ -798,11 +793,11 @@ func TestOldEqualAllIPv4(t *testing.T) {
 	}
 
 	for _, n := range bNets {
-		assert.False(t, a.EqualInterface(b))
-		assert.False(t, b.EqualInterface(a))
+		assert.False(t, a.IEqual(b))
+		assert.False(t, b.IEqual(a))
 		b.Insert(n)
-		assert.False(t, b.EqualInterface(c))
-		assert.False(t, c.EqualInterface(b))
+		assert.False(t, b.IEqual(c))
+		assert.False(t, c.IEqual(b))
 	}
 
 	// Constructed a different way
@@ -843,8 +838,8 @@ func TestOldEqualAllIPv4(t *testing.T) {
 	}
 
 	for _, n := range cNets {
-		assert.False(t, c.EqualInterface(a))
-		assert.False(t, c.EqualInterface(b))
+		assert.False(t, c.IEqual(a))
+		assert.False(t, c.IEqual(b))
 		c.Insert(n)
 		assert.True(t, a.isValid())
 		assert.True(t, b.isValid())
@@ -852,10 +847,10 @@ func TestOldEqualAllIPv4(t *testing.T) {
 	}
 
 	// At this point, all three should have the entire IPv4 space
-	assert.True(t, a.EqualInterface(b))
-	assert.True(t, a.EqualInterface(c))
-	assert.True(t, b.EqualInterface(a))
-	assert.True(t, b.EqualInterface(c))
-	assert.True(t, c.EqualInterface(a))
-	assert.True(t, c.EqualInterface(b))
+	assert.True(t, a.IEqual(b))
+	assert.True(t, a.IEqual(c))
+	assert.True(t, b.IEqual(a))
+	assert.True(t, b.IEqual(c))
+	assert.True(t, c.IEqual(a))
+	assert.True(t, c.IEqual(b))
 }

@@ -167,7 +167,7 @@ func (me Prefix) Host() Prefix {
 // Prefix. If the two Prefixes are equal, true is returned. The host bits in
 // the address are ignored when testing containership.
 func (me Prefix) Contains(other SetI) bool {
-	return me.FixedSet().Contains(other)
+	return me.Set().Contains(other)
 }
 
 // Size returns the number of addresses in the prefix, including network and
@@ -189,20 +189,12 @@ func (me Prefix) Uint32() (address, mask uint32) {
 	return
 }
 
-// AddressCallback is the type of function passed to walk individual addresses
-//
-// Each invocation of your callback should return true if iteration should
-// continue (as long as another key / value pair exists) or false to stop
-// iterating and return immediately (meaning your callback will not be called
-// again).
-type AddressCallback func(Address) bool
-
 // walkAddresses visits all of the addresses in the prefix in lexigraphical
 // order
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
-func (me Prefix) walkAddresses(callback AddressCallback) bool {
+func (me Prefix) walkAddresses(callback func(Address) bool) bool {
 	for a := me.Network().addr.Uint32(); a <= me.Broadcast().addr.Uint32(); a++ {
 		if !callback(Address{a}) {
 			return false
@@ -236,10 +228,10 @@ func (me Prefix) Halves() (a, b Prefix) {
 	return
 }
 
-// FixedSet returns the set that includes the same addresses as the prefix
+// Set returns the set that includes the same addresses as the prefix
 // It ignores any bits set in the host part of the address.
-func (me Prefix) FixedSet() FixedSet {
-	return FixedSet{
+func (me Prefix) Set() Set {
+	return Set{
 		trie: setNodeFromPrefix(me),
 	}
 }
