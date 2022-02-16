@@ -5,8 +5,10 @@ import (
 	"net"
 )
 
-// Mask represents an IPv6 prefix mask. It has 0-128 leading 1s and then all
-// remaining bits are 0s
+// Mask represents a prefix mask. It has any number of leading 1s  and then the
+// remaining bits are 0s up to the number of bits in an address. It can be all
+// zeroes or all ones.
+// The zero value of a Mask is "/0"
 type Mask struct {
 	ui uint128
 }
@@ -46,7 +48,7 @@ func MaskFromUint64(high uint64, low uint64) (Mask, error) {
 func MaskFromNetIPMask(mask net.IPMask) (Mask, error) {
 	ones, bits := mask.Size()
 	if bits != addressSize {
-		return Mask{}, fmt.Errorf("failed to convert IPMask with size != 128")
+		return Mask{}, fmt.Errorf("failed to convert IPMask with incorrect size")
 	}
 	m, err := MaskFromLength(ones)
 	if err != nil {
