@@ -14,6 +14,7 @@ package ipv6
 
 import (
 	"fmt"
+	"math/bits"
 )
 
 type uint128 struct {
@@ -76,6 +77,20 @@ func (me uint128) uint64() (uint64, uint64) {
 	return me.high, me.low
 }
 
+// onesCount returns the number of one bits ("population count") in x.
+func (me uint128) onesCount() int {
+	return bits.OnesCount64(me.high) + bits.OnesCount64(me.low)
+}
+
+// leadingZeros returns the number of leading zero bits in x; the result is 128 for x == 0.
+func (me uint128) leadingZeros() int {
+	leadingZeros := bits.LeadingZeros64(me.high)
+	if leadingZeros == 64 {
+		leadingZeros += bits.LeadingZeros64(me.low)
+	}
+	return leadingZeros
+}
+
 // compare returns comparison of two uint128s and returns:
 //  O if equal
 // -1 if me is less than other
@@ -88,4 +103,27 @@ func (me uint128) compare(other uint128) int {
 		return -1
 	}
 	return 1
+}
+
+// complement returns the bitwise complement
+func (me uint128) complement() uint128 {
+	return uint128{^me.high, ^me.low}
+}
+
+// leftShift returns the bitwise shift left by bits
+func (me uint128) leftShift(bits int) uint128 {
+	high := me.high
+	low := me.low
+	if bits >= 128 {
+		high = 0
+		low = 0
+	} else if bits >= 64 {
+		high = low << (bits - 64)
+		low = 0
+	} else {
+		high <<= bits
+		high |= low >> (64 - bits)
+		low <<= bits
+	}
+	return uint128{high, low}
 }
