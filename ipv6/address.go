@@ -82,6 +82,11 @@ func (me Address) lessThan(other Address) bool {
 	return me.ui.compare(other.ui) < 0
 }
 
+// Prefix returns a host prefix (/32) with the address
+func (me Address) Prefix() Prefix {
+	return Prefix{me, uint32(addressSize)}
+}
+
 // String returns a string representing the address in IPv6 notation
 func (me Address) String() string {
 	return me.ToNetIP().String()
@@ -90,6 +95,11 @@ func (me Address) String() string {
 // Size returns the size of an address (always 128)
 func (me Address) Size() int {
 	return addressSize
+}
+
+// uint128 returns the address as a uint128
+func (me Address) uint128() uint128 {
+	return me.ui
 }
 
 // Uint64 returns the address as two uint64

@@ -44,6 +44,8 @@ func TestAddressComparable(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			assert.Equal(t, tt.equal, tt.a == tt.b)
 			assert.Equal(t, !tt.equal, tt.a != tt.b)
+			assert.Equal(t, tt.equal, tt.a.Prefix() == tt.b.Prefix())
+			assert.Equal(t, !tt.equal, tt.a.Prefix() != tt.b.Prefix())
 		})
 	}
 }
@@ -76,7 +78,12 @@ func TestAddressFromNetIP(t *testing.T) {
 			isErr:       true,
 		},
 		{
-			description: "ipv6",
+			description: "ipv6 dotted quad",
+			ip:          net.ParseIP("::ffff:203.0.113.17"),
+			expected:    AddressFromUint64(0x0, 0xffffcb007111),
+		},
+		{
+			description: "ipv6 standard",
 			ip:          net.ParseIP("2001:0db8:85a3:0000:0000:8a2e:0370:7334"),
 			expected:    AddressFromUint64(0x20010db885a30000, 0x8a2e03707334),
 		},

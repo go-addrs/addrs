@@ -105,6 +105,26 @@ func (me uint128) compare(other uint128) int {
 	return 1
 }
 
+// addUint64 returns sum of uint128 with x (uint64)
+func (me uint128) addUint64(x uint64) uint128 {
+	low := me.low + x
+	high := me.high
+	if me.low > low {
+		high++
+	}
+	return uint128{high, low}
+}
+
+// and returns a bitwise AND with x
+func (me uint128) and(x uint128) uint128 {
+	return uint128{me.high & x.high, me.low & x.low}
+}
+
+// or returns a bitwise OR with x
+func (me uint128) or(x uint128) uint128 {
+	return uint128{me.high | x.high, me.low | x.low}
+}
+
 // complement returns the bitwise complement
 func (me uint128) complement() uint128 {
 	return uint128{^me.high, ^me.low}
@@ -124,6 +144,24 @@ func (me uint128) leftShift(bits int) uint128 {
 		high <<= bits
 		high |= low >> (64 - bits)
 		low <<= bits
+	}
+	return uint128{high, low}
+}
+
+// rightShift returns the bitwise shift right by bits
+func (me uint128) rightShift(bits int) uint128 {
+	high := me.high
+	low := me.low
+	if bits >= 128 {
+		high = 0
+		low = 0
+	} else if bits >= 64 {
+		low = high >> (bits - 64)
+		high = 0
+	} else {
+		low >>= bits
+		low |= high << (64 - bits)
+		high >>= bits
 	}
 	return uint128{high, low}
 }

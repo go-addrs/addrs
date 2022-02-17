@@ -113,6 +113,72 @@ func TestComplement(t *testing.T) {
 	assert.Equal(t, uint128{0x0, 0x0}, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}.complement())
 }
 
+func TestAnd(t *testing.T) {
+	tests := []struct {
+		description string
+		num         uint128
+		andWith     uint128
+		expected    uint128
+	}{
+		{
+			description: "same",
+			num:         uint128{0x20010db885a30000, 0x00008a2e03707434},
+			andWith:     uint128{0x20010db885a30000, 0x00008a2e03707434},
+			expected:    uint128{0x20010db885a30000, 0x00008a2e03707434},
+		},
+		{
+			description: "different",
+			num:         uint128{0x20010db885a30000, 0x00008a2e03707434},
+			andWith:     uint128{0x27810ec88f12c000, 0x11008a5fa37d1934},
+			expected:    uint128{0x20010c8885020000, 0x00008a0e03701034},
+		},
+		{
+			description: "extreme",
+			num:         uint128{0x0, 0x0},
+			andWith:     uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF},
+			expected:    uint128{0x0, 0x0},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.num.and(tt.andWith))
+		})
+	}
+}
+
+func TestOr(t *testing.T) {
+	tests := []struct {
+		description string
+		num         uint128
+		orWith      uint128
+		expected    uint128
+	}{
+		{
+			description: "same",
+			num:         uint128{0x20010db885a30000, 0x00008a2e03707434},
+			orWith:      uint128{0x20010db885a30000, 0x00008a2e03707434},
+			expected:    uint128{0x20010db885a30000, 0x00008a2e03707434},
+		},
+		{
+			description: "different",
+			num:         uint128{0x20010db885a30000, 0x00008a2e03707434},
+			orWith:      uint128{0x27810ec88f12c000, 0x11008a5fa37d1934},
+			expected:    uint128{0x27810ff88fb3c000, 0x11008a7fa37d7d34},
+		},
+		{
+			description: "extreme",
+			num:         uint128{0x0, 0x0},
+			orWith:      uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF},
+			expected:    uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.num.or(tt.orWith))
+		})
+	}
+}
+
 func TestLeftShift(t *testing.T) {
 	assert.Equal(t, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}.leftShift(0))
 	assert.Equal(t, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFF00000000}, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}.leftShift(32))
@@ -122,4 +188,22 @@ func TestLeftShift(t *testing.T) {
 	assert.Equal(t, uint128{0xFFFFFFF000000000, 0x0}, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}.leftShift(100))
 	assert.Equal(t, uint128{0x0, 0x0}, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}.leftShift(128))
 	assert.Equal(t, uint128{0x0, 0x0}, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}.leftShift(129))
+}
+
+func TestRightShift(t *testing.T) {
+	assert.Equal(t, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}.rightShift(0))
+	assert.Equal(t, uint128{0x00000000FFFFFFFF, 0xFFFFFFFFFFFFFFFF}, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}.rightShift(32))
+	assert.Equal(t, uint128{0x000000000001FFFF, 0xFFFFFFFFFFFFFFFF}, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}.rightShift(47))
+	assert.Equal(t, uint128{0x0, 0xFFFFFFFFFFFFFFFF}, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}.rightShift(64))
+	assert.Equal(t, uint128{0x0, 0x0001FFFFFFFFFFFF}, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}.rightShift(79))
+	assert.Equal(t, uint128{0x0, 0x000000000FFFFFFF}, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}.rightShift(100))
+	assert.Equal(t, uint128{0x0, 0x0}, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}.rightShift(128))
+	assert.Equal(t, uint128{0x0, 0x0}, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}.rightShift(129))
+}
+
+func TestAddUint64(t *testing.T) {
+	assert.Equal(t, uint128{0x20010db885a30001, 0x00008a2e03707433}, uint128{0x20010db885a30000, 0x00008a2e03707434}.addUint64(0xFFFFFFFFFFFFFFFF))
+	assert.Equal(t, uint128{0x20010db885a30000, 0x00008a2f03707433}, uint128{0x20010db885a30000, 0x00008a2e03707434}.addUint64(0x00000000FFFFFFFF))
+	assert.Equal(t, uint128{0x20010db885a30000, 0x00008a2e03707435}, uint128{0x20010db885a30000, 0x00008a2e03707434}.addUint64(1))
+	assert.Equal(t, uint128{0x20010db885a30000, 0x00008a2e03707434}, uint128{0x20010db885a30000, 0x00008a2e03707434}.addUint64(0))
 }
