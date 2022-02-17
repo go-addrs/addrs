@@ -11,7 +11,7 @@ import (
 // Note that any bits in the address can be 0 or 1 regardless if they in the
 // first `length` bits or not. This allows storing an IP address in CIDR
 // notation with both the network and host parts of the address.
-// The zero value of a Prefix is "0.0.0.0/0"
+// The zero value of a Prefix is "::/0"
 type Prefix struct {
 	addr   Address
 	length uint32
@@ -20,7 +20,7 @@ type Prefix struct {
 // PrefixI is something that can be treated as a Prefix by calling .Prefix().
 // It is possible to pass nil as a PrefixI. In that case, it will be treated as
 // if a default zero-value Prefix{} were passed which is equivalent to
-// "0.0.0.0/0".
+// "::/0".
 // This includes the following types: Address and Prefix
 type PrefixI interface {
 	Prefix() Prefix
@@ -69,7 +69,7 @@ func parseNet(prefix string) (*net.IPNet, error) {
 	return &net.IPNet{IP: ip, Mask: ipNet.Mask}, nil
 }
 
-// ParsePrefix returns the net represented by `addr` in dotted-quad CIDR
+// ParsePrefix returns the net represented by `addr` in ipv6 hex colon CIDR
 // notation. If the prefix cannot be parsed, then error is non-nil and the
 // prefix returned must be ignored.
 func ParsePrefix(prefix string) (Prefix, error) {
@@ -137,20 +137,6 @@ func (me Prefix) Network() Prefix {
 	}
 }
 
-// Broadcast returns a new Prefix with all bits after `length` set to 1s. Note
-// that this method ignores special cases where a broadcast address doesn't
-// make sense like in a host route or point-to-point prefix (/128 and /127). It
-// just does the math.
-func (me Prefix) Broadcast() Prefix {
-	network := me.addr.ui.or(me.Mask().ui.complement())
-	return Prefix{
-		addr: Address{
-			ui: network,
-		},
-		length: me.length,
-	}
-}
-
 // Host returns a new Prefix with the first `length` bits zeroed out so
 // that only the bits in the `host` part of the prefix are present
 func (me Prefix) Host() Prefix {
@@ -174,20 +160,6 @@ func (me Prefix) Uint64() (addressHigh, addressLow, maskHigh, maskLow uint64) {
 	addressHigh, addressLow = me.addr.Uint64()
 	maskHigh, maskLow = me.Mask().Uint64()
 	return
-}
-
-// walkAddresses visits all of the addresses in the prefix in lexigraphical
-// order
-//
-// It returns false if iteration was stopped due to a callback return false or
-// true if it iterated all items.
-func (me Prefix) walkAddresses(callback func(Address) bool) bool {
-	for a := me.Network().addr.uint128(); a.compare(me.Broadcast().addr.uint128()) <= 0; a = a.addUint64(1) {
-		if !callback(Address{a}) {
-			return false
-		}
-	}
-	return true
 }
 
 // Halves returns two prefixes that add up to the current one

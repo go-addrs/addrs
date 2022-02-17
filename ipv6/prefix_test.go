@@ -83,12 +83,17 @@ func TestParsePrefix(t *testing.T) {
 		isErr       bool
 	}{
 		{
-			description: "success",
+			description: "ipv4",
 			cidr:        "10.224.24.1/27",
 			isErr:       true,
 		},
 		{
-			description: "ipv6",
+			description: "ipv6 dotted quad",
+			cidr:        "::ffff:203.0.113.17/128",
+			expected:    unsafePrefixFromUint64(0x0, 0xffffcb007111, 128),
+		},
+		{
+			description: "ipv6 standard",
 			cidr:        "2001::1/64",
 			expected:    unsafePrefixFromUint64(0x2001000000000000, 0x1, 64),
 		},
@@ -205,46 +210,41 @@ func TestPrefixLessThan(t *testing.T) {
 	}
 }
 
-func TestNetworkHostBroadcast(t *testing.T) {
+func TestNetworkHost(t *testing.T) {
 	tests := []struct {
-		description              string
-		prefix                   Prefix
-		network, host, broadcast Prefix
+		description   string
+		prefix        Prefix
+		network, host Prefix
 	}{
 		{
 			description: "0",
 			prefix:      _p("2001::1/0"),
 			network:     _p("::/0"),
 			host:        _p("2001::1/0"),
-			broadcast:   _p("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/0"),
 		},
 		{
 			description: "32",
 			prefix:      _p("2001::1/32"),
 			network:     _p("2001::0/32"),
 			host:        _p("::1/32"),
-			broadcast:   _p("2001::ffff:ffff:ffff:ffff:ffff:ffff/32"),
 		},
 		{
 			description: "64",
 			prefix:      _p("2001::1/64"),
 			network:     _p("2001::0/64"),
 			host:        _p("::1/64"),
-			broadcast:   _p("2001::ffff:ffff:ffff:ffff/64"),
 		},
 		{
 			description: "96",
 			prefix:      _p("2001::1/96"),
 			network:     _p("2001::0/96"),
 			host:        _p("::1/96"),
-			broadcast:   _p("2001::ffff:ffff/96"),
 		},
 		{
 			description: "128",
 			prefix:      _p("2001::1/128"),
 			network:     _p("2001::1/128"),
 			host:        _p("::/128"),
-			broadcast:   _p("2001::1/128"),
 		},
 	}
 
@@ -252,7 +252,6 @@ func TestNetworkHostBroadcast(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			assert.Equal(t, tt.network, tt.prefix.Network())
 			assert.Equal(t, tt.host, tt.prefix.Host())
-			assert.Equal(t, tt.broadcast, tt.prefix.Broadcast())
 		})
 	}
 }
@@ -322,51 +321,6 @@ func TestPrefixHalves(t *testing.T) {
 			a, b := tt.prefix.Halves()
 			assert.Equal(t, tt.a, a)
 			assert.Equal(t, tt.b, b)
-		})
-	}
-}
-
-func TestWalkAddress(t *testing.T) {
-	tests := []struct {
-		prefix      Prefix
-		first, last Address
-	}{
-		{
-			prefix: _p("2001::/32"),
-			first:  _a("2001::"),
-			last:   _a("2001::63"),
-		},
-		{
-			prefix: _p("2001:db8:85a3:8a2e::/64"),
-			first:  _a("2001:db8:85a3:8a2e::"),
-			last:   _a("2001:db8:85a3:8a2e::63"),
-		},
-		{
-			prefix: _p("2001:db8:85a3::8a2e:370:7334/127"),
-			first:  _a("2001:db8:85a3::8a2e:370:7334"),
-			last:   _a("2001:db8:85a3::8a2e:370:7335"),
-		},
-		{
-			prefix: _p("2001:db8:85a3::8a2e:370:7334/128"),
-			first:  _a("2001:db8:85a3::8a2e:370:7334"),
-			last:   _a("2001:db8:85a3::8a2e:370:7334"),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.prefix.String(), func(t *testing.T) {
-			count := 0
-			ips := []Address{}
-			tt.prefix.walkAddresses(func(ip Address) bool {
-				count++
-				ips = append(ips, ip)
-				if count == 100 {
-					return false
-				}
-				return true
-			})
-			assert.Equal(t, tt.first, ips[0])
-			assert.Equal(t, tt.last, ips[len(ips)-1])
 		})
 	}
 }
