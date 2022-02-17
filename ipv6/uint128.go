@@ -115,6 +115,16 @@ func (me uint128) addUint64(x uint64) uint128 {
 	return uint128{high, low}
 }
 
+// addUint64 returns difference of uint128 with x (uint64)
+func (me uint128) subtractUint64(x uint64) uint128 {
+	low := me.low - x
+	high := me.high
+	if me.low < low {
+		high--
+	}
+	return uint128{high, low}
+}
+
 // and returns a bitwise AND with x
 func (me uint128) and(x uint128) uint128 {
 	return uint128{me.high & x.high, me.low & x.low}

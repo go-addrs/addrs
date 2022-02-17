@@ -207,3 +207,10 @@ func TestAddUint64(t *testing.T) {
 	assert.Equal(t, uint128{0x20010db885a30000, 0x00008a2e03707435}, uint128{0x20010db885a30000, 0x00008a2e03707434}.addUint64(1))
 	assert.Equal(t, uint128{0x20010db885a30000, 0x00008a2e03707434}, uint128{0x20010db885a30000, 0x00008a2e03707434}.addUint64(0))
 }
+
+func TestSubtractUint64(t *testing.T) {
+	assert.Equal(t, uint128{0x20010db885a2ffff, 0x00008a2e03707435}, uint128{0x20010db885a30000, 0x00008a2e03707434}.subtractUint64(0xFFFFFFFFFFFFFFFF))
+	assert.Equal(t, uint128{0x20010db885a30000, 0x00008a2d03707435}, uint128{0x20010db885a30000, 0x00008a2e03707434}.subtractUint64(0x00000000FFFFFFFF))
+	assert.Equal(t, uint128{0x20010db885a30000, 0x00008a2e03707433}, uint128{0x20010db885a30000, 0x00008a2e03707434}.subtractUint64(1))
+	assert.Equal(t, uint128{0x20010db885a30000, 0x00008a2e03707434}, uint128{0x20010db885a30000, 0x00008a2e03707434}.subtractUint64(0))
+}
