@@ -122,7 +122,11 @@ func (me *trieNode) copyMutate(mutator func(*trieNode)) *trieNode {
 	}
 	doppelganger := &trieNode{}
 	*doppelganger = *me
-	return doppelganger.mutate(mutator)
+	mutated := doppelganger.mutate(mutator)
+	if *mutated == *me {
+		return me
+	}
+	return mutated
 }
 
 // Equal returns true if all of the entries are the same in the two data structures
@@ -498,6 +502,7 @@ func (me *trieNode) del(key Prefix, opts deleteOpts) (newHead *trieNode, err err
 		// The two children are disjoint so keep this inactive node.
 		newNode := me.copyMutate(func(n *trieNode) {
 			n.isActive = false
+			n.Data = nil
 		})
 		return newNode, nil
 
@@ -758,7 +763,13 @@ func (me *trieNode) aggregate(parentUmbrella *umbrella) (result *trieNode) {
 		}
 		return me.copyMutate(func(n *trieNode) {
 			n.isActive = isActive
-			n.Data = data
+			if isActive {
+				if !dataEqual(me.Data, data) {
+					n.Data = data
+				}
+			} else {
+				n.Data = nil
+			}
 			n.children = children
 		})
 	}
