@@ -750,7 +750,7 @@ func (me *trieNode) aggregate(parentUmbrella *umbrella, eq comparator) (result *
 		return me.copyMutate(func(n *trieNode) {
 			n.isActive = isActive
 			if isActive {
-				if !eq(me.Data, data) {
+				if n.Data == nil || !eq(n.Data, data) {
 					n.Data = data
 				}
 			} else {
