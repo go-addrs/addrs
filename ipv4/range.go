@@ -7,10 +7,10 @@ import (
 // Range represents a range of addresses that don't have to be aligned to
 // powers of 2 like a Prefix does.
 //
-// Note that there is no instantiation of an empty range (.Size() == 0) because
-// .First() and .Last() would not make sense.
+// Note that there is no instantiation of an empty range (.NumAddresses() == 0)
+// because .First() and .Last() would not make sense.
 //
-// The zero value of a Range is "[0.0.0.0, 0.0.0.0]" (.Size() == 1)
+// The zero value of a Range is "[0.0.0.0, 0.0.0.0]" (.NumAddresses() == 1)
 type Range struct {
 	first, last Address
 }
@@ -28,8 +28,8 @@ func NewRange(first, last Address) (r Range, empty bool) {
 	}, false
 }
 
-// Size returns the number of addresses in the range
-func (me Range) Size() int64 {
+// NumAddresses returns the number of addresses in the range
+func (me Range) NumAddresses() int64 {
 	return 1 + int64(me.last.ui-me.first.ui)
 }
 

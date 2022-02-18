@@ -92,8 +92,8 @@ func (me Address) String() string {
 	return me.ToNetIP().String()
 }
 
-// Size returns the size of an address (always 128)
-func (me Address) Size() int {
+// NumAddresses returns the size of an address (always 128)
+func (me Address) NumAddresses() int {
 	return addressSize
 }
 

@@ -277,9 +277,9 @@ func (me *setNode) Equal(other *setNode) bool {
 	return (*trieNode)(me).Equal((*trieNode)(other))
 }
 
-// Size calls trieNode Size
-func (me *setNode) Size() int64 {
-	return (*trieNode)(me).Size()
+// NumAddresses calls trieNode NumAddresses
+func (me *setNode) NumAddresses() int64 {
+	return (*trieNode)(me).NumAddresses()
 }
 
 // NumNodes returns the number of entries in the trie

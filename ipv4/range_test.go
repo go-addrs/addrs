@@ -65,9 +65,9 @@ func TestRangeString(t *testing.T) {
 }
 
 func TestRangeSize(t *testing.T) {
-	assert.Equal(t, int64(0x100), _p("10.224.24.1/24").Range().Size())
-	assert.Equal(t, int64(0x20000), _p("10.224.24.1/15").Range().Size())
-	assert.Equal(t, int64(0x11111112), _r(Address{ui: 0x12345678}, Address{ui: 0x23456789}).Size())
+	assert.Equal(t, int64(0x100), _p("10.224.24.1/24").Range().NumAddresses())
+	assert.Equal(t, int64(0x20000), _p("10.224.24.1/15").Range().NumAddresses())
+	assert.Equal(t, int64(0x11111112), _r(Address{ui: 0x12345678}, Address{ui: 0x23456789}).NumAddresses())
 }
 
 func TestRangeFirstLast(t *testing.T) {

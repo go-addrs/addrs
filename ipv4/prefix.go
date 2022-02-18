@@ -170,9 +170,9 @@ func (me Prefix) Contains(other SetI) bool {
 	return me.Set().Contains(other)
 }
 
-// Size returns the number of addresses in the prefix, including network and
+// NumAddresses returns the number of addresses in the prefix, including network and
 // broadcast addresses. It ignores any bits set in the host part of the address.
-func (me Prefix) Size() int64 {
+func (me Prefix) NumAddresses() int64 {
 	return 1 << (addressSize - me.Length())
 }
 

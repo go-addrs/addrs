@@ -19,12 +19,12 @@ func NewTable_[T any]() Table_[T] {
 	return Table_[T]{NewITable_()}
 }
 
-// Size returns the number of exact prefixes stored in the table
-func (me Table_[T]) Size() int64 {
+// NumEntries returns the number of exact prefixes stored in the table
+func (me Table_[T]) NumEntries() int64 {
 	if me.t.m == nil {
 		return 0
 	}
-	return me.t.Size()
+	return me.t.NumEntries()
 }
 
 // Insert inserts the given prefix with the given value into the table.
@@ -132,9 +132,9 @@ func (me Table[T]) Table_() Table_[T] {
 	}
 }
 
-// Size returns the number of exact prefixes stored in the table
-func (me Table[T]) Size() int64 {
-	return me.t.Size()
+// NumEntries returns the number of exact prefixes stored in the table
+func (me Table[T]) NumEntries() int64 {
+	return me.t.NumEntries()
 }
 
 // Get returns the value in the table associated with the given network prefix

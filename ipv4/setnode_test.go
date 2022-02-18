@@ -208,7 +208,7 @@ func TestTrieNodeSet32Union(t *testing.T) {
 		two = two.Insert(_p("203.0.113.128/25"))
 
 		result := one.Union(two)
-		assert.Equal(t, int64(512), result.Size())
+		assert.Equal(t, int64(512), result.NumAddresses())
 		assert.NotNil(t, result.Match(_p("198.51.100.0/24")))
 		assert.NotNil(t, result.Match(_p("203.0.113.0/24")))
 		assert.Nil(t, result.Match(_p("192.0.0.0/4")))
@@ -296,50 +296,50 @@ func TestSetRemove(t *testing.T) {
 	t.Run("test remove from nil", func(t *testing.T) {
 		var trie *setNode
 
-		assert.Equal(t, int64(0), trie.Size())
+		assert.Equal(t, int64(0), trie.NumAddresses())
 
 		trie = trie.Remove(_p("203.0.113.0/24"))
-		assert.Equal(t, int64(0), trie.Size())
+		assert.Equal(t, int64(0), trie.NumAddresses())
 	})
 	t.Run("test remove all", func(t *testing.T) {
 		var trie *setNode
 
 		prefix := _p("203.0.113.0/24")
 		trie = trie.Insert(prefix)
-		assert.Equal(t, int64(256), trie.Size())
+		assert.Equal(t, int64(256), trie.NumAddresses())
 
 		trie = trie.Remove(prefix)
-		assert.Equal(t, int64(0), trie.Size())
+		assert.Equal(t, int64(0), trie.NumAddresses())
 	})
 	t.Run("test remove one address", func(t *testing.T) {
 		var trie *setNode
 
 		prefix := _p("203.0.113.0/24")
 		trie = trie.Insert(prefix)
-		assert.Equal(t, int64(256), trie.Size())
+		assert.Equal(t, int64(256), trie.NumAddresses())
 
 		trie = trie.Remove(_p("203.0.113.233/32"))
-		assert.Equal(t, int64(255), trie.Size())
+		assert.Equal(t, int64(255), trie.NumAddresses())
 	})
 	t.Run("test remove half", func(t *testing.T) {
 		var trie *setNode
 
 		prefix := _p("203.0.113.0/24")
 		trie = trie.Insert(prefix)
-		assert.Equal(t, int64(256), trie.Size())
+		assert.Equal(t, int64(256), trie.NumAddresses())
 
 		trie = trie.Remove(_p("203.0.113.128/25"))
-		assert.Equal(t, int64(128), trie.Size())
+		assert.Equal(t, int64(128), trie.NumAddresses())
 	})
 	t.Run("test remove more", func(t *testing.T) {
 		var trie *setNode
 
 		prefix := _p("203.0.113.0/24")
 		trie = trie.Insert(prefix)
-		assert.Equal(t, int64(256), trie.Size())
+		assert.Equal(t, int64(256), trie.NumAddresses())
 
 		trie = trie.Remove(_p("203.0.112.0/23"))
-		assert.Equal(t, int64(0), trie.Size())
+		assert.Equal(t, int64(0), trie.NumAddresses())
 	})
 }
 
@@ -349,21 +349,21 @@ func TestSetIntersect(t *testing.T) {
 
 		three = three.Insert(_p("203.0.113.0/24"))
 
-		assert.Equal(t, int64(0), one.Size())
-		assert.Equal(t, int64(0), two.Size())
-		assert.Equal(t, int64(256), three.Size())
+		assert.Equal(t, int64(0), one.NumAddresses())
+		assert.Equal(t, int64(0), two.NumAddresses())
+		assert.Equal(t, int64(256), three.NumAddresses())
 
-		assert.Equal(t, int64(0), one.Intersect(two).Size())
-		assert.Equal(t, int64(0), one.Intersect(three).Size())
-		assert.Equal(t, int64(0), three.Intersect(one).Size())
+		assert.Equal(t, int64(0), one.Intersect(two).NumAddresses())
+		assert.Equal(t, int64(0), one.Intersect(three).NumAddresses())
+		assert.Equal(t, int64(0), three.Intersect(one).NumAddresses())
 	})
 	t.Run("disjoint", func(t *testing.T) {
 		var one, two *setNode
 
 		one = one.Insert(_p("203.0.113.0/27"))
 		two = two.Insert(_p("203.0.113.128/25"))
-		assert.Equal(t, int64(0), one.Intersect(two).Size())
-		assert.Equal(t, int64(0), two.Intersect(one).Size())
+		assert.Equal(t, int64(0), one.Intersect(two).NumAddresses())
+		assert.Equal(t, int64(0), two.Intersect(one).NumAddresses())
 	})
 	t.Run("subset", func(t *testing.T) {
 		var one, two *setNode
@@ -371,8 +371,8 @@ func TestSetIntersect(t *testing.T) {
 		one = one.Insert(_p("203.0.113.0/24"))
 		two = two.Insert(_p("203.0.113.128/25"))
 		result := one.Intersect(two)
-		assert.Equal(t, int64(128), result.Size())
-		assert.Equal(t, int64(128), two.Intersect(one).Size())
+		assert.Equal(t, int64(128), result.NumAddresses())
+		assert.Equal(t, int64(128), two.Intersect(one).NumAddresses())
 		assert.Nil(t, result.Match(_p("203.0.113.117/32")))
 		assert.NotNil(t, result.Match(_p("203.0.113.217/32")))
 	})
@@ -383,13 +383,13 @@ func TestSetIntersect(t *testing.T) {
 		two = two.Insert(_p("203.0.113.128/25"))
 
 		result := one.Intersect(two)
-		assert.Equal(t, int64(128), result.Size())
+		assert.Equal(t, int64(128), result.NumAddresses())
 		assert.Nil(t, result.Match(_p("198.51.100.0/24")))
 		assert.Nil(t, result.Match(_p("203.0.113.0/25")))
 		assert.NotNil(t, result.Match(_p("203.0.113.128/25")))
 
 		result = two.Intersect(one)
-		assert.Equal(t, int64(128), result.Size())
+		assert.Equal(t, int64(128), result.NumAddresses())
 		assert.Nil(t, result.Match(_p("198.51.100.0/24")))
 		assert.Nil(t, result.Match(_p("203.0.113.0/25")))
 		assert.NotNil(t, result.Match(_p("203.0.113.128/25")))
@@ -402,13 +402,13 @@ func TestSetDifference(t *testing.T) {
 
 		three = three.Insert(_p("203.0.113.0/24"))
 
-		assert.Equal(t, int64(0), one.Size())
-		assert.Equal(t, int64(0), two.Size())
-		assert.Equal(t, int64(256), three.Size())
+		assert.Equal(t, int64(0), one.NumAddresses())
+		assert.Equal(t, int64(0), two.NumAddresses())
+		assert.Equal(t, int64(256), three.NumAddresses())
 
-		assert.Equal(t, int64(0), one.Difference(two).Size())
-		assert.Equal(t, int64(0), one.Difference(three).Size())
-		assert.Equal(t, int64(256), three.Difference(one).Size())
+		assert.Equal(t, int64(0), one.Difference(two).NumAddresses())
+		assert.Equal(t, int64(0), one.Difference(three).NumAddresses())
+		assert.Equal(t, int64(256), three.Difference(one).NumAddresses())
 	})
 	t.Run("disjoint", func(t *testing.T) {
 		var one, two *setNode
@@ -417,12 +417,12 @@ func TestSetDifference(t *testing.T) {
 		two = two.Insert(_p("203.0.113.128/25"))
 
 		result := one.Difference(two)
-		assert.Equal(t, int64(32), result.Size())
+		assert.Equal(t, int64(32), result.NumAddresses())
 		assert.NotNil(t, result.Match(_p("203.0.113.0/27")))
 		assert.Nil(t, result.Match(_p("203.0.113.128/25")))
 
 		result = two.Difference(one)
-		assert.Equal(t, int64(128), result.Size())
+		assert.Equal(t, int64(128), result.NumAddresses())
 		assert.Nil(t, result.Match(_p("203.0.113.0/27")))
 		assert.NotNil(t, result.Match(_p("203.0.113.128/25")))
 	})
@@ -433,11 +433,11 @@ func TestSetDifference(t *testing.T) {
 		two = two.Insert(_p("203.0.113.128/25"))
 
 		result := one.Difference(two)
-		assert.Equal(t, int64(128), result.Size())
+		assert.Equal(t, int64(128), result.NumAddresses())
 		assert.NotNil(t, result.Match(_p("203.0.113.117/32")))
 		assert.Nil(t, result.Match(_p("203.0.113.217/32")))
 
-		assert.Equal(t, int64(0), two.Difference(one).Size())
+		assert.Equal(t, int64(0), two.Difference(one).NumAddresses())
 	})
 	t.Run("recursive", func(t *testing.T) {
 		var one, two *setNode
@@ -446,13 +446,13 @@ func TestSetDifference(t *testing.T) {
 		two = two.Insert(_p("203.0.113.128/25"))
 
 		result := one.Difference(two)
-		assert.Equal(t, int64(384), result.Size())
+		assert.Equal(t, int64(384), result.NumAddresses())
 		assert.NotNil(t, result.Match(_p("198.51.100.0/24")))
 		assert.NotNil(t, result.Match(_p("203.0.113.0/25")))
 		assert.Nil(t, result.Match(_p("203.0.113.128/25")))
 
 		result = two.Difference(one)
-		assert.Equal(t, int64(0), result.Size())
+		assert.Equal(t, int64(0), result.NumAddresses())
 		assert.Nil(t, result.Match(_p("198.51.100.0/24")))
 		assert.Nil(t, result.Match(_p("203.0.113.0/25")))
 		assert.Nil(t, result.Match(_p("203.0.113.128/25")))
@@ -465,7 +465,7 @@ func TestSetDifference(t *testing.T) {
 		two = two.Insert(_p("192.0.2.0/24"))
 
 		result := one.Difference(two)
-		assert.Equal(t, int64(512), result.Size())
+		assert.Equal(t, int64(512), result.NumAddresses())
 		assert.NotNil(t, result.Match(_p("198.51.100.0/24")))
 		assert.NotNil(t, result.Match(_p("203.0.113.0/24")))
 		assert.Nil(t, result.Match(_p("192.0.2.0/24")))
@@ -478,7 +478,7 @@ func TestSetDifference(t *testing.T) {
 		two = two.Insert(_p("203.0.113.0/24"))
 
 		result := one.Difference(two)
-		assert.Equal(t, int64(268434944), result.Size())
+		assert.Equal(t, int64(268434944), result.NumAddresses())
 		assert.Nil(t, result.Match(_p("198.51.100.0/24")))
 		assert.Nil(t, result.Match(_p("203.0.113.0/24")))
 		assert.NotNil(t, result.Match(_p("197.51.100.128/25")))

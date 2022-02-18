@@ -68,18 +68,18 @@ func (me Set_) Remove(other SetI) {
 	})
 }
 
-// Size returns the number of IP addresses
-func (me Set_) Size() int64 {
+// NumAddresses returns the number of IP addresses
+func (me Set_) NumAddresses() int64 {
 	if me.s == nil {
 		return 0
 	}
-	return me.s.Size()
+	return me.s.NumAddresses()
 }
 
 // Contains tests if the given prefix is entirely contained in the set
 func (me Set_) Contains(other SetI) bool {
 	if me.s == nil {
-		return other == nil || other.Set().Size() == 0
+		return other == nil || other.Set().NumAddresses() == 0
 	}
 	return me.s.Contains(other)
 }
@@ -87,7 +87,7 @@ func (me Set_) Contains(other SetI) bool {
 // Equal returns true if this set is equal to other
 func (me Set_) Equal(other Set_) bool {
 	if me.s == nil {
-		return other.Size() == 0
+		return other.NumAddresses() == 0
 	}
 	return me.s.Equal(other.Set())
 }
@@ -177,9 +177,9 @@ func (me Set) Set() Set {
 	return me
 }
 
-// Size returns the number of IP addresses
-func (me Set) Size() int64 {
-	return me.trie.Size()
+// NumAddresses returns the number of IP addresses
+func (me Set) NumAddresses() int64 {
+	return me.trie.NumAddresses()
 }
 
 // WalkPrefixes calls `callback` for each prefix stored in lexographical
@@ -259,7 +259,7 @@ func (me Set) Contains(other SetI) bool {
 		other = Set{}
 	}
 	// NOTE This is the not the most efficient way to do this
-	return other.Set().Difference(me).Size() == 0
+	return other.Set().Difference(me).NumAddresses() == 0
 }
 
 // Union returns a new set with all addresses from both sets

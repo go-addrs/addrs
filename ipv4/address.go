@@ -95,8 +95,8 @@ func (me Address) String() string {
 	return fmt.Sprintf("%d.%d.%d.%d", a, b, c, d)
 }
 
-// Size returns the size of an address (always 32)
-func (me Address) Size() int {
+// NumBits returns the size of an address (always 32)
+func (me Address) NumBits() int {
 	return addressSize
 }
 

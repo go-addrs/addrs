@@ -383,7 +383,7 @@ func TestPrefixSize(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
-			assert.Equal(t, tt.expected, tt.prefix.Size())
+			assert.Equal(t, tt.expected, tt.prefix.NumAddresses())
 		})
 	}
 }

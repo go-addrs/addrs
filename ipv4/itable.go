@@ -36,12 +36,12 @@ const (
 	matchExact
 )
 
-// Size returns the number of exact prefixes stored in the table
-func (me ITable_) Size() int64 {
+// NumEntries returns the number of exact prefixes stored in the table
+func (me ITable_) NumEntries() int64 {
 	if me.m == nil {
 		return 0
 	}
-	return me.m.Size()
+	return me.m.NumEntries()
 }
 
 // mutate should be called by any method that modifies the table in any way
@@ -214,8 +214,8 @@ func (me ITable) Table_() ITable_ {
 	}
 }
 
-// Size returns the number of exact prefixes stored in the table
-func (me ITable) Size() int64 {
+// NumEntries returns the number of exact prefixes stored in the table
+func (me ITable) NumEntries() int64 {
 	return me.trie.NumNodes()
 }
 

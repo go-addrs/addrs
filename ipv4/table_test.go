@@ -14,7 +14,7 @@ func TestTableTInsertOrUpdate(t *testing.T) {
 	m := NewTable_[int]()
 	m.Insert(_a("10.224.24.1"), 0)
 	m.InsertOrUpdate(_a("10.224.24.1"), 3)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 
 	data, ok := m.Get(_a("10.224.24.1"))
 	assert.True(t, ok)
@@ -24,13 +24,13 @@ func TestTableTInsertOrUpdate(t *testing.T) {
 func TestTableTInsertOrUpdateDuplicate(t *testing.T) {
 	m := NewTable_[int]()
 	m.InsertOrUpdate(_a("10.224.24.1"), 3)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 	data, ok := m.Get(_a("10.224.24.1"))
 	assert.True(t, ok)
 	assert.Equal(t, 3, data)
 
 	m.InsertOrUpdate(_a("10.224.24.1"), 4)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 	data, ok = m.Get(_a("10.224.24.1"))
 	assert.True(t, ok)
 	assert.Equal(t, 4, data)
@@ -39,7 +39,7 @@ func TestTableTInsertOrUpdateDuplicate(t *testing.T) {
 func TestTableTGetOnlyExactMatch(t *testing.T) {
 	m := NewTable_[int]()
 	m.Insert(_p("10.224.24.0/24"), 3)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 
 	_, ok := m.Get(_a("10.224.24.1"))
 	assert.False(t, ok)
@@ -49,7 +49,7 @@ func TestTableTGetNotFound(t *testing.T) {
 	m := NewTable_[int]()
 	succeeded := m.Insert(_a("10.224.24.1"), 3)
 	assert.True(t, succeeded)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 
 	_, ok := m.Get(_a("10.225.24.1"))
 	assert.False(t, ok)
@@ -58,11 +58,11 @@ func TestTableTGetNotFound(t *testing.T) {
 func TestTableTGetOrInsertOnlyExactMatch(t *testing.T) {
 	m := NewTable_[int]()
 	m.Insert(_p("10.224.24.0/24"), 3)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 
 	value := m.GetOrInsert(_a("10.224.24.1"), 5)
 	assert.Equal(t, 5, value)
-	assert.Equal(t, int64(2), m.Size())
+	assert.Equal(t, int64(2), m.NumEntries())
 }
 
 func TestTableTGetOrInsertNotFound(t *testing.T) {
@@ -72,17 +72,17 @@ func TestTableTGetOrInsertNotFound(t *testing.T) {
 
 	value := m.GetOrInsert(_a("10.225.24.1"), 5)
 	assert.Equal(t, 5, value)
-	assert.Equal(t, int64(2), m.Size())
+	assert.Equal(t, int64(2), m.NumEntries())
 }
 
 func TestTableTGetOrInsertPrefixOnlyExactMatch(t *testing.T) {
 	m := NewTable_[int]()
 	m.Insert(_p("10.224.24.0/24"), 3)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 
 	value := m.GetOrInsert(_p("10.224.24.2/31"), 5)
 	assert.Equal(t, 5, value)
-	assert.Equal(t, int64(2), m.Size())
+	assert.Equal(t, int64(2), m.NumEntries())
 }
 
 func TestTableTGetOrInsertPrefixNotFound(t *testing.T) {
@@ -92,15 +92,15 @@ func TestTableTGetOrInsertPrefixNotFound(t *testing.T) {
 
 	value := m.GetOrInsert(_p("10.225.24.2/31"), 5)
 	assert.Equal(t, 5, value)
-	assert.Equal(t, int64(2), m.Size())
+	assert.Equal(t, int64(2), m.NumEntries())
 }
 
 func TestTableTMatchLongestPrefixMatch(t *testing.T) {
 	m := NewTable_[int]()
 	m.Insert(_p("10.224.24.0/24"), 3)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 	m.Insert(_p("10.224.0.0/16"), 4)
-	assert.Equal(t, int64(2), m.Size())
+	assert.Equal(t, int64(2), m.NumEntries())
 
 	data, matched, n := m.LongestMatch(_a("10.224.24.1"))
 	assert.True(t, matched)
@@ -112,7 +112,7 @@ func TestMTableatchNotFound(t *testing.T) {
 	m := NewTable_[int]()
 	succeeded := m.Insert(_a("10.224.24.1"), 3)
 	assert.True(t, succeeded)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 
 	_, matched, _ := m.LongestMatch(_a("10.225.24.1"))
 	assert.False(t, matched)
@@ -122,27 +122,27 @@ func TestTableTRemove(t *testing.T) {
 	m := NewTable_[int]()
 	succeeded := m.Insert(_a("10.224.24.1"), 3)
 	assert.True(t, succeeded)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 
 	m.Remove(_a("10.224.24.1"))
-	assert.Equal(t, int64(0), m.Size())
+	assert.Equal(t, int64(0), m.NumEntries())
 }
 
 func TestTableTRemoveNotFound(t *testing.T) {
 	m := NewTable_[int]()
 	succeeded := m.Insert(_a("10.224.24.1"), 3)
 	assert.True(t, succeeded)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 
 	m.Remove(_a("10.225.24.1"))
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 }
 
 func TestTableTInsert(t *testing.T) {
 	m := NewTable_[int]()
 	succeeded := m.Insert(_p("10.224.24.0/24"), 3)
 	assert.True(t, succeeded)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 
 	data, ok := m.Get(_p("10.224.24.0/24"))
 	assert.True(t, ok)
@@ -156,7 +156,7 @@ func TestTableTInsertOrUpdatePrefix(t *testing.T) {
 	m := NewTable_[int]()
 	m.Insert(_p("10.224.24.0/24"), 0)
 	m.InsertOrUpdate(_p("10.224.24.0/24"), 3)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 
 	data, ok := m.Get(_p("10.224.24.0/24"))
 	assert.True(t, ok)
@@ -170,18 +170,18 @@ func TestTableTRemovePrefixNotFound(t *testing.T) {
 	m := NewTable_[int]()
 	succeeded := m.Insert(_p("10.224.24.0/24"), 3)
 	assert.True(t, succeeded)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 
 	m.Remove(_p("10.225.24.0/24"))
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 }
 
 func TestTableTMatchPrefixLongestPrefixMatch(t *testing.T) {
 	m := NewTable_[int]()
 	m.Insert(_p("10.224.24.0/24"), 3)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 	m.Insert(_p("10.224.0.0/16"), 4)
-	assert.Equal(t, int64(2), m.Size())
+	assert.Equal(t, int64(2), m.NumEntries())
 
 	prefix := _p("10.224.24.0/27")
 	data, matched, n := m.LongestMatch(prefix)
@@ -194,7 +194,7 @@ func TestTableTMatchPrefixLongestPrefixMatch(t *testing.T) {
 func TestTableTMatchPrefixNotFound(t *testing.T) {
 	m := NewTable_[int]()
 	m.Insert(_p("10.224.24.0/24"), 3)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 
 	_, matched, _ := m.LongestMatch(_p("10.225.24.0/24"))
 	assert.False(t, matched)
@@ -573,7 +573,7 @@ func TestTableTAsReferenceType(t *testing.T) {
 		m.InsertOrUpdate(_a("10.224.24.1"), 3)
 	}
 	manipulate(m)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 	data, ok := m.Get(_a("10.224.24.1"))
 	assert.True(t, ok)
 	assert.Equal(t, 3, data)
@@ -621,8 +621,8 @@ func TestNilTable(t *testing.T) {
 	var table Table_[bool]
 
 	// On-offs
-	assert.Equal(t, int64(0), table.Size())
-	assert.Equal(t, int64(0), table.Table().Size())
+	assert.Equal(t, int64(0), table.NumEntries())
+	assert.Equal(t, int64(0), table.Table().NumEntries())
 	_, found := table.Get(_a("203.0.113.0"))
 	assert.False(t, found)
 	_, matched, _ := table.LongestMatch(_a("203.0.113.0"))
@@ -680,7 +680,7 @@ func TestTableInsertNil(t *testing.T) {
 	m := NewTable_[int]()
 	succeeded := m.Insert(nil, 3)
 	assert.True(t, succeeded)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 	value, found := m.Get(_p("0.0.0.0/0"))
 	assert.True(t, found)
 	assert.Equal(t, 3, value)
@@ -692,7 +692,7 @@ func TestTableUpdateNil(t *testing.T) {
 
 	succeeded := m.Update(nil, 3)
 	assert.True(t, succeeded)
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 	value, found := m.Get(_p("0.0.0.0/0"))
 	assert.True(t, found)
 	assert.Equal(t, 3, value)
@@ -724,7 +724,7 @@ func TestTableInsertOrUpdateNil(t *testing.T) {
 	m := NewTable_[int]()
 	m.InsertOrUpdate(nil, 3)
 
-	assert.Equal(t, int64(1), m.Size())
+	assert.Equal(t, int64(1), m.NumEntries())
 	value, found := m.Get(_p("0.0.0.0/0"))
 	assert.True(t, found)
 	assert.Equal(t, 3, value)
@@ -824,7 +824,7 @@ func TestFixedTableT(t *testing.T) {
 	_, found = m.Get(addrThree)
 	assert.False(t, found)
 
-	assert.Equal(t, int64(1), im.Size())
+	assert.Equal(t, int64(1), im.NumEntries())
 	value, found = im.Get(addrOne)
 	assert.True(t, found)
 	assert.Equal(t, 1, value)
@@ -833,7 +833,7 @@ func TestFixedTableT(t *testing.T) {
 	_, found = im.Get(addrThree)
 	assert.False(t, found)
 
-	assert.Equal(t, int64(2), m2.Size())
+	assert.Equal(t, int64(2), m2.NumEntries())
 	value, found = m2.Get(addrOne)
 	assert.True(t, found)
 	assert.Equal(t, 1, value)

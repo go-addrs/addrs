@@ -233,18 +233,18 @@ func (me *trieNode) Match(searchKey Prefix) *trieNode {
 	return me
 }
 
-// Size returns the number of addresses that could match this node
-// Note that this may have to search all nodes recursively to find the answer.
-// The implementation can be changed to store the size in each node at the cost
-// of adding about 8 more bytes to the size of each node.
-func (me *trieNode) Size() int64 {
+// NumAddresses returns the number of addresses that could match this node Note
+// that this may have to search all nodes recursively to find the answer. The
+// implementation can be changed to store the size in each node at the cost of
+// adding about 8 more bytes to the size of each node.
+func (me *trieNode) NumAddresses() int64 {
 	if me == nil {
 		return 0
 	}
 	if me.isActive {
 		return int64(^me.Prefix.Mask().Uint32()) + 1
 	}
-	return me.children[0].Size() + me.children[1].Size()
+	return me.children[0].NumAddresses() + me.children[1].NumAddresses()
 }
 
 // NumNodes returns the number of entries in the trie
