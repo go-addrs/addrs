@@ -878,3 +878,77 @@ func TestTableMap(t *testing.T) {
 	value, ok = result.Get(_p("0.0.0.0/0"))
 	assert.False(t, ok)
 }
+
+func TestTableVariousComparators(t *testing.T) {
+	tests := []struct {
+		description string
+		table       Table_[creativeComparable]
+		expected    []string
+	}{
+		{
+			description: "comparable",
+			table:       NewTable_[creativeComparable](),
+			expected: []string{
+				"203.0.113.0/27",
+				"203.0.113.0/29",
+				"203.0.113.0/30",
+				"203.0.113.0/31",
+				"203.0.113.0/32",
+			},
+		}, {
+			description: "not_comparable",
+			table: NewTableCustomCompare_[creativeComparable](
+				func(a, b creativeComparable) bool {
+					return false
+				},
+			),
+			expected: []string{
+				"203.0.113.0/27",
+				"203.0.113.0/28",
+				"203.0.113.0/29",
+				"203.0.113.0/30",
+				"203.0.113.0/31",
+				"203.0.113.0/32",
+			},
+		}, {
+			description: "equal_comparable",
+			table: NewTableCustomCompare_[creativeComparable](
+				func(a, b creativeComparable) bool {
+					return a.Equal(b)
+				},
+			),
+			expected: []string{
+				"203.0.113.0/27",
+				"203.0.113.0/31",
+				"203.0.113.0/32",
+			},
+		}, {
+			description: "custom_comparable",
+			table: NewTableCustomCompare_[creativeComparable](func(a, b creativeComparable) bool {
+				return a.i <= 3 && b.i <= 3
+			}),
+			expected: []string{
+				"203.0.113.0/27",
+				"203.0.113.0/32",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			tt.table.Insert(_p("203.0.113.0/27"), creativeComparable{0})
+			tt.table.Insert(_p("203.0.113.0/28"), creativeComparable{0})
+			tt.table.Insert(_p("203.0.113.0/29"), creativeComparable{1})
+			tt.table.Insert(_p("203.0.113.0/30"), creativeComparable{2})
+			tt.table.Insert(_p("203.0.113.0/31"), creativeComparable{3})
+			tt.table.Insert(_p("203.0.113.0/32"), creativeComparable{4})
+
+			result := []string{}
+			tt.table.Table().Aggregate().Walk(func(prefix Prefix, value creativeComparable) bool {
+				result = append(result, prefix.String())
+				return true
+			})
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

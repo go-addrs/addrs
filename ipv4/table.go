@@ -11,12 +11,32 @@ package ipv4
 // reading an empty Table_. Attempts to modify it will result in a panic.
 // Always use NewTable_() to get an initialized Table_.
 type Table_[T any] struct {
-	t ITable_
+	t  ITable_
+	eq comparator
 }
 
-// NewTable_ returns a new fully-initialized Table_
-func NewTable_[T any]() Table_[T] {
-	return Table_[T]{NewITable_()}
+// NewTable_ returns a new fully-initialized Table_ optimized for values that
+// are comparable with ==.
+func NewTable_[C comparable]() Table_[C] {
+	return Table_[C]{
+		NewITable_(),
+		func(a, b interface{}) bool {
+			a, _ = a.(C)
+			b, _ = b.(C)
+			return a == b
+		},
+	}
+}
+
+// NewTableCustomComparator_ returns a new fully-initialized Table_ optimized for
+// data that can be compared used a comparator that you pass.
+func NewTableCustomCompare_[A any](comparator func(a, b A) bool) Table_[A] {
+	return Table_[A]{
+		NewITable_(),
+		func(a, b interface{}) bool {
+			return comparator(a.(A), b.(A))
+		},
+	}
 }
 
 // NumEntries returns the number of exact prefixes stored in the table
@@ -37,7 +57,7 @@ func (me Table_[T]) Insert(prefix PrefixI, value T) (succeeded bool) {
 // Update inserts the given prefix with the given value into the table. If the
 // prefix already existed, it updates the associated value in place and return
 // true. Otherwise, it returns false.
-func (me Table_[T]) Update(prefix PrefixI, value T) (succeeded bool) {
+func (me Table_[T]) Update(prefix PrefixI, value T) (updated bool) {
 	return me.t.Update(prefix, value)
 }
 
@@ -97,10 +117,14 @@ func (me Table_[T]) Remove(prefix PrefixI) (succeeded bool) {
 // effectively a pointer copy.
 func (me Table_[T]) Table() Table[T] {
 	if me.t.m == nil {
-		return Table[T]{}
+		return Table[T]{
+			ITable{},
+			me.eq,
+		}
 	}
 	return Table[T]{
 		*me.t.m,
+		me.eq,
 	}
 }
 
@@ -118,7 +142,8 @@ func (me Table_[T]) Table() Table[T] {
 // The zero value of a Table is an empty table
 // Table is immutable. For a mutable equivalent, see Table_.
 type Table[T any] struct {
-	t ITable
+	t  ITable
+	eq comparator
 }
 
 // Table_ returns a mutable table initialized with the contents of this one. Due to
@@ -128,7 +153,9 @@ func (me Table[T]) Table_() Table_[T] {
 	return Table_[T]{
 		ITable_{
 			&me.t,
+			me.eq,
 		},
+		me.eq,
 	}
 }
 
@@ -190,7 +217,10 @@ func (me Table[T]) LongestMatch(searchPrefix PrefixI) (value T, found bool, pref
 // peers.
 func (me Table[T]) Aggregate() Table[T] {
 	return Table[T]{
-		me.t.Aggregate(),
+		ITable{
+			trie: me.t.trie.Aggregate(me.eq),
+		},
+		me.eq,
 	}
 }
 
@@ -241,7 +271,7 @@ func (me Table[T]) Diff(other Table[T], left, right func(Prefix, T) bool, change
 			return changed(l.Prefix, lt, rt)
 		}
 	}
-	return me.t.trie.Diff(other.t.trie, trieHandler, ieq)
+	return me.t.trie.Diff(other.t.trie, trieHandler, me.eq)
 }
 
 // Map invokes the given mapper function for each prefix/value pair in the
@@ -263,10 +293,17 @@ func (me Table[T]) Diff(other Table[T], left, right func(Prefix, T) bool, change
 // place takking time that is linear in the number of entries. It also avoids
 // modifying anything if any values compare equal to the original.
 func (me Table[T]) Map(mapper func(Prefix, T) T) Table[T] {
+	if mapper == nil {
+		return me
+	}
 	return Table[T]{
-		me.t.Map(func(p Prefix, value interface{}) interface{} {
-			t, _ := value.(T)
-			return mapper(p, t)
-		}),
+		ITable{
+			me.t.trie.Map(func(p Prefix, value interface{}) interface{} {
+				t, _ := value.(T)
+				return mapper(p, t)
+			}, me.eq),
+			me.eq,
+		},
+		me.eq,
 	}
 }

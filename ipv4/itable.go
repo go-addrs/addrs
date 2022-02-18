@@ -14,13 +14,27 @@ type ITable_ struct {
 
 	// Be careful not to take an ITable from outside the package and turn
 	// it into a mutable one. That would break the contract.
-	m *ITable
+	m  *ITable
+	eq comparator
 }
 
-// NewITable_ returns a new fully-initialized ITable_
+// NewITable_ returns a new fully-initialized Table_ optimized for values that
+// are comparable with ==.
 func NewITable_() ITable_ {
 	return ITable_{
-		m: &ITable{},
+		&ITable{},
+		func(a, b interface{}) bool {
+			return a == b
+		},
+	}
+}
+
+// NewITableCustomCompare_ returns a new fully-initialized Table_ optimized for
+// data that can be compared used a comparator that you pass.
+func NewITableCustomCompare_(comparator func(a, b interface{}) bool) ITable_ {
+	return ITable_{
+		&ITable{},
+		comparator,
 	}
 }
 
@@ -35,24 +49,6 @@ const (
 	// matchExact indicates that a match with the same prefix
 	matchExact
 )
-
-// equalComparable is an interface used to compare data. If the datatype you
-// store implements it, it can be used to aggregate prefixes.
-type equalComparable interface {
-	IEqual(interface{}) bool
-}
-
-func ieq(a, b interface{}) bool {
-	// If the data stored implement IEqual, compare it using its method.
-	// This is useful to allow mapping to a more complex type (e.g. Set_) that
-	// is not comparable by normal means.
-	switch t := a.(type) {
-	case equalComparable:
-		return t.IEqual(b)
-	default:
-		return a == b
-	}
-}
 
 // NumEntries returns the number of exact prefixes stored in the table
 func (me ITable_) NumEntries() int64 {
@@ -200,7 +196,8 @@ func (me ITable_) Table() ITable {
 		return ITable{}
 	}
 	return ITable{
-		trie: me.m.trie,
+		me.m.trie,
+		me.eq,
 	}
 }
 
@@ -219,6 +216,7 @@ func (me ITable_) Table() ITable {
 // ITable is immutable. For a mutable equivalent, see ITable_.
 type ITable struct {
 	trie *trieNode
+	eq   comparator
 }
 
 // Table_ returns a mutable table initialized with the contents of this one. Due to
@@ -227,7 +225,8 @@ type ITable struct {
 func (me ITable) Table_() ITable_ {
 	return ITable_{
 		m: &ITable{
-			trie: me.trie,
+			me.trie,
+			me.eq,
 		},
 	}
 }
@@ -311,7 +310,8 @@ func (me ITable) longestMatch(prefix PrefixI) (value interface{}, matched match,
 // peers.
 func (me ITable) Aggregate() ITable {
 	return ITable{
-		trie: me.trie.Aggregate(ieq),
+		me.trie.Aggregate(me.eq),
+		me.eq,
 	}
 }
 
@@ -351,7 +351,7 @@ func (me ITable) Diff(other ITable, left, right func(Prefix, interface{}) bool, 
 			return changed(l.Prefix, l.Data, r.Data)
 		}
 	}
-	return me.trie.Diff(other.trie, trieHandler, ieq)
+	return me.trie.Diff(other.trie, trieHandler, me.eq)
 }
 
 // Map invokes the given mapper function for each prefix/value pair in the
@@ -377,6 +377,7 @@ func (me ITable) Map(mapper func(Prefix, interface{}) interface{}) ITable {
 		return me
 	}
 	return ITable{
-		me.trie.Map(mapper, ieq),
+		me.trie.Map(mapper, me.eq),
+		me.eq,
 	}
 }

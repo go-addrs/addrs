@@ -556,6 +556,10 @@ func TestTableWalkAggregates(t *testing.T) {
 	assert.True(t, m.m.trie.isValid())
 }
 
+func ieq(a, b interface{}) bool {
+	return a == b
+}
+
 func TestTableEqual(t *testing.T) {
 	a := NewITable_()
 	b := NewITable_()
@@ -879,4 +883,76 @@ func TestITableMap(t *testing.T) {
 
 	value, ok = result.Get(_p("0.0.0.0/0"))
 	assert.False(t, ok)
+}
+
+type creativeComparable struct {
+	i int
+}
+
+func (me creativeComparable) IEqual(other interface{}) bool {
+	return me.i <= 1 && other.(creativeComparable).i <= 1
+}
+
+func (me creativeComparable) Equal(other creativeComparable) bool {
+	return me.i <= 2 && other.i <= 2
+}
+
+func TestITableVariousComparators(t *testing.T) {
+	tests := []struct {
+		description string
+		table       ITable_
+		expected    []string
+	}{
+		{
+			description: "comparable",
+			table:       NewITable_(),
+			expected: []string{
+				"203.0.113.0/27",
+				"203.0.113.0/29",
+				"203.0.113.0/30",
+				"203.0.113.0/31",
+				"203.0.113.0/32",
+			},
+		}, {
+			description: "not_comparable",
+			table: NewITableCustomCompare_(func(a, b interface{}) bool {
+				return false
+			}),
+			expected: []string{
+				"203.0.113.0/27",
+				"203.0.113.0/28",
+				"203.0.113.0/29",
+				"203.0.113.0/30",
+				"203.0.113.0/31",
+				"203.0.113.0/32",
+			},
+		}, {
+			description: "custom_comparable",
+			table: NewITableCustomCompare_(func(a, b interface{}) bool {
+				return a.(creativeComparable).i <= 3 && b.(creativeComparable).i <= 3
+			}),
+			expected: []string{
+				"203.0.113.0/27",
+				"203.0.113.0/32",
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			tt.table.Insert(_p("203.0.113.0/27"), creativeComparable{0})
+			tt.table.Insert(_p("203.0.113.0/28"), creativeComparable{0})
+			tt.table.Insert(_p("203.0.113.0/29"), creativeComparable{1})
+			tt.table.Insert(_p("203.0.113.0/30"), creativeComparable{2})
+			tt.table.Insert(_p("203.0.113.0/31"), creativeComparable{3})
+			tt.table.Insert(_p("203.0.113.0/32"), creativeComparable{4})
+
+			result := []string{}
+			tt.table.Table().Aggregate().Walk(func(prefix Prefix, _ interface{}) bool {
+				result = append(result, prefix.String())
+				return true
+			})
+			assert.Equal(t, tt.expected, result)
+		})
+	}
 }
