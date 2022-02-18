@@ -552,16 +552,16 @@ func TestTableTEqual(t *testing.T) {
 	a := NewTable_[bool]()
 	b := NewTable_[bool]()
 
-	assert.True(t, a.t.m.trie.Equal(b.t.m.trie))
-	assert.True(t, b.t.m.trie.Equal(a.t.m.trie))
+	assert.True(t, a.t.m.trie.Equal(b.t.m.trie, ieq))
+	assert.True(t, b.t.m.trie.Equal(a.t.m.trie, ieq))
 
 	a.Insert(Prefix{Address{0x0ae01801}, 24}, true)
-	assert.False(t, a.t.m.trie.Equal(b.t.m.trie))
-	assert.False(t, b.t.m.trie.Equal(a.t.m.trie))
+	assert.False(t, a.t.m.trie.Equal(b.t.m.trie, ieq))
+	assert.False(t, b.t.m.trie.Equal(a.t.m.trie, ieq))
 
 	b.Insert(Prefix{Address{0x0ae01800}, 24}, true)
-	assert.False(t, a.t.m.trie.Equal(b.t.m.trie))
-	assert.False(t, b.t.m.trie.Equal(a.t.m.trie))
+	assert.False(t, a.t.m.trie.Equal(b.t.m.trie, ieq))
+	assert.False(t, b.t.m.trie.Equal(a.t.m.trie, ieq))
 }
 
 // Test that Tables, when passed and copied, refer to the same data

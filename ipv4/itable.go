@@ -36,6 +36,24 @@ const (
 	matchExact
 )
 
+// equalComparable is an interface used to compare data. If the datatype you
+// store implements it, it can be used to aggregate prefixes.
+type equalComparable interface {
+	IEqual(interface{}) bool
+}
+
+func ieq(a, b interface{}) bool {
+	// If the data stored implement IEqual, compare it using its method.
+	// This is useful to allow mapping to a more complex type (e.g. Set_) that
+	// is not comparable by normal means.
+	switch t := a.(type) {
+	case equalComparable:
+		return t.IEqual(b)
+	default:
+		return a == b
+	}
+}
+
 // NumEntries returns the number of exact prefixes stored in the table
 func (me ITable_) NumEntries() int64 {
 	if me.m == nil {
@@ -293,7 +311,7 @@ func (me ITable) longestMatch(prefix PrefixI) (value interface{}, matched match,
 // peers.
 func (me ITable) Aggregate() ITable {
 	return ITable{
-		trie: me.trie.Aggregate(),
+		trie: me.trie.Aggregate(ieq),
 	}
 }
 
@@ -333,7 +351,7 @@ func (me ITable) Diff(other ITable, left, right func(Prefix, interface{}) bool, 
 			return changed(l.Prefix, l.Data, r.Data)
 		}
 	}
-	return me.trie.Diff(other.trie, trieHandler)
+	return me.trie.Diff(other.trie, trieHandler, ieq)
 }
 
 // Map invokes the given mapper function for each prefix/value pair in the
@@ -359,6 +377,6 @@ func (me ITable) Map(mapper func(Prefix, interface{}) interface{}) ITable {
 		return me
 	}
 	return ITable{
-		me.trie.Map(mapper),
+		me.trie.Map(mapper, ieq),
 	}
 }

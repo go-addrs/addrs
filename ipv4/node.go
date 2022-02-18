@@ -129,8 +129,10 @@ func (me *trieNode) copyMutate(mutator func(*trieNode)) *trieNode {
 	return mutated
 }
 
+type comparator func(a, b interface{}) bool
+
 // Equal returns true if all of the entries are the same in the two data structures
-func (me *trieNode) Equal(other *trieNode) bool {
+func (me *trieNode) Equal(other *trieNode, eq comparator) bool {
 	switch {
 	case me == other:
 		return true
@@ -143,11 +145,11 @@ func (me *trieNode) Equal(other *trieNode) bool {
 		return false
 	case me.Prefix != other.Prefix:
 		return false
-	case me.isActive && !dataEqual(me.Data, other.Data):
+	case me.isActive && !eq(me.Data, other.Data):
 		return false
-	case !me.children[0].Equal(other.children[0]):
+	case !me.children[0].Equal(other.children[0], eq):
 		return false
-	case !me.children[1].Equal(other.children[1]):
+	case !me.children[1].Equal(other.children[1], eq):
 		return false
 
 	default:
@@ -558,24 +560,6 @@ func (me *trieNode) active() bool {
 	return me.isActive
 }
 
-func dataEqual(a, b interface{}) bool {
-	// If the data stored implement IEqual, compare it using its method.
-	// This is useful to allow mapping to a more complex type (e.g. Set_) that
-	// is not comparable by normal means.
-	switch t := a.(type) {
-	case equalComparable:
-		return t.IEqual(b)
-	default:
-		return a == b
-	}
-}
-
-// equalComparable is an interface used to compare data. If the datatype you
-// store implements it, it can be used to aggregate prefixes.
-type equalComparable interface {
-	IEqual(interface{}) bool
-}
-
 // Walk walks the entire tree and calls the given function for each active
 // node. The order of visiting nodes is essentially lexigraphical:
 // - disjoint prefixes are visited in lexigraphical order
@@ -596,7 +580,9 @@ func (me *trieNode) Walk(callback func(Prefix, interface{}) bool) bool {
 			return callback(n.Prefix, n.Data)
 		},
 	}
-	return empty.Diff(me, handler)
+	return empty.Diff(me, handler, func(a, b interface{}) bool {
+		return false
+	})
 }
 
 type trieDiffHandler struct {
@@ -698,7 +684,7 @@ func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) bool {
 
 // Diff compares the two tries to find entries that are removed, added, or
 // changed between the two. It calls the appropriate callback
-func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler) bool {
+func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler, eq comparator) bool {
 	noop := func(*trieNode) bool {
 		return true
 	}
@@ -732,7 +718,7 @@ func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler) bool {
 		Modified: func(left, right *trieNode) bool {
 			switch {
 			case left.isActive && right.isActive:
-				if !dataEqual(left.Data, right.Data) {
+				if !eq(left.Data, right.Data) {
 					return handler.Modified(left, right)
 				}
 			case left.isActive:
@@ -749,7 +735,7 @@ type umbrella struct {
 	Data interface{}
 }
 
-func (me *trieNode) aggregate(parentUmbrella *umbrella) (result *trieNode) {
+func (me *trieNode) aggregate(parentUmbrella *umbrella, eq comparator) (result *trieNode) {
 	if me == nil {
 		return me
 	}
@@ -758,13 +744,13 @@ func (me *trieNode) aggregate(parentUmbrella *umbrella) (result *trieNode) {
 	data := me.Data
 	children := me.children
 	createReturnValue := func() *trieNode {
-		if isActive == me.isActive && children == me.children && dataEqual(data, me.Data) {
+		if isActive == me.isActive && children == me.children && eq(data, me.Data) {
 			return me
 		}
 		return me.copyMutate(func(n *trieNode) {
 			n.isActive = isActive
 			if isActive {
-				if !dataEqual(me.Data, data) {
+				if !eq(me.Data, data) {
 					n.Data = data
 				}
 			} else {
@@ -776,7 +762,7 @@ func (me *trieNode) aggregate(parentUmbrella *umbrella) (result *trieNode) {
 
 	u := parentUmbrella
 	if isActive {
-		if parentUmbrella == nil || !dataEqual(parentUmbrella.Data, data) {
+		if parentUmbrella == nil || !eq(parentUmbrella.Data, data) {
 			u = &umbrella{data}
 		} else {
 			isActive = false
@@ -784,15 +770,15 @@ func (me *trieNode) aggregate(parentUmbrella *umbrella) (result *trieNode) {
 		}
 	}
 	children = [2]*trieNode{
-		children[0].aggregate(u),
-		children[1].aggregate(u),
+		children[0].aggregate(u, eq),
+		children[1].aggregate(u, eq),
 	}
 
 	childrenAggregate := func(a, b *trieNode) bool {
 		if a.active() && b.active() {
 			if a.Prefix.Length() == (me.Prefix.Length() + 1) {
 				if a.Prefix.Length() == b.Prefix.Length() {
-					if dataEqual(a.Data, b.Data) {
+					if eq(a.Data, b.Data) {
 						return true
 					}
 				}
@@ -822,22 +808,22 @@ func (me *trieNode) aggregate(parentUmbrella *umbrella) (result *trieNode) {
 	return createReturnValue()
 }
 
-func (me *trieNode) Aggregate() *trieNode {
-	return me.aggregate(nil)
+func (me *trieNode) Aggregate(eq comparator) *trieNode {
+	return me.aggregate(nil, eq)
 }
 
 // Map runs the given mapper function on every data value in the table and
 // returns the *trieNode pointing to the result. As always, the original
 // structure is not modified, an entirely new structure is created.
-func (me *trieNode) Map(mapper func(Prefix, interface{}) interface{}) *trieNode {
+func (me *trieNode) Map(mapper func(Prefix, interface{}) interface{}, eq comparator) *trieNode {
 	return me.copyMutate(func(n *trieNode) {
 		n.Data = mapper(me.Prefix, me.Data)
-		if dataEqual(me.Data, n.Data) {
+		if eq(me.Data, n.Data) {
 			n.Data = me.Data
 		}
 		n.children = [2]*trieNode{
-			me.children[0].Map(mapper),
-			me.children[1].Map(mapper),
+			me.children[0].Map(mapper, eq),
+			me.children[1].Map(mapper, eq),
 		}
 	})
 }

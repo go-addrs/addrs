@@ -1397,7 +1397,7 @@ func TestAggregate(t *testing.T) {
 			check := func(t *testing.T) {
 				expectedIterations := 0
 				result := []pair32{}
-				trie.Aggregate().Walk(
+				trie.Aggregate(ieq).Walk(
 					func(key Prefix, data interface{}) bool {
 						result = append(result, pair32{key: key, data: data})
 						expectedIterations = 1
@@ -1407,7 +1407,7 @@ func TestAggregate(t *testing.T) {
 				assert.Equal(t, tt.golden, result)
 
 				iterations := 0
-				trie.Aggregate().Walk(
+				trie.Aggregate(ieq).Walk(
 					func(key Prefix, data interface{}) bool {
 						result = append(result, pair32{key: key, data: data})
 						iterations++
@@ -1476,7 +1476,7 @@ func TestAggregateEqualComparable(t *testing.T) {
 			}
 
 			result := []pair32{}
-			trie.Aggregate().Walk(
+			trie.Aggregate(ieq).Walk(
 				func(key Prefix, data interface{}) bool {
 					result = append(result, pair32{key: key, data: data})
 					return true
@@ -1563,8 +1563,8 @@ func TestTrieNodeEqual(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.desc, func(t *testing.T) {
-			assert.Equal(t, tt.equal, tt.a.Equal(tt.b))
-			assert.Equal(t, tt.equal, tt.b.Equal(tt.a))
+			assert.Equal(t, tt.equal, tt.a.Equal(tt.b, ieq))
+			assert.Equal(t, tt.equal, tt.b.Equal(tt.a, ieq))
 		})
 	}
 }
@@ -1929,7 +1929,7 @@ func TestDiff(t *testing.T) {
 
 			t.Run("forward", func(t *testing.T) {
 				t.Run("normal", func(t *testing.T) {
-					left.Diff(right, getHandler(true))
+					left.Diff(right, getHandler(true), ieq)
 					assert.True(t,
 						reflect.DeepEqual(tt.actions, actions),
 						cmp.Diff(tt.actions, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
@@ -1937,14 +1937,14 @@ func TestDiff(t *testing.T) {
 					if len(tt.actions) >= 1 {
 						// Run the same thing but return false to stop iteration
 						t.Run("stop", func(t *testing.T) {
-							left.Diff(right, getHandler(false))
+							left.Diff(right, getHandler(false), ieq)
 							assert.True(t, reflect.DeepEqual(tt.actions[:1], actions))
 						})
 					}
 				})
 
 				t.Run("aggregated", func(t *testing.T) {
-					left.Aggregate().Diff(right.Aggregate(), getHandler(true))
+					left.Aggregate(ieq).Diff(right.Aggregate(ieq), getHandler(true), ieq)
 					assert.True(t,
 						reflect.DeepEqual(aggregatedExpected, actions),
 						cmp.Diff(aggregatedExpected, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
@@ -1954,7 +1954,7 @@ func TestDiff(t *testing.T) {
 
 			t.Run("backward", func(t *testing.T) {
 				t.Run("normal", func(t *testing.T) {
-					right.Diff(left, getHandler(true))
+					right.Diff(left, getHandler(true), ieq)
 
 					var expected []diffAction
 					for _, action := range tt.actions {
@@ -1979,7 +1979,7 @@ func TestDiff(t *testing.T) {
 				})
 
 				t.Run("aggregated", func(t *testing.T) {
-					right.Aggregate().Diff(left.Aggregate(), getHandler(true))
+					right.Aggregate(ieq).Diff(left.Aggregate(ieq), getHandler(true), ieq)
 
 					var expected []diffAction
 					for _, action := range aggregatedExpected {
@@ -2054,7 +2054,7 @@ func TestMap(t *testing.T) {
 
 			result := original.Map(func(Prefix, interface{}) interface{} {
 				return true
-			})
+			}, ieq)
 			assert.Equal(t, original.NumNodes(), result.NumNodes())
 			expected.Diff(result, trieDiffHandler{
 				Removed: func(left *trieNode) bool {
@@ -2069,10 +2069,10 @@ func TestMap(t *testing.T) {
 					assert.Fail(t, fmt.Sprintf("found a changed node: %+v: %+v -> %+v", left.Prefix, left.Data, right.Data))
 					return true
 				},
-			})
+			}, ieq)
 			result = original.Map(func(_ Prefix, value interface{}) interface{} {
 				return value
-			})
+			}, ieq)
 			assert.True(t, original == result)
 		})
 	}
@@ -2190,7 +2190,7 @@ func TestNewAggregate(t *testing.T) {
 				return fill(tt.table), fill(tt.aggregated)
 			}()
 
-			assert.True(t, table.Aggregate().Equal(aggregated))
+			assert.True(t, table.Aggregate(ieq).Equal(aggregated, ieq))
 		})
 	}
 }

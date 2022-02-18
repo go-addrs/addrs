@@ -274,7 +274,9 @@ func (me *setNode) Intersect(other *setNode) *setNode {
 }
 
 func (me *setNode) Equal(other *setNode) bool {
-	return (*trieNode)(me).Equal((*trieNode)(other))
+	return (*trieNode)(me).Equal((*trieNode)(other), func(a, b interface{}) bool {
+		return true
+	})
 }
 
 // NumAddresses calls trieNode NumAddresses

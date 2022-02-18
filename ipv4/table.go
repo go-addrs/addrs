@@ -241,7 +241,7 @@ func (me Table[T]) Diff(other Table[T], left, right func(Prefix, T) bool, change
 			return changed(l.Prefix, lt, rt)
 		}
 	}
-	return me.t.trie.Diff(other.t.trie, trieHandler)
+	return me.t.trie.Diff(other.t.trie, trieHandler, ieq)
 }
 
 // Map invokes the given mapper function for each prefix/value pair in the
