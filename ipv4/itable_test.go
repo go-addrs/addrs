@@ -845,3 +845,38 @@ func TestFixedTable(t *testing.T) {
 	_, found = m2.Get(addrThree)
 	assert.True(t, found)
 }
+
+func TestITableMap(t *testing.T) {
+	var a ITable
+	assert.Equal(t, a, a.Map(nil))
+	assert.Equal(t, a, a.Map(func(Prefix, interface{}) interface{} {
+		panic("this should not be run")
+	}))
+
+	a = func() ITable {
+		a := NewITable_()
+		a.Insert(_p("203.0.113.0/27"), true)
+		a.Insert(_p("203.0.113.64/27"), true)
+		a.Insert(_p("203.0.113.0/25"), true)
+		return a.Table()
+	}()
+
+	result := a.Map(func(Prefix, interface{}) interface{} {
+		return false
+	})
+
+	assert.Equal(t, int64(3), result.NumEntries())
+
+	value, ok := result.Get(_p("203.0.113.0/27"))
+	assert.True(t, ok)
+	assert.False(t, value.(bool))
+	value, ok = result.Get(_p("203.0.113.64/27"))
+	assert.True(t, ok)
+	assert.False(t, value.(bool))
+	value, ok = result.Get(_p("203.0.113.0/25"))
+	assert.True(t, ok)
+	assert.False(t, value.(bool))
+
+	value, ok = result.Get(_p("0.0.0.0/0"))
+	assert.False(t, ok)
+}

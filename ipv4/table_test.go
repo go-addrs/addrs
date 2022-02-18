@@ -843,3 +843,38 @@ func TestFixedTableT(t *testing.T) {
 	assert.True(t, found)
 	assert.Equal(t, 3, value)
 }
+
+func TestTableMap(t *testing.T) {
+	var a Table[bool]
+	assert.Equal(t, a, a.Map(nil))
+	assert.Equal(t, a, a.Map(func(Prefix, bool) bool {
+		panic("this should not be run")
+	}))
+
+	a = func() Table[bool] {
+		a := NewTable_[bool]()
+		a.Insert(_p("203.0.113.0/27"), true)
+		a.Insert(_p("203.0.113.64/27"), true)
+		a.Insert(_p("203.0.113.0/25"), true)
+		return a.Table()
+	}()
+
+	result := a.Map(func(Prefix, bool) bool {
+		return false
+	})
+
+	assert.Equal(t, int64(3), result.NumEntries())
+
+	value, ok := result.Get(_p("203.0.113.0/27"))
+	assert.True(t, ok)
+	assert.False(t, value)
+	value, ok = result.Get(_p("203.0.113.64/27"))
+	assert.True(t, ok)
+	assert.False(t, value)
+	value, ok = result.Get(_p("203.0.113.0/25"))
+	assert.True(t, ok)
+	assert.False(t, value)
+
+	value, ok = result.Get(_p("0.0.0.0/0"))
+	assert.False(t, ok)
+}

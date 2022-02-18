@@ -825,3 +825,19 @@ func (me *trieNode) aggregate(parentUmbrella *umbrella) (result *trieNode) {
 func (me *trieNode) Aggregate() *trieNode {
 	return me.aggregate(nil)
 }
+
+// Map runs the given mapper function on every data value in the table and
+// returns the *trieNode pointing to the result. As always, the original
+// structure is not modified, an entirely new structure is created.
+func (me *trieNode) Map(mapper func(Prefix, interface{}) interface{}) *trieNode {
+	return me.copyMutate(func(n *trieNode) {
+		n.Data = mapper(me.Prefix, me.Data)
+		if dataEqual(me.Data, n.Data) {
+			n.Data = me.Data
+		}
+		n.children = [2]*trieNode{
+			me.children[0].Map(mapper),
+			me.children[1].Map(mapper),
+		}
+	})
+}

@@ -2007,6 +2007,76 @@ func TestDiff(t *testing.T) {
 	}
 }
 
+func TestMap(t *testing.T) {
+	tests := []struct {
+		desc     string
+		original []Prefix
+	}{
+		{
+			desc: "empty",
+		}, {
+			desc: "single_entry",
+			original: []Prefix{
+				Prefix{_a("203.0.113.0"), 24},
+			},
+		}, {
+			desc: "bunch of entries",
+			original: []Prefix{
+				Prefix{_a("203.0.113.0"), 24},
+				Prefix{_a("203.0.113.0"), 32},
+				Prefix{_a("192.0.2.0"), 27},
+				Prefix{_a("198.51.100.0"), 24},
+				Prefix{_a("198.51.100.0"), 25},
+				Prefix{_a("198.51.100.0"), 26},
+				Prefix{_a("198.51.100.0"), 27},
+				Prefix{_a("198.51.100.0"), 28},
+				Prefix{_a("198.51.100.0"), 29},
+				Prefix{_a("198.51.100.0"), 30},
+				Prefix{_a("198.51.100.0"), 31},
+				Prefix{_a("198.51.100.0"), 32},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			original, expected := func() (left, right *trieNode) {
+				fill := func(prefixes []Prefix, value interface{}) (trie *trieNode) {
+					var err error
+					for _, p := range prefixes {
+						trie, err = trie.Insert(p, value)
+						require.Nil(t, err)
+					}
+					return
+				}
+				return fill(tt.original, false), fill(tt.original, true)
+			}()
+
+			result := original.Map(func(Prefix, interface{}) interface{} {
+				return true
+			})
+			assert.Equal(t, original.NumNodes(), result.NumNodes())
+			expected.Diff(result, trieDiffHandler{
+				Removed: func(left *trieNode) bool {
+					assert.Fail(t, fmt.Sprintf("found a removed node: %+v, %+v", left.Prefix, left.Data))
+					return true
+				},
+				Added: func(right *trieNode) bool {
+					assert.Fail(t, fmt.Sprintf("found an added node: %+v, %+v", right.Prefix, right.Data))
+					return true
+				},
+				Modified: func(left, right *trieNode) bool {
+					assert.Fail(t, fmt.Sprintf("found a changed node: %+v: %+v -> %+v", left.Prefix, left.Data, right.Data))
+					return true
+				},
+			})
+			result = original.Map(func(_ Prefix, value interface{}) interface{} {
+				return value
+			})
+			assert.True(t, original == result)
+		})
+	}
+}
 func TestNewAggregate(t *testing.T) {
 	tests := []struct {
 		desc              string

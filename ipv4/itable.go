@@ -335,3 +335,30 @@ func (me ITable) Diff(other ITable, left, right func(Prefix, interface{}) bool, 
 	}
 	return me.trie.Diff(other.trie, trieHandler)
 }
+
+// Map invokes the given mapper function for each prefix/value pair in the
+// table in lexigraphical order. The resulting table has the same Prefix
+// entries as the original but the values are modified by the mapper for each.
+//
+// A similar result can be obtained by calling Walk on the table, mapping each
+// result, and inserting it into a new table or updating a mutable clone of the
+// original. However, Map is more efficient than that.
+//
+// The walk method is inefficient in the following ways.
+// 1. If inserting into a new map, a new entry is created even if the values
+//    compare equal.
+// 2. Each step in the walk produces an intermediate result that is eventually
+//    thrown away (except the final result).
+// 3. Each insert or update must traverse the result map.
+//
+// Map avoids all of these inefficiencies by building the resulting table in
+// place takking time that is linear in the number of entries. It also avoids
+// modifying anything if any values compare equal to the original.
+func (me ITable) Map(mapper func(Prefix, interface{}) interface{}) ITable {
+	if mapper == nil {
+		return me
+	}
+	return ITable{
+		me.trie.Map(mapper),
+	}
+}
