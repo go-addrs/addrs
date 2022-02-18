@@ -1,0 +1,20 @@
+#!/bin/bash -e
+
+# TODO Get CI going on PRs for both go < 1.18 and >= 1.18
+
+cd $(dirname "$0")
+cd $(git rev-parse --show-toplevel)
+
+go test -v ./...
+if [ "$(uname -s)" != "Darwin" ]
+then
+    GOARCH=386 go test -v ./...
+fi
+
+go vet ./...
+# If you run go fmt before 1.18, it is broken
+# go fmt ./...
+
+# Check that git is clean
+git update-index --refresh
+git diff-index --quiet --exit-code HEAD
