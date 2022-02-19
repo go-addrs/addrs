@@ -8,7 +8,7 @@ import (
 )
 
 func TestInsertOrUpdate(t *testing.T) {
-	m := NewITable_()
+	m := ITable{}.Table_()
 	m.Insert(_a("10.224.24.1"), nil)
 	m.InsertOrUpdate(_a("10.224.24.1"), 3)
 	assert.Equal(t, int64(1), m.NumEntries())
@@ -209,7 +209,7 @@ func TestMatchPrefixNotFound(t *testing.T) {
 }
 
 func TestExample1(t *testing.T) {
-	m := NewITable_()
+	m := ITable{}.Table_()
 	m.Insert(_p("10.224.24.2/31"), true)
 	m.Insert(_p("10.224.24.1/32"), true)
 	m.Insert(_p("10.224.24.0/32"), true)
@@ -753,7 +753,7 @@ func TestITableGetOrInsertNil(t *testing.T) {
 }
 
 func TestITableDiff(t *testing.T) {
-	a := NewITable_()
+	a := ITable{}.Table_()
 	a.Insert(_p("203.0.113.0/27"), true)
 	a.Insert(_p("203.0.113.64/27"), true)
 	a.Insert(_p("203.0.113.0/25"), true)
@@ -858,7 +858,7 @@ func TestITableMap(t *testing.T) {
 	}))
 
 	a = func() ITable {
-		a := NewITable_()
+		a := ITable{}.Table_()
 		a.Insert(_p("203.0.113.0/27"), true)
 		a.Insert(_p("203.0.113.64/27"), true)
 		a.Insert(_p("203.0.113.0/25"), true)
@@ -901,7 +901,7 @@ func TestITableVariousComparators(t *testing.T) {
 	}{
 		{
 			description: "comparable",
-			table:       NewITable_(),
+			table:       ITable{}.Table_(),
 			expected: []string{
 				"203.0.113.0/27",
 				"203.0.113.0/29",

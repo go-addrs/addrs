@@ -18,14 +18,16 @@ type ITable_ struct {
 	eq comparator
 }
 
+func defaultComparator(a, b interface{}) bool {
+	return a == b
+}
+
 // NewITable_ returns a new fully-initialized Table_ optimized for values that
 // are comparable with ==.
 func NewITable_() ITable_ {
 	return ITable_{
 		&ITable{},
-		func(a, b interface{}) bool {
-			return a == b
-		},
+		defaultComparator,
 	}
 }
 
@@ -223,11 +225,16 @@ type ITable struct {
 // the COW nature of the underlying datastructure, it is very cheap to copy
 // these -- effectively a pointer copy.
 func (me ITable) Table_() ITable_ {
+	eq := me.eq
+	if eq == nil {
+		eq = defaultComparator
+	}
 	return ITable_{
-		m: &ITable{
+		&ITable{
 			me.trie,
-			me.eq,
+			eq,
 		},
+		eq,
 	}
 }
 

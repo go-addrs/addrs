@@ -150,12 +150,16 @@ type Table[T any] struct {
 // the COW nature of the underlying datastructure, it is very cheap to copy
 // these -- effectively a pointer copy.
 func (me Table[T]) Table_() Table_[T] {
+	eq := me.eq
+	if eq == nil {
+		eq = defaultComparator
+	}
 	return Table_[T]{
 		ITable_{
 			&me.t,
-			me.eq,
+			eq,
 		},
-		me.eq,
+		eq,
 	}
 }
 
