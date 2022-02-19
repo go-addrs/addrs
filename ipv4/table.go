@@ -17,12 +17,12 @@ type Table_[T any] struct {
 
 // NewTable_ returns a new fully-initialized Table_ optimized for values that
 // are comparable with ==.
-func NewTable_[C comparable]() Table_[C] {
-	return Table_[C]{
+func NewTable_[T comparable]() Table_[T] {
+	return Table_[T]{
 		NewITable_(),
 		func(a, b interface{}) bool {
-			a, _ = a.(C)
-			b, _ = b.(C)
+			a, _ = a.(T)
+			b, _ = b.(T)
 			return a == b
 		},
 	}
@@ -30,11 +30,11 @@ func NewTable_[C comparable]() Table_[C] {
 
 // NewTableCustomComparator_ returns a new fully-initialized Table_ optimized for
 // data that can be compared used a comparator that you pass.
-func NewTableCustomCompare_[A any](comparator func(a, b A) bool) Table_[A] {
-	return Table_[A]{
+func NewTableCustomCompare_[T any](comparator func(a, b T) bool) Table_[T] {
+	return Table_[T]{
 		NewITable_(),
 		func(a, b interface{}) bool {
-			return comparator(a.(A), b.(A))
+			return comparator(a.(T), b.(T))
 		},
 	}
 }
