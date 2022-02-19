@@ -889,10 +889,6 @@ type creativeComparable struct {
 	i int
 }
 
-func (me creativeComparable) IEqual(other interface{}) bool {
-	return me.i <= 1 && other.(creativeComparable).i <= 1
-}
-
 func (me creativeComparable) Equal(other creativeComparable) bool {
 	return me.i <= 2 && other.i <= 2
 }

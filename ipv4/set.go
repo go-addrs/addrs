@@ -92,16 +92,6 @@ func (me Set_) Equal(other Set_) bool {
 	return me.s.Equal(other.Set())
 }
 
-// IEqual returns true if this set is equal to other
-func (me Set_) IEqual(other interface{}) bool {
-	switch o := other.(type) {
-	case Set_:
-		return me.Equal(o)
-	default:
-		return false
-	}
-}
-
 func (me Set_) isValid() bool {
 	return me.s.isValid()
 }
@@ -236,16 +226,6 @@ func (me Set) WalkRanges(callback func(Range) bool) bool {
 		}
 	}
 	return true
-}
-
-// IEqual returns true if this set is equal to other
-func (me Set) IEqual(other interface{}) bool {
-	switch o := other.(type) {
-	case Set:
-		return me.Equal(o)
-	default:
-		return false
-	}
 }
 
 // Equal returns true if this set is equal to other

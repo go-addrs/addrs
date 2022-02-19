@@ -130,13 +130,6 @@ func TestNilSet(t *testing.T) {
 	assert.False(t, set.Equal(nonEmptySet))
 	assert.False(t, nonEmptySet.Equal(set))
 
-	// IEqual
-	assert.True(t, set.IEqual(set))
-	assert.True(t, set.IEqual(NewSet_()))
-	assert.True(t, NewSet_().IEqual(set))
-	assert.False(t, set.IEqual(_p("203.0.113.0/24")))
-	assert.False(t, _p("203.0.113.0/24").Set().Set_().IEqual(set))
-
 	// Union
 	assert.True(t, set.Union(nonEmptySet).Equal(nonEmptySet.Set()))
 	assert.True(t, nonEmptySet.Union(set).Equal(nonEmptySet.Set()))
@@ -721,13 +714,13 @@ func TestOldSetAllocateDeallocate(t *testing.T) {
 func TestOldEqualTrivial(t *testing.T) {
 	a := NewSet_()
 	b := NewSet_()
-	assert.True(t, a.IEqual(b))
+	assert.True(t, a.Equal(b))
 
 	a.Insert(_p("10.0.0.0/24"))
-	assert.False(t, a.IEqual(b))
-	assert.False(t, b.IEqual(a))
-	assert.True(t, a.IEqual(a))
-	assert.True(t, b.IEqual(b))
+	assert.False(t, a.Equal(b))
+	assert.False(t, b.Equal(a))
+	assert.True(t, a.Equal(a))
+	assert.True(t, b.Equal(b))
 	assert.True(t, a.isValid())
 	assert.True(t, b.isValid())
 }
@@ -738,8 +731,8 @@ func TestOldEqualSingleNode(t *testing.T) {
 	a.Insert(_p("10.0.0.0/24"))
 	b.Insert(_p("10.0.0.0/24"))
 
-	assert.True(t, a.IEqual(b))
-	assert.True(t, b.IEqual(a))
+	assert.True(t, a.Equal(b))
+	assert.True(t, b.Equal(a))
 	assert.True(t, a.isValid())
 	assert.True(t, b.isValid())
 }
@@ -793,11 +786,11 @@ func TestOldEqualAllIPv4(t *testing.T) {
 	}
 
 	for _, n := range bNets {
-		assert.False(t, a.IEqual(b))
-		assert.False(t, b.IEqual(a))
+		assert.False(t, a.Equal(b))
+		assert.False(t, b.Equal(a))
 		b.Insert(n)
-		assert.False(t, b.IEqual(c))
-		assert.False(t, c.IEqual(b))
+		assert.False(t, b.Equal(c))
+		assert.False(t, c.Equal(b))
 	}
 
 	// Constructed a different way
@@ -838,8 +831,8 @@ func TestOldEqualAllIPv4(t *testing.T) {
 	}
 
 	for _, n := range cNets {
-		assert.False(t, c.IEqual(a))
-		assert.False(t, c.IEqual(b))
+		assert.False(t, c.Equal(a))
+		assert.False(t, c.Equal(b))
 		c.Insert(n)
 		assert.True(t, a.isValid())
 		assert.True(t, b.isValid())
@@ -847,10 +840,10 @@ func TestOldEqualAllIPv4(t *testing.T) {
 	}
 
 	// At this point, all three should have the entire IPv4 space
-	assert.True(t, a.IEqual(b))
-	assert.True(t, a.IEqual(c))
-	assert.True(t, b.IEqual(a))
-	assert.True(t, b.IEqual(c))
-	assert.True(t, c.IEqual(a))
-	assert.True(t, c.IEqual(b))
+	assert.True(t, a.Equal(b))
+	assert.True(t, a.Equal(c))
+	assert.True(t, b.Equal(a))
+	assert.True(t, b.Equal(c))
+	assert.True(t, c.Equal(a))
+	assert.True(t, c.Equal(b))
 }

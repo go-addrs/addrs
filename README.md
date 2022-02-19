@@ -141,9 +141,8 @@ ones mentioned above.
    entries required such that any search using an `Address` as the search key
    will return the same value as it would on the original. (This operation
    requires that the values be of a comparable type, either by using a type that
-   is inherently comparable with `==` and `!=` or by implementing
-   `IEqual(interface{})` (e.g. `Set` implements this so they can be stored as
-   values in a `Table`).
+   is inherently comparable with `==` and `!=` or by implementing a custom
+   compare function to compare elements of the type you store in the map.
 
 4. It supports an efficient diff operation so that you can iterate the entries
    removed, added, or changed from one to the other.
