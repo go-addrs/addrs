@@ -753,15 +753,24 @@ func TestITableGetOrInsertNil(t *testing.T) {
 }
 
 func TestITableDiff(t *testing.T) {
-	a := ITable{}.Table_()
-	a.Insert(_p("203.0.113.0/27"), true)
-	a.Insert(_p("203.0.113.64/27"), true)
-	a.Insert(_p("203.0.113.0/25"), true)
+	a := ITable{}.Build(func(a_ ITable_) bool {
+		a_.Insert(_p("203.0.113.0/27"), true)
+		a_.Insert(_p("203.0.113.64/27"), true)
+		a_.Insert(_p("203.0.113.0/25"), true)
+		return true
+	})
 
-	b := NewITable_()
-	b.Insert(_p("203.0.113.0/27"), true)
-	b.Insert(_p("203.0.113.96/27"), true)
-	b.Insert(_p("203.0.113.0/25"), false)
+	a = a.Build(func(a_ ITable_) bool {
+		a_.Insert(_p("192.0.113.0/25"), true)
+		return false
+	})
+
+	b := ITable{}.Build(func(b_ ITable_) bool {
+		b_.Insert(_p("203.0.113.0/27"), true)
+		b_.Insert(_p("203.0.113.96/27"), true)
+		b_.Insert(_p("203.0.113.0/25"), false)
+		return true
+	})
 
 	type action struct {
 		prefix        Prefix
@@ -788,7 +797,7 @@ func TestITableDiff(t *testing.T) {
 
 	t.Run("forward", func(t *testing.T) {
 		left, right, changed := getHandlers()
-		a.Table().Diff(b.Table(), left, right, changed)
+		a.Diff(b, left, right, changed)
 		assert.Equal(t, []action{
 			action{_p("203.0.113.0/25"), true, false},
 			action{_p("203.0.113.64/27"), true, nil},
@@ -798,7 +807,7 @@ func TestITableDiff(t *testing.T) {
 
 	t.Run("backward", func(t *testing.T) {
 		left, right, changed := getHandlers()
-		b.Table().Diff(a.Table(), left, right, changed)
+		b.Diff(a, left, right, changed)
 		assert.Equal(t, []action{
 			action{_p("203.0.113.0/25"), false, true},
 			action{_p("203.0.113.64/27"), nil, true},

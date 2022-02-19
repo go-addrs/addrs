@@ -231,6 +231,21 @@ func (me ITable) Table_() ITable_ {
 	return ITable_{&me}
 }
 
+// Build is a convenience method for making modifications to a table within a
+// defined scope. It calls the given callback passing a modifiable clone of
+// itself The callback can make any changes to it. After it returns true, Build
+// returns the fixed snapshot of the result.
+//
+// If the callback returns false, modifications are aborted and the original
+// fixed table is returned.
+func (me ITable) Build(builder func(ITable_) bool) ITable {
+	t_ := me.Table_()
+	if builder(t_) {
+		return t_.Table()
+	}
+	return me
+}
+
 // NumEntries returns the number of exact prefixes stored in the table
 func (me ITable) NumEntries() int64 {
 	return me.trie.NumNodes()
