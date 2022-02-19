@@ -14,8 +14,7 @@ type ITable_ struct {
 
 	// Be careful not to take an ITable from outside the package and turn
 	// it into a mutable one. That would break the contract.
-	m  *ITable
-	eq comparator
+	m *ITable
 }
 
 func defaultComparator(a, b interface{}) bool {
@@ -26,8 +25,10 @@ func defaultComparator(a, b interface{}) bool {
 // are comparable with ==.
 func NewITable_() ITable_ {
 	return ITable_{
-		&ITable{},
-		defaultComparator,
+		&ITable{
+			nil,
+			defaultComparator,
+		},
 	}
 }
 
@@ -35,8 +36,10 @@ func NewITable_() ITable_ {
 // data that can be compared used a comparator that you pass.
 func NewITableCustomCompare_(comparator func(a, b interface{}) bool) ITable_ {
 	return ITable_{
-		&ITable{},
-		comparator,
+		&ITable{
+			nil,
+			comparator,
+		},
 	}
 }
 
@@ -106,7 +109,7 @@ func (me ITable_) Update(prefix PrefixI, value interface{}) (succeeded bool) {
 	var err error
 	me.mutate(func() (bool, *trieNode) {
 		var newHead *trieNode
-		newHead, err = me.m.trie.Update(prefix.Prefix(), value, me.eq)
+		newHead, err = me.m.trie.Update(prefix.Prefix(), value, me.m.eq)
 		if err != nil {
 			return false, nil
 		}
@@ -125,7 +128,7 @@ func (me ITable_) InsertOrUpdate(prefix PrefixI, value interface{}) {
 		prefix = Prefix{}
 	}
 	me.mutate(func() (bool, *trieNode) {
-		return true, me.m.trie.InsertOrUpdate(prefix.Prefix(), value, me.eq)
+		return true, me.m.trie.InsertOrUpdate(prefix.Prefix(), value, me.m.eq)
 	})
 }
 
@@ -197,10 +200,7 @@ func (me ITable_) Table() ITable {
 	if me.m == nil {
 		return ITable{}
 	}
-	return ITable{
-		me.m.trie,
-		me.eq,
-	}
+	return *me.m
 }
 
 // ITable is a structure that maps IP prefixes to values. For example, the
@@ -225,17 +225,10 @@ type ITable struct {
 // the COW nature of the underlying datastructure, it is very cheap to copy
 // these -- effectively a pointer copy.
 func (me ITable) Table_() ITable_ {
-	eq := me.eq
-	if eq == nil {
-		eq = defaultComparator
+	if me.eq == nil {
+		me.eq = defaultComparator
 	}
-	return ITable_{
-		&ITable{
-			me.trie,
-			eq,
-		},
-		eq,
-	}
+	return ITable_{&me}
 }
 
 // NumEntries returns the number of exact prefixes stored in the table

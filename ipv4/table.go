@@ -11,8 +11,7 @@ package ipv4
 // reading an empty Table_. Attempts to modify it will result in a panic.
 // Always use NewTable_() to get an initialized Table_.
 type Table_[T any] struct {
-	t  ITable_
-	eq comparator
+	t ITable_
 }
 
 // NewTable_ returns a new fully-initialized Table_ optimized for values that
@@ -20,11 +19,6 @@ type Table_[T any] struct {
 func NewTable_[T comparable]() Table_[T] {
 	return Table_[T]{
 		NewITable_(),
-		func(a, b interface{}) bool {
-			a, _ = a.(T)
-			b, _ = b.(T)
-			return a == b
-		},
 	}
 }
 
@@ -32,10 +26,11 @@ func NewTable_[T comparable]() Table_[T] {
 // data that can be compared used a comparator that you pass.
 func NewTableCustomCompare_[T any](comparator func(a, b T) bool) Table_[T] {
 	return Table_[T]{
-		NewITable_(),
-		func(a, b interface{}) bool {
-			return comparator(a.(T), b.(T))
-		},
+		NewITableCustomCompare_(
+			func(a, b interface{}) bool {
+				return comparator(a.(T), b.(T))
+			},
+		),
 	}
 }
 
@@ -119,12 +114,10 @@ func (me Table_[T]) Table() Table[T] {
 	if me.t.m == nil {
 		return Table[T]{
 			ITable{},
-			me.eq,
 		}
 	}
 	return Table[T]{
-		*me.t.m,
-		me.eq,
+		me.t.Table(),
 	}
 }
 
@@ -142,25 +135,14 @@ func (me Table_[T]) Table() Table[T] {
 // The zero value of a Table is an empty table
 // Table is immutable. For a mutable equivalent, see Table_.
 type Table[T any] struct {
-	t  ITable
-	eq comparator
+	t ITable
 }
 
 // Table_ returns a mutable table initialized with the contents of this one. Due to
 // the COW nature of the underlying datastructure, it is very cheap to copy
 // these -- effectively a pointer copy.
 func (me Table[T]) Table_() Table_[T] {
-	eq := me.eq
-	if eq == nil {
-		eq = defaultComparator
-	}
-	return Table_[T]{
-		ITable_{
-			&me.t,
-			eq,
-		},
-		eq,
-	}
+	return Table_[T]{me.t.Table_()}
 }
 
 // NumEntries returns the number of exact prefixes stored in the table
@@ -222,9 +204,8 @@ func (me Table[T]) LongestMatch(searchPrefix PrefixI) (value T, found bool, pref
 func (me Table[T]) Aggregate() Table[T] {
 	return Table[T]{
 		ITable{
-			trie: me.t.trie.Aggregate(me.eq),
+			trie: me.t.trie.Aggregate(me.t.eq),
 		},
-		me.eq,
 	}
 }
 
@@ -275,7 +256,7 @@ func (me Table[T]) Diff(other Table[T], left, right func(Prefix, T) bool, change
 			return changed(l.Prefix, lt, rt)
 		}
 	}
-	return me.t.trie.Diff(other.t.trie, trieHandler, me.eq)
+	return me.t.trie.Diff(other.t.trie, trieHandler, me.t.eq)
 }
 
 // Map invokes the given mapper function for each prefix/value pair in the
@@ -305,9 +286,8 @@ func (me Table[T]) Map(mapper func(Prefix, T) T) Table[T] {
 			me.t.trie.Map(func(p Prefix, value interface{}) interface{} {
 				t, _ := value.(T)
 				return mapper(p, t)
-			}, me.eq),
-			me.eq,
+			}, me.t.eq),
+			me.t.eq,
 		},
-		me.eq,
 	}
 }
