@@ -302,15 +302,15 @@ func (me *trieNode) isValidLen(minLen uint32) bool {
 }
 
 // Update updates the key / value only if the key already exists
-func (me *trieNode) Update(key Prefix, data interface{}) (newHead *trieNode, err error) {
-	return me.insert(&trieNode{Prefix: key, Data: data}, insertOpts{update: true})
+func (me *trieNode) Update(key Prefix, data interface{}, eq comparator) (newHead *trieNode, err error) {
+	return me.insert(&trieNode{Prefix: key, Data: data}, insertOpts{update: true, eq: eq})
 }
 
 // InsertOrUpdate inserts the key / value if the key didn't previously exist.
 // Otherwise, it updates the data.
-func (me *trieNode) InsertOrUpdate(key Prefix, data interface{}) (newHead *trieNode) {
+func (me *trieNode) InsertOrUpdate(key Prefix, data interface{}, eq comparator) (newHead *trieNode) {
 	var err error
-	newHead, err = me.insert(&trieNode{Prefix: key, Data: data}, insertOpts{insert: true, update: true})
+	newHead, err = me.insert(&trieNode{Prefix: key, Data: data}, insertOpts{insert: true, update: true, eq: eq})
 	if err != nil {
 		// when inserting *or* updating, we design around the errors that could come from insert
 		panic(fmt.Errorf("this error shouldn't happen: %w", err))
@@ -325,6 +325,7 @@ func (me *trieNode) Insert(key Prefix, data interface{}) (newHead *trieNode, err
 
 type insertOpts struct {
 	insert, update, flatten bool
+	eq                      comparator
 }
 
 // flatten assumes that `me` is a new node. It should not be called that had
@@ -388,14 +389,16 @@ func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, 
 			// avoid copy-on-write when it will be flattened resulting in no effective change
 			return me, nil
 		}
-		node = node.mutate(func(n *trieNode) {
+		return node.mutate(func(n *trieNode) {
+			if me.isActive && opts.eq(me.Data, node.Data) {
+				node.Data = me.Data
+			}
 			n.children = me.children
 			n.isActive = true
 			if opts.flatten {
 				n.flatten()
 			}
-		})
-		return node, nil
+		}), nil
 
 	case compareContains:
 		// Trie node's key contains the new node's key. Insert it recursively.

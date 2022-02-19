@@ -104,7 +104,7 @@ func (me ITable_) Update(prefix PrefixI, value interface{}) (succeeded bool) {
 	var err error
 	me.mutate(func() (bool, *trieNode) {
 		var newHead *trieNode
-		newHead, err = me.m.trie.Update(prefix.Prefix(), value)
+		newHead, err = me.m.trie.Update(prefix.Prefix(), value, me.eq)
 		if err != nil {
 			return false, nil
 		}
@@ -123,7 +123,7 @@ func (me ITable_) InsertOrUpdate(prefix PrefixI, value interface{}) {
 		prefix = Prefix{}
 	}
 	me.mutate(func() (bool, *trieNode) {
-		return true, me.m.trie.InsertOrUpdate(prefix.Prefix(), value)
+		return true, me.m.trie.InsertOrUpdate(prefix.Prefix(), value, me.eq)
 	})
 }
 

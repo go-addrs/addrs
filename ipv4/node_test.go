@@ -70,11 +70,11 @@ func TestInsertOrUpdateChangeValue(t *testing.T) {
 
 	key := Prefix{}
 
-	trie = trie.InsertOrUpdate(key, true)
+	trie = trie.InsertOrUpdate(key, true, ieq)
 	assert.True(t, trie.isValid())
 	assert.True(t, trie.Match(key).Data.(bool))
 
-	trie = trie.InsertOrUpdate(key, false)
+	trie = trie.InsertOrUpdate(key, false, ieq)
 	assert.True(t, trie.isValid())
 	assert.False(t, trie.Match(key).Data.(bool))
 }
@@ -84,12 +84,12 @@ func TestInsertOrUpdateNewKey(t *testing.T) {
 
 	key := Prefix{}
 
-	trie = trie.InsertOrUpdate(key, true)
+	trie = trie.InsertOrUpdate(key, true, ieq)
 	assert.True(t, trie.isValid())
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{Address{0}, 1}
-	trie = trie.InsertOrUpdate(newKey, false)
+	trie = trie.InsertOrUpdate(newKey, false, ieq)
 	assert.True(t, trie.isValid())
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
@@ -100,12 +100,12 @@ func TestInsertOrUpdateNarrowerKey(t *testing.T) {
 
 	key := Prefix{Address{0}, 1}
 
-	trie = trie.InsertOrUpdate(key, true)
+	trie = trie.InsertOrUpdate(key, true, ieq)
 	assert.True(t, trie.isValid())
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{}
-	trie = trie.InsertOrUpdate(newKey, false)
+	trie = trie.InsertOrUpdate(newKey, false, ieq)
 	assert.True(t, trie.isValid())
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
@@ -116,12 +116,12 @@ func TestInsertOrUpdateDisjointKeys(t *testing.T) {
 
 	key := Prefix{Address{0}, 1}
 
-	trie = trie.InsertOrUpdate(key, true)
+	trie = trie.InsertOrUpdate(key, true, ieq)
 	assert.True(t, trie.isValid())
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{Address{0x80000000}, 1}
-	trie = trie.InsertOrUpdate(newKey, false)
+	trie = trie.InsertOrUpdate(newKey, false, ieq)
 	assert.True(t, trie.isValid())
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
@@ -132,18 +132,18 @@ func TestInsertOrUpdateInactive(t *testing.T) {
 
 	key := Prefix{Address{0}, 1}
 
-	trie = trie.InsertOrUpdate(key, true)
+	trie = trie.InsertOrUpdate(key, true, ieq)
 	assert.True(t, trie.isValid())
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{Address{0x80000000}, 1}
-	trie = trie.InsertOrUpdate(newKey, false)
+	trie = trie.InsertOrUpdate(newKey, false, ieq)
 	assert.True(t, trie.isValid())
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
 
 	inactiveKey := Prefix{}
-	trie = trie.InsertOrUpdate(inactiveKey, "value")
+	trie = trie.InsertOrUpdate(inactiveKey, "value", ieq)
 	assert.True(t, trie.isValid())
 	assert.True(t, trie.Match(key).Data.(bool))
 	assert.False(t, trie.Match(newKey).Data.(bool))
@@ -160,7 +160,7 @@ func TestUpdateChangeValue(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
 
-	trie, err = trie.Update(key, false)
+	trie, err = trie.Update(key, false, ieq)
 	assert.True(t, trie.isValid())
 	assert.Nil(t, err)
 	assert.False(t, trie.Match(key).Data.(bool))
@@ -177,7 +177,7 @@ func TestUpdateNewKey(t *testing.T) {
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{Address{0}, 1}
-	trie, err = trie.Update(newKey, false)
+	trie, err = trie.Update(newKey, false, ieq)
 	assert.True(t, trie.isValid())
 	assert.NotNil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
@@ -195,7 +195,7 @@ func TestUpdateNarrowerKey(t *testing.T) {
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{}
-	trie, err = trie.Update(newKey, false)
+	trie, err = trie.Update(newKey, false, ieq)
 	assert.True(t, trie.isValid())
 	assert.NotNil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
@@ -213,7 +213,7 @@ func TestUpdateDisjointKeys(t *testing.T) {
 	assert.True(t, trie.Match(key).Data.(bool))
 
 	newKey := Prefix{Address{0x80000000}, 1}
-	trie, err = trie.Update(newKey, false)
+	trie, err = trie.Update(newKey, false, ieq)
 	assert.True(t, trie.isValid())
 	assert.NotNil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
@@ -238,7 +238,7 @@ func TestUpdateInactive(t *testing.T) {
 	assert.False(t, trie.Match(newKey).Data.(bool))
 
 	inactiveKey := Prefix{}
-	trie, err = trie.Update(inactiveKey, "value")
+	trie, err = trie.Update(inactiveKey, "value", ieq)
 	assert.True(t, trie.isValid())
 	assert.NotNil(t, err)
 	assert.True(t, trie.Match(key).Data.(bool))
