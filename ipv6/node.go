@@ -1,5 +1,21 @@
 package ipv6
 
+type trieNode struct {
+	Prefix   Prefix
+	Data     interface{}
+	size     uint32
+	h        uint16
+	isActive bool
+	children [2]*trieNode
+}
+
+func intMin(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 // contains is a helper which compares to see if the shorter prefix contains the
 // longer.
 //
@@ -68,4 +84,32 @@ func compare(a, b Prefix) (result int, reversed bool, common uint32, child int) 
 		result = compareDisjoint
 	}
 	return
+}
+
+type comparator func(a, b interface{}) bool
+
+// Equal returns true if all of the entries are the same in the two data structures
+func (me *trieNode) Equal(other *trieNode, eq comparator) bool {
+	switch {
+	case me == other:
+		return true
+
+	case me == nil:
+		return false
+	case other == nil:
+		return false
+	case me.isActive != other.isActive:
+		return false
+	case me.Prefix != other.Prefix:
+		return false
+	case me.isActive && !eq(me.Data, other.Data):
+		return false
+	case !me.children[0].Equal(other.children[0], eq):
+		return false
+	case !me.children[1].Equal(other.children[1], eq):
+		return false
+
+	default:
+		return true
+	}
 }
