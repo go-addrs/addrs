@@ -592,10 +592,11 @@ type trieDiffHandler struct {
 	Removed  func(left *trieNode) bool
 	Added    func(right *trieNode) bool
 	Modified func(left, right *trieNode) bool
+	Same     func(common *trieNode) bool
 }
 
 func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) bool {
-	if left == right {
+	if left == right && handler.Same == nil {
 		return true
 	}
 
@@ -692,6 +693,8 @@ func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler, eq comparat
 		return true
 	}
 
+	common := noop
+
 	// Ensure I don't have to check for nil everywhere.
 	if handler.Removed == nil {
 		handler.Removed = noop
@@ -703,6 +706,9 @@ func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler, eq comparat
 		handler.Modified = func(l, r *trieNode) bool {
 			return true
 		}
+	}
+	if handler.Same != nil {
+		common = handler.Same
 	}
 
 	return left.diff(right, trieDiffHandler{
@@ -723,6 +729,8 @@ func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler, eq comparat
 			case left.isActive && right.isActive:
 				if !eq(left.Data, right.Data) {
 					return handler.Modified(left, right)
+				} else {
+					return common(left)
 				}
 			case left.isActive:
 				return handler.Removed(left)
@@ -731,6 +739,7 @@ func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler, eq comparat
 			}
 			return true
 		},
+		Same: handler.Same,
 	})
 }
 

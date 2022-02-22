@@ -1697,6 +1697,7 @@ const (
 	actionTypeRemove actionType = iota
 	actionTypeAdd
 	actionTypeChange
+	actionTypeSame
 )
 
 type diffAction struct {
@@ -1768,6 +1769,9 @@ func TestDiff(t *testing.T) {
 			},
 			right: []pair32{
 				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeSame, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
 			},
 		}, {
 			desc: "different_data",
@@ -1849,6 +1853,7 @@ func TestDiff(t *testing.T) {
 			},
 			actions: []diffAction{
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
+				diffAction{actionTypeSame, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
 			},
 			aggregated: []diffAction{
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
@@ -1876,11 +1881,29 @@ func TestDiff(t *testing.T) {
 				pair32{key: Prefix{_a("203.0.113.0"), 25}},
 			},
 			actions: []diffAction{
+				diffAction{actionTypeSame, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
 			},
 			aggregated: []diffAction{
 				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
 				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
+			},
+		}, {
+			desc: "aggregated same",
+			left: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 25}},
+				pair32{key: Prefix{_a("203.0.113.128"), 25}},
+			},
+			right: []pair32{
+				pair32{key: Prefix{_a("203.0.113.0"), 24}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeAdd, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.0"), 25}}, nil},
+				diffAction{actionTypeRemove, pair32{key: Prefix{_a("203.0.113.128"), 25}}, nil},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeSame, pair32{key: Prefix{_a("203.0.113.0"), 24}}, nil},
 			},
 		},
 	}
@@ -1917,6 +1940,11 @@ func TestDiff(t *testing.T) {
 						require.True(t, left.isActive)
 						require.True(t, right.isActive)
 						actions = append(actions, diffAction{actionTypeChange, pair32{key: left.Prefix, data: left.Data}, right.Data})
+						return ret
+					},
+					Same: func(common *trieNode) bool {
+						require.True(t, common.isActive)
+						actions = append(actions, diffAction{actionTypeSame, pair32{key: common.Prefix, data: common.Data}, nil})
 						return ret
 					},
 				}
