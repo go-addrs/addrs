@@ -39,3 +39,33 @@ func contains(shorter, longer Prefix) (matches, exact bool, common uint32, child
 	}
 	return
 }
+
+const (
+	compareSame        int = iota
+	compareContains        // Second key is a subset of the first
+	compareIsContained     // Second key is a superset of the first
+	compareDisjoint
+)
+
+// compare is a helper which compares two keys to find their relationship
+func compare(a, b Prefix) (result int, reversed bool, common uint32, child int) {
+	var aMatch, bMatch bool
+	// Figure out which is the longer prefix and reverse them if b is shorter
+	reversed = b.length < a.length
+	if reversed {
+		bMatch, aMatch, common, child = contains(b, a)
+	} else {
+		aMatch, bMatch, common, child = contains(a, b)
+	}
+	switch {
+	case aMatch && bMatch:
+		result = compareSame
+	case aMatch && !bMatch:
+		result = compareContains
+	case !aMatch && bMatch:
+		result = compareIsContained
+	case !aMatch && !bMatch:
+		result = compareDisjoint
+	}
+	return
+}

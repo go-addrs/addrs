@@ -165,6 +165,16 @@ func TestContains(t *testing.T) {
 			assert.Equal(t, tt.exact, exact)
 			assert.Equal(t, tt.common, common)
 			assert.Equal(t, tt.child, child)
+
+			// Opportunistically test the compare function
+			t.Run("compare forward", func(t *testing.T) {
+				_, reversed, _, _ := compare(tt.a, tt.b)
+				assert.False(t, reversed)
+			})
+			t.Run("compare reversed", func(t *testing.T) {
+				_, reversed, _, _ := compare(tt.b, tt.a)
+				assert.Equal(t, tt.a.length != tt.b.length, reversed)
+			})
 		})
 	}
 }
