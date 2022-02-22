@@ -212,39 +212,44 @@ func TestPrefixLessThan(t *testing.T) {
 
 func TestNetworkHost(t *testing.T) {
 	tests := []struct {
-		description   string
-		prefix        Prefix
-		network, host Prefix
+		description                     string
+		prefix                          Prefix
+		network, host, prefixUpperLimit Prefix
 	}{
 		{
-			description: "0",
-			prefix:      _p("2001::1/0"),
-			network:     _p("::/0"),
-			host:        _p("2001::1/0"),
+			description:      "0",
+			prefix:           _p("2001::1/0"),
+			network:          _p("::/0"),
+			host:             _p("2001::1/0"),
+			prefixUpperLimit: _p("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff/0"),
 		},
 		{
-			description: "32",
-			prefix:      _p("2001::1/32"),
-			network:     _p("2001::0/32"),
-			host:        _p("::1/32"),
+			description:      "32",
+			prefix:           _p("2001::1/32"),
+			network:          _p("2001::0/32"),
+			host:             _p("::1/32"),
+			prefixUpperLimit: _p("2001::ffff:ffff:ffff:ffff:ffff:ffff/32"),
 		},
 		{
-			description: "64",
-			prefix:      _p("2001::1/64"),
-			network:     _p("2001::0/64"),
-			host:        _p("::1/64"),
+			description:      "64",
+			prefix:           _p("2001::1/64"),
+			network:          _p("2001::0/64"),
+			host:             _p("::1/64"),
+			prefixUpperLimit: _p("2001::ffff:ffff:ffff:ffff/64"),
 		},
 		{
-			description: "96",
-			prefix:      _p("2001::1/96"),
-			network:     _p("2001::0/96"),
-			host:        _p("::1/96"),
+			description:      "96",
+			prefix:           _p("2001::1/96"),
+			network:          _p("2001::0/96"),
+			host:             _p("::1/96"),
+			prefixUpperLimit: _p("2001::ffff:ffff/96"),
 		},
 		{
-			description: "128",
-			prefix:      _p("2001::1/128"),
-			network:     _p("2001::1/128"),
-			host:        _p("::/128"),
+			description:      "128",
+			prefix:           _p("2001::1/128"),
+			network:          _p("2001::1/128"),
+			host:             _p("::/128"),
+			prefixUpperLimit: _p("2001::1/128"),
 		},
 	}
 
@@ -252,6 +257,7 @@ func TestNetworkHost(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			assert.Equal(t, tt.network, tt.prefix.Network())
 			assert.Equal(t, tt.host, tt.prefix.Host())
+			assert.Equal(t, tt.prefixUpperLimit, tt.prefix.prefixUpperLimit())
 		})
 	}
 }

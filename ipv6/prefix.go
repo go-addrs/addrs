@@ -162,6 +162,28 @@ func (me Prefix) Uint64() (addressHigh, addressLow, maskHigh, maskLow uint64) {
 	return
 }
 
+// prefixUpperLimit returns a new Prefix with all bits after `length` set to 1s. Note
+// that this method ignores special cases where a broadcast address doesn't
+// make sense like in a host route or point-to-point prefix (/128 and /127). It
+// just does the math.
+func (me Prefix) prefixUpperLimit() Prefix {
+	network := me.addr.ui.or(me.Mask().ui.complement())
+	return Prefix{
+		addr: Address{
+			ui: network,
+		},
+		length: me.length,
+	}
+}
+
+// Range returns the range that includes the same addresses as the prefix
+// It ignores any bits set in the host part of the address.
+func (me Prefix) Range() Range {
+	// Note: this error can be ignored by design
+	r, _ := NewRange(me.Network().addr, me.prefixUpperLimit().addr)
+	return r
+}
+
 // Halves returns two prefixes that add up to the current one
 // if the prefix is a /128, the return value is undefined
 func (me Prefix) Halves() (a, b Prefix) {
