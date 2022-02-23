@@ -227,11 +227,13 @@ func TestWalkRanges(t *testing.T) {
 		description string
 		prefixes    []SetI
 		ranges      []Range
+		str         string
 	}{
 		{
 			description: "empty",
 			prefixes:    []SetI{},
 			ranges:      []Range{},
+			str:         "[]",
 		}, {
 			description: "simple prefix",
 			prefixes: []SetI{
@@ -240,6 +242,7 @@ func TestWalkRanges(t *testing.T) {
 			ranges: []Range{
 				_p("203.0.113.0/24").Range(),
 			},
+			str: "[203.0.113.0/24]",
 		}, {
 			description: "adjacent prefixes",
 			prefixes: []SetI{
@@ -249,6 +252,7 @@ func TestWalkRanges(t *testing.T) {
 			ranges: []Range{
 				_r(_a("203.0.113.0"), _a("203.0.113.191")),
 			},
+			str: "[203.0.113.0/25, 203.0.113.128/26]",
 		}, {
 			description: "disjoint prefixes",
 			prefixes: []SetI{
@@ -259,6 +263,7 @@ func TestWalkRanges(t *testing.T) {
 				_r(_a("203.0.113.0"), _a("203.0.113.127")),
 				_r(_a("203.0.113.192"), _a("203.0.113.255")),
 			},
+			str: "[203.0.113.0/25, 203.0.113.192/26]",
 		}, {
 			// This is the reverse of the complicated test from range_test.go
 			description: "complicated",
@@ -300,6 +305,7 @@ func TestWalkRanges(t *testing.T) {
 			ranges: []Range{
 				_r(_a("7.0.37.17"), _a("13.8.222.113")),
 			},
+			str: "[7.0.37.17/32, 7.0.37.18/31, 7.0.37.20/30, 7.0.37.24/29, 7.0.37.32/27, 7.0.37.64/26, 7.0.37.128/25, 7.0.38.0/23, 7.0.40.0/21, 7.0.48.0/20, 7.0.64.0/18, 7.0.128.0/17, 7.1.0.0/16, 7.2.0.0/15, 7.4.0.0/14, 7.8.0.0/13, 7.16.0.0/12, 7.32.0.0/11, 7.64.0.0/10, 7.128.0.0/9, 8.0.0.0/6, 12.0.0.0/8, 13.0.0.0/13, 13.8.0.0/17, 13.8.128.0/18, 13.8.192.0/20, 13.8.208.0/21, 13.8.216.0/22, 13.8.220.0/23, 13.8.222.0/26, 13.8.222.64/27, 13.8.222.96/28, 13.8.222.112/31]",
 		},
 	}
 
@@ -323,6 +329,7 @@ func TestWalkRanges(t *testing.T) {
 				for i, r := range tt.ranges {
 					assert.Equal(t, r, ranges[i])
 				}
+				assert.Equal(t, tt.str, s.String())
 			})
 
 			t.Run("don't finish", func(t *testing.T) {

@@ -1,5 +1,9 @@
 package ipv4
 
+import (
+	"strings"
+)
+
 // Set_ is the mutable version of a Set, allowing insertion and deletion of
 // elements.
 // The zero value of a Set_ is unitialized. Reading it is equivalent to reading
@@ -183,6 +187,25 @@ func (me Set) WalkPrefixes(callback func(Prefix) bool) bool {
 	return me.trie.Walk(func(prefix Prefix, data interface{}) bool {
 		return callback(prefix)
 	})
+}
+
+// String returns a string representation of the set showing the minimal set of
+// maximally sized prefixes that exactly cover the addresses in the set.
+func (me Set) String() string {
+	builder := strings.Builder{}
+	builder.WriteString("[")
+	var comma bool
+	me.WalkPrefixes(func(p Prefix) bool {
+		if comma {
+			builder.WriteString(", ")
+		} else {
+			comma = true
+		}
+		builder.WriteString(p.String())
+		return true
+	})
+	builder.WriteString("]")
+	return builder.String()
 }
 
 // WalkAddresses calls `callback` for each address stored in lexographical
