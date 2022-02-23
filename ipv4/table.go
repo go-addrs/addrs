@@ -240,14 +240,20 @@ func (me Table[T]) Walk(callback func(Prefix, T) bool) bool {
 // Diff invokes the given callback functions for each prefix/value pair in the
 // table in lexigraphical order.
 //
-// It takes three callbacks, the first two handle prefixes that only exist on
-// the left and right side tables respectively. The third callback handles
-// prefixes that exist in both tables but with different values. No callback is
-// called for prefixes that exist in both tables with the same values.
+// It takes four callbacks: The first callback handles prefixes that exist in
+// both tables but with different values. The next two handle prefixes that
+// only exist on the left and right side tables respectively. The fourth handle
+// prefixes that exist in both tables with the same value.
+//
+// It is safe to pass nil for any of the callbacks. Prefixes that would be
+// passed to it will be skipped and iteration will continue. If unchanged is
+// nil, iteration will be optimized by skipping any common tries that are
+// encountered. This could result in a significant optimization if the
+// differences between the two are small.
 //
 // It returns false if iteration was stopped due to a callback returning false
 // or true if it iterated all items.
-func (me Table[T]) Diff(other Table[T], left, right func(Prefix, T) bool, changed func(p Prefix, left, right T) bool) bool {
+func (me Table[T]) Diff(other Table[T], changed func(p Prefix, left, right T) bool, left, right, unchanged func(Prefix, T) bool) bool {
 	trieHandler := trieDiffHandler{}
 	if left != nil {
 		trieHandler.Removed = func(n *trieNode) bool {
@@ -269,6 +275,13 @@ func (me Table[T]) Diff(other Table[T], left, right func(Prefix, T) bool, change
 			lt, _ = l.Data.(T)
 			rt, _ = r.Data.(T)
 			return changed(l.Prefix, lt, rt)
+		}
+	}
+	if unchanged != nil {
+		trieHandler.Same = func(n *trieNode) bool {
+			var t T
+			t, _ = n.Data.(T)
+			return unchanged(n.Prefix, t)
 		}
 	}
 	return me.t.trie.Diff(other.t.trie, trieHandler, me.t.eq)

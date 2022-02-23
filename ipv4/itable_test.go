@@ -797,7 +797,7 @@ func TestITableDiff(t *testing.T) {
 
 	t.Run("forward", func(t *testing.T) {
 		left, right, changed := getHandlers()
-		a.Diff(b, left, right, changed)
+		a.Diff(b, changed, left, right, nil)
 		assert.Equal(t, []action{
 			action{_p("203.0.113.0/25"), true, false},
 			action{_p("203.0.113.64/27"), true, nil},
@@ -807,7 +807,7 @@ func TestITableDiff(t *testing.T) {
 
 	t.Run("backward", func(t *testing.T) {
 		left, right, changed := getHandlers()
-		b.Diff(a, left, right, changed)
+		b.Diff(a, changed, left, right, nil)
 		assert.Equal(t, []action{
 			action{_p("203.0.113.0/25"), false, true},
 			action{_p("203.0.113.64/27"), nil, true},

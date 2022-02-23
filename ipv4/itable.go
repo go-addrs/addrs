@@ -342,14 +342,20 @@ func (me ITable) Walk(callback func(Prefix, interface{}) bool) bool {
 // Diff invokes the given callback functions for each prefix/value pair in the
 // table in lexigraphical order.
 //
-// It takes three callbacks, the first two handle prefixes that only exist on
-// the left and right side tables respectively. The third callback handles
-// prefixes that exist in both tables but with different values. No callback is
-// called for prefixes that exist in both tables with the same values.
+// It takes four callbacks: The first callback handles prefixes that exist in
+// both tables but with different values. The next two handle prefixes that
+// only exist on the left and right side tables respectively. The fourth handle
+// prefixes that exist in both tables with the same value.
+//
+// It is safe to pass nil for any of the callbacks. Prefixes that would be
+// passed to it will be skipped and iteration will continue. If unchanged is
+// nil, iteration will be optimized by skipping any common tries that are
+// encountered. This could result in a significant optimization if the
+// differences between the two are small.
 //
 // It returns false if iteration was stopped due to a callback returning false
 // or true if it iterated all items.
-func (me ITable) Diff(other ITable, left, right func(Prefix, interface{}) bool, changed func(p Prefix, left, right interface{}) bool) bool {
+func (me ITable) Diff(other ITable, changed func(p Prefix, left, right interface{}) bool, left, right, unchanged func(Prefix, interface{}) bool) bool {
 	trieHandler := trieDiffHandler{}
 	if left != nil {
 		trieHandler.Removed = func(n *trieNode) bool {
@@ -364,6 +370,11 @@ func (me ITable) Diff(other ITable, left, right func(Prefix, interface{}) bool, 
 	if changed != nil {
 		trieHandler.Modified = func(l, r *trieNode) bool {
 			return changed(l.Prefix, l.Data, r.Data)
+		}
+	}
+	if unchanged != nil {
+		trieHandler.Same = func(n *trieNode) bool {
+			return unchanged(n.Prefix, n.Data)
 		}
 	}
 	return me.trie.Diff(other.trie, trieHandler, me.eq)

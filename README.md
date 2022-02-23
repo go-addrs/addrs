@@ -145,9 +145,13 @@ ones mentioned above.
    compare function to compare elements of the type you store in the map.
 
 4. It supports an efficient diff operation so that you can iterate the entries
-   removed, added, or changed from one to the other.
+   removed, added, changed, or (optionally) unchanged from one to the other.
 
    Starting with a large `Table_`, if you make a small number of modifications to
    it and then diff the before and after snapshots, the diff operation
    efficiency will be very good -- proportional to the changes made between the
    two.
+
+   The exception to this is if you pass a handler for unchanged prefixes. In
+   this case, every prefix is always visited. This can be always be avoided by
+   passing nil for the unchanged handler.
