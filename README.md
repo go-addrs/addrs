@@ -117,10 +117,11 @@ using it as a key in a `Table_`.
 `Table`s are immutable and `Table_`s are mutable. One can be efficiently
 obtained a fixed table by calling `.Table()` on a `Table_` and vice-versa.
 
-`ITable` is equivalent but does not require generics. If you do not have at
+`TableX` is equivalent but does not require generics. If you do not have at
 least Go version `1.18`, you can use this type to map to `interface{}`es
 instead. Arbitrary value types can still be stored but it is up to you to
-dynamically cast them to the type you want.
+dynamically cast them to the type you want. This should be considered deprecated
+and will not appear in a 2.0 version of the library.
 
 At first glance, `Table` may seem similar but more restrictive than Go's `map`.
 Afterall, a `Prefix` can be used as a `map` key so why is it necessary?
