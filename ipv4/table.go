@@ -148,7 +148,7 @@ func (me Table[T]) Table_() Table_[T] {
 
 // Build is a convenience method for making modifications to a table within a
 // defined scope. It calls the given callback passing a modifiable clone of
-// itself The callback can make any changes to it. After it returns true, Build
+// itself. The callback can make any changes to it. After it returns true, Build
 // returns the fixed snapshot of the result.
 //
 // If the callback returns false, modifications are aborted and the original

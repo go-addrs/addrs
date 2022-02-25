@@ -212,14 +212,20 @@ func TestSetRemoveNil(t *testing.T) {
 }
 
 func TestFixedSetContainsPrefix(t *testing.T) {
-	s := NewSet_()
-	s.Insert(_p("10.0.0.0/16"))
-	assert.True(t, s.Set().Contains(_p("10.0.0.0/24")))
-	assert.True(t, s.Set().Contains(_p("10.0.30.0/27")))
-	assert.True(t, s.Set().Contains(_p("10.0.128.0/17")))
-	assert.False(t, s.Set().Contains(_p("10.224.0.0/24")))
-	assert.False(t, s.Set().Contains(_p("10.1.30.0/27")))
-	assert.False(t, s.Set().Contains(_p("10.0.128.0/15")))
+	s := Set{}.Build(func(s_ Set_) bool {
+		s_.Insert(_p("10.0.0.0/16"))
+		return true
+	})
+	s = s.Build(func(s_ Set_) bool {
+		s_.Insert(_p("10.224.0.0/24"))
+		return false
+	})
+	assert.True(t, s.Contains(_p("10.0.0.0/24")))
+	assert.True(t, s.Contains(_p("10.0.30.0/27")))
+	assert.True(t, s.Contains(_p("10.0.128.0/17")))
+	assert.False(t, s.Contains(_p("10.224.0.0/24")))
+	assert.False(t, s.Contains(_p("10.1.30.0/27")))
+	assert.False(t, s.Contains(_p("10.0.128.0/15")))
 }
 
 func TestWalkRanges(t *testing.T) {

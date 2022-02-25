@@ -166,6 +166,21 @@ func (me Set) Set_() Set_ {
 	}
 }
 
+// Build is a convenience method for making modifications to a set within a
+// defined scope. It calls the given callback passing a modifiable clone of
+// itself. The callback can make any changes to it. After it returns true, Build
+// returns the fixed snapshot of the result.
+//
+// If the callback returns false, modifications are aborted and the original
+// fixed table is returned.
+func (me Set) Build(builder func(Set_) bool) Set {
+	s_ := me.Set_()
+	if builder(s_) {
+		return s_.Set()
+	}
+	return me
+}
+
 // Set implements SetI
 func (me Set) Set() Set {
 	return me
