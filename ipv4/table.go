@@ -88,15 +88,16 @@ func (me Table_[T]) GetOrInsert(prefix PrefixI, value T) T {
 // LongestMatch returns the value associated with the given network prefix
 // using a longest prefix match. If a match is found, it returns true and the
 // Prefix matched, which may be equal to or shorter than the one passed. If no
-// match is found, returns false and the other fields must be ignored.
-func (me Table_[T]) LongestMatch(searchPrefix PrefixI) (value T, found bool, prefix Prefix) {
+// match is found, returns the zero value for T, false, and matchPrefix must be
+// ignored.
+func (me Table_[T]) LongestMatch(prefix PrefixI) (value T, found bool, matchPrefix Prefix) {
 	if me.t.m == nil {
 		return value, found, Prefix{}
 	}
 	var v interface{}
-	v, found, prefix = me.t.LongestMatch(searchPrefix)
+	v, found, matchPrefix = me.t.LongestMatch(prefix)
 	value, _ = v.(T)
-	return value, found, prefix
+	return value, found, matchPrefix
 }
 
 // Remove removes the given prefix from the table with its associated value and

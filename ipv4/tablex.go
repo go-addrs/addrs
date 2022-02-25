@@ -165,7 +165,7 @@ func (me TableX_) GetOrInsert(prefix PrefixI, value interface{}) interface{} {
 // LongestMatch returns the value associated with the given network prefix
 // using a longest prefix match. If a match is found, it returns true and the
 // Prefix matched, which may be equal to or shorter than the one passed. If no
-// match is found, returns false and the other fields must be ignored.
+// match is found, returns nil, false, and matchPrefix must be ignored.
 func (me TableX_) LongestMatch(prefix PrefixI) (value interface{}, found bool, matchPrefix Prefix) {
 	if me.m == nil {
 		return nil, false, Prefix{}
@@ -268,7 +268,7 @@ func (me TableX) Get(prefix PrefixI) (interface{}, bool) {
 // LongestMatch returns the value associated with the given network prefix
 // using a longest prefix match. If a match is found, it returns true and the
 // Prefix matched, which may be equal to or shorter than the one passed. If no
-// match is found, returns false and the other fields must be ignored.
+// match is found, returns nil, false, and matchPrefix must be ignored.
 func (me TableX) LongestMatch(prefix PrefixI) (value interface{}, found bool, matchPrefix Prefix) {
 	var matched match
 	value, matched, matchPrefix = me.longestMatch(prefix)
@@ -289,13 +289,10 @@ func (me TableX) longestMatch(prefix PrefixI) (value interface{}, matched match,
 		return nil, matchNone, Prefix{}
 	}
 
-	var resultKey Prefix
-	resultKey = node.Prefix
-
 	if node.Prefix.length == sp.length {
-		return node.Data, matchExact, resultKey
+		return node.Data, matchExact, node.Prefix
 	}
-	return node.Data, matchContains, resultKey
+	return node.Data, matchContains, node.Prefix
 }
 
 // Aggregate returns a new aggregated table as described below.
