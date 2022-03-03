@@ -135,6 +135,11 @@ func (me uint128) or(x uint128) uint128 {
 	return uint128{me.high | x.high, me.low | x.low}
 }
 
+// xor returns a bitwise XOR with x
+func (me uint128) xor(x uint128) uint128 {
+	return uint128{me.high ^ x.high, me.low ^ x.low}
+}
+
 // complement returns the bitwise complement
 func (me uint128) complement() uint128 {
 	return uint128{^me.high, ^me.low}
