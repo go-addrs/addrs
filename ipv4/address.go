@@ -70,7 +70,7 @@ func maxAddress(a, b Address) Address {
 // ToNetIP returns a net.IP representation of the address which always has 4 bytes
 func (me Address) ToNetIP() net.IP {
 	a, b, c, d := me.toBytes()
-	return net.IPv4(a, b, c, d)
+	return net.IPv4(a, b, c, d).To4()
 }
 
 // lessThan reports whether this Address comes strictly before `other`

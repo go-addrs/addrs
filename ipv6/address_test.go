@@ -97,6 +97,8 @@ func TestAddressFromNetIP(t *testing.T) {
 			} else {
 				assert.Nil(t, err)
 				assert.Equal(t, tt.expected, ip)
+				assert.True(t, tt.ip.Equal(ip.ToNetIP()))
+				assert.Equal(t, 16, len(ip.ToNetIP()))
 			}
 		})
 	}
