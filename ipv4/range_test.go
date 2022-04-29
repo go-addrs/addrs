@@ -7,7 +7,7 @@ import (
 )
 
 func _r(first, last Address) Range {
-	r, empty := NewRange(first, last)
+	r, empty := RangeFromAddresses(first, last)
 	if empty {
 		panic("only use this is non-empty cases")
 	}
@@ -46,9 +46,9 @@ func TestRangeComparable(t *testing.T) {
 	}
 }
 
-func TestNewRange(t *testing.T) {
+func TestRangeFromAddresses(t *testing.T) {
 	rangeEmpty := func(first, last Address) bool {
-		_, empty := NewRange(first, last)
+		_, empty := RangeFromAddresses(first, last)
 		return empty
 	}
 

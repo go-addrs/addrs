@@ -15,10 +15,10 @@ type Range struct {
 	first, last Address
 }
 
-// NewRange returns a new range from the given first and last addresses. If
-// first > last, then empty is set to true and the returned range must be
-// ignored. There is no valid instantiation of an empty range.
-func NewRange(first, last Address) (r Range, empty bool) {
+// RangeFromAddresses returns a new range from the given first and last
+// addresses. If first > last, then empty is set to true and the returned range
+// must be ignored. There is no valid instantiation of an empty range.
+func RangeFromAddresses(first, last Address) (r Range, empty bool) {
 	if last.lessThan(first) {
 		return Range{}, true
 	}

@@ -207,7 +207,7 @@ func (me Prefix) walkAddresses(callback func(Address) bool) bool {
 // It ignores any bits set in the host part of the address.
 func (me Prefix) Range() Range {
 	// Note: this error can be ignored by design
-	r, _ := NewRange(me.Network().addr, me.Broadcast().addr)
+	r, _ := RangeFromAddresses(me.Network().addr, me.Broadcast().addr)
 	return r
 }
 
