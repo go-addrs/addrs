@@ -46,6 +46,16 @@ One thing to note is that there is no valid representation of an empty `Range`.
 The API will not return one in any case and the zero value of a `Range` has one
 address in it (`Address{}` - `Address{}`).
 
+### Set
+
+This is the immutable representation of `Set_`. See the full description below
+under the mutable type section for more detail.
+
+### Table
+
+This is the immutable representation of `Table_`. See the full description below
+under the mutable type section for more detail.
+
 ## Mutable Types
 
 The two most complex types in this library have both mutable and immutable
@@ -86,7 +96,7 @@ A nice pattern to ensure consistency is to reserve writing to a single goroutine
 and then send fixed `Set`s or `Table`s through channels to other goroutines to
 consume it.
 
-### Set
+### Set_
 
 A `Set` contains any arbitrary collection of individual, distinct `Address`
 values. `Address`, `Prefix`, and `Range` are similar to sets but are more
@@ -107,7 +117,7 @@ The above is especially important when it comes to storing IPv6 addresses. For
 example, an entire `/64` `Prefix` has a massive number of distinct `Address`es
 but is stored in a very small space.
 
-### Table
+### Table_
 
 A `Table` maps `Prefix`es to arbitrary values. They use Go generics so that any
 type of value can be stored and retreived in a type-safe manner. Bits in the
