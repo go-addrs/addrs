@@ -69,10 +69,10 @@ func parseNet(prefix string) (*net.IPNet, error) {
 	return &net.IPNet{IP: ip, Mask: ipNet.Mask}, nil
 }
 
-// ParsePrefix returns the net represented by `addr` in dotted-quad CIDR
+// PrefixFromString returns the net represented by `addr` in dotted-quad CIDR
 // notation. If the prefix cannot be parsed, then error is non-nil and the
 // prefix returned must be ignored.
-func ParsePrefix(prefix string) (Prefix, error) {
+func PrefixFromString(prefix string) (Prefix, error) {
 	ipNet, err := parseNet(prefix)
 	if err != nil {
 		return Prefix{}, err

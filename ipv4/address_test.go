@@ -9,7 +9,7 @@ import (
 )
 
 func _a(str string) Address {
-	addr, err := ParseAddress(str)
+	addr, err := AddressFromString(str)
 	if err != nil {
 		panic("only use this is happy cases")
 	}
@@ -54,8 +54,8 @@ func TestAddressSize(t *testing.T) {
 	assert.Equal(t, 32, Address{}.NumBits())
 }
 
-func TestParseAddress(t *testing.T) {
-	ip, err := ParseAddress("10.224.24.1")
+func TestAddressFromString(t *testing.T) {
+	ip, err := AddressFromString("10.224.24.1")
 	assert.Nil(t, err)
 	assert.Equal(t, AddressFromUint32(0x0ae01801), ip)
 }

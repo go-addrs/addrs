@@ -38,10 +38,10 @@ func AddressFromNetIP(ip net.IP) (Address, error) {
 	return fromSlice(ip)
 }
 
-// ParseAddress returns the Address represented by `addr` in colon
+// AddressFromString returns the Address represented by `addr` in colon
 // notation. If it cannot be parsed, then error is non-nil and the Address
 // returned must be ignored.
-func ParseAddress(address string) (Address, error) {
+func AddressFromString(address string) (Address, error) {
 	netIP := net.ParseIP(address)
 	if netIP == nil {
 		return Address{}, fmt.Errorf("failed to parse address: %s", address)

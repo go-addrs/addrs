@@ -10,7 +10,7 @@ import (
 )
 
 func _p(cidr string) Prefix {
-	prefix, err := ParsePrefix(cidr)
+	prefix, err := PrefixFromString(cidr)
 	if err != nil {
 		panic("only use this is happy cases")
 	}
@@ -75,7 +75,7 @@ func TestPrefixComparable(t *testing.T) {
 	}
 }
 
-func TestParsePrefix(t *testing.T) {
+func TestPrefixFromString(t *testing.T) {
 	tests := []struct {
 		description string
 		cidr        string
@@ -105,7 +105,7 @@ func TestParsePrefix(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.description, func(t *testing.T) {
-			net, err := ParsePrefix(tt.cidr)
+			net, err := PrefixFromString(tt.cidr)
 			if tt.isErr {
 				assert.NotNil(t, err)
 			} else {
