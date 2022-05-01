@@ -8,6 +8,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestActive(t *testing.T) {
+	var node *trieNode
+	assert.False(t, node.active())
+	assert.False(t, (&trieNode{}).active())
+	assert.True(t, (&trieNode{isActive: true}).active())
+}
+
 func TestStructSizes(t *testing.T) {
 	// This test has two purposes. The first is to remind any future
 	// contributors to be mindful of the size and alignment of these structs
@@ -71,6 +78,104 @@ func TestMatchZeroLength(t *testing.T) {
 		_a("2001::"),
 		0,
 	}))
+}
+
+func TestGetOrInsertTrivial(t *testing.T) {
+	var trie *trieNode
+	assert.Equal(t, int64(0), trie.NumNodes())
+	assert.True(t, trie.isValid())
+
+	key := Prefix{Address{uint128{0, 0}}, 0}
+
+	trie, node := trie.GetOrInsert(key, true)
+	assert.True(t, trie.isValid())
+	assert.Equal(t, trie, node)
+	assert.True(t, node.Data.(bool))
+}
+
+func TestGetOrInsertExists(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{Address{uint128{0, 0}}, 0}
+
+	trie, err := trie.Insert(key, true)
+	assert.Nil(t, err)
+	assert.True(t, trie.isValid())
+
+	trie, node := trie.GetOrInsert(key, false)
+
+	assert.True(t, trie.isValid())
+	assert.Equal(t, trie, node)
+	assert.True(t, node.Data.(bool))
+}
+
+func TestGetOrInsertBroader(t *testing.T) {
+	var trie *trieNode
+
+	existingKey := Prefix{_a("2001:224::"), 32}
+	trie, err := trie.Insert(existingKey, true)
+	assert.Nil(t, err)
+	assert.True(t, trie.isValid())
+
+	broaderKey := Prefix{_a("2001::"), 16}
+	trie, node := trie.GetOrInsert(broaderKey, false)
+
+	assert.True(t, trie.isValid())
+	assert.Equal(t, trie, node)
+	assert.False(t, node.Data.(bool))
+
+	assert.True(t, trie.Match(existingKey).Data.(bool))
+	assert.False(t, trie.Match(broaderKey).Data.(bool))
+}
+
+func TestGetOrInsertNarrower(t *testing.T) {
+	var trie *trieNode
+
+	existingKey := Prefix{_a("2001:224::"), 32}
+	trie, err := trie.Insert(existingKey, true)
+	assert.Nil(t, err)
+	assert.True(t, trie.isValid())
+
+	narrowerKey := Prefix{_a("2001:224:24::"), 96}
+	trie, node := trie.GetOrInsert(narrowerKey, false)
+
+	assert.True(t, trie.isValid())
+	assert.NotEqual(t, trie, node)
+	assert.False(t, node.Data.(bool))
+
+	assert.True(t, trie.Match(existingKey).Data.(bool))
+	assert.False(t, trie.Match(narrowerKey).Data.(bool))
+}
+
+func TestGetOrInsertDisjoint(t *testing.T) {
+	var trie *trieNode
+
+	existingKey := Prefix{_a("2001:224::"), 32}
+	trie, err := trie.Insert(existingKey, true)
+	assert.Nil(t, err)
+	assert.True(t, trie.isValid())
+
+	disjointKey := Prefix{_a("2001:225::"), 32}
+	trie, node := trie.GetOrInsert(disjointKey, false)
+
+	assert.True(t, trie.isValid())
+	assert.False(t, node.Data.(bool))
+
+	assert.True(t, trie.Match(existingKey).Data.(bool))
+	assert.False(t, trie.Match(disjointKey).Data.(bool))
+}
+
+func TestGetOrInsertInActive(t *testing.T) {
+	var trie *trieNode
+
+	trie, _ = trie.Insert(Prefix{_a("2001:224::"), 32}, true)
+	trie, _ = trie.Insert(Prefix{_a("2001:225::"), 32}, true)
+	assert.True(t, trie.isValid())
+
+	trie, node := trie.GetOrInsert(Prefix{_a("2001:224::"), 31}, false)
+	assert.True(t, trie.isValid())
+	assert.Equal(t, trie, node)
+	assert.False(t, node.Data.(bool))
 }
 
 func TestNoMatchTooBroad(t *testing.T) {

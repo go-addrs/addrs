@@ -156,6 +156,47 @@ func (me *trieNode) Equal(other *trieNode, eq comparator) bool {
 	}
 }
 
+// GetOrInsert returns the existing value if an exact match is found, otherwise, inserts the given default
+func (me *trieNode) GetOrInsert(searchKey Prefix, data interface{}) (head, result *trieNode) {
+	defer func() {
+		if result == nil {
+			result = &trieNode{Prefix: searchKey, Data: data}
+
+			var err error
+			head, err = me.insert(result, insertOpts{insert: true})
+			if err != nil {
+				// when getting *or* inserting, we design around the errors that could come from insert
+				panic(fmt.Errorf("this error shouldn't happen: %w", err))
+			}
+		}
+	}()
+
+	if me == nil || searchKey.length < me.Prefix.length {
+		return
+	}
+
+	matches, exact, _, child := contains(me.Prefix, searchKey)
+	if !matches {
+		return
+	}
+
+	if !exact {
+		var newChild *trieNode
+		newChild, result = me.children[child].GetOrInsert(searchKey, data)
+
+		head = me.copyMutate(func(n *trieNode) {
+			n.children[child] = newChild
+		})
+		return
+	}
+
+	if !me.isActive {
+		return
+	}
+
+	return me, me
+}
+
 // Match returns the existing entry with the longest prefix that fully contains
 // the prefix given by the key argument or nil if none match.
 //
