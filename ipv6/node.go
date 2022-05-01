@@ -297,14 +297,31 @@ func (me *trieNode) isValidLen(minLen uint32) bool {
 	return left.isValidLen(me.Prefix.length+1) && right.isValidLen(me.Prefix.length+1)
 }
 
+// Update updates the key / value only if the key already exists
+func (me *trieNode) Update(key Prefix, data interface{}, eq comparator) (newHead *trieNode, err error) {
+	return me.insert(&trieNode{Prefix: key, Data: data}, insertOpts{update: true, eq: eq})
+}
+
+// InsertOrUpdate inserts the key / value if the key didn't previously exist.
+// Otherwise, it updates the data.
+func (me *trieNode) InsertOrUpdate(key Prefix, data interface{}, eq comparator) (newHead *trieNode) {
+	var err error
+	newHead, err = me.insert(&trieNode{Prefix: key, Data: data}, insertOpts{insert: true, update: true, eq: eq})
+	if err != nil {
+		// when inserting *or* updating, we design around the errors that could come from insert
+		panic(fmt.Errorf("this error shouldn't happen: %w", err))
+	}
+	return newHead
+}
+
 // Insert is the public form of insert(...)
 func (me *trieNode) Insert(key Prefix, data interface{}) (newHead *trieNode, err error) {
 	return me.insert(&trieNode{Prefix: key, Data: data}, insertOpts{insert: true})
 }
 
 type insertOpts struct {
-	insert bool
-	eq     comparator
+	insert, update bool
+	eq             comparator
 }
 
 // insert adds a node into the trie and return the new root of the trie. It is
@@ -326,7 +343,7 @@ func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, 
 	switch result {
 	case compareSame:
 		// They have the same key
-		if me.isActive {
+		if me.isActive && !opts.update {
 			return me, fmt.Errorf("a node with that key already exists")
 		}
 		if !me.isActive && !opts.insert {

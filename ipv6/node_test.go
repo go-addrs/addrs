@@ -55,6 +55,194 @@ func TestStructSizes(t *testing.T) {
 	)
 }
 
+func TestMatchNilKey(t *testing.T) {
+	var trie *trieNode
+	var key Prefix
+
+	assert.Nil(t, trie.Match(key))
+}
+
+func TestInsertOrUpdateChangeValue(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{}
+
+	trie = trie.InsertOrUpdate(key, true, ieq)
+	assert.True(t, trie.isValid())
+	assert.True(t, trie.Match(key).Data.(bool))
+
+	trie = trie.InsertOrUpdate(key, false, ieq)
+	assert.True(t, trie.isValid())
+	assert.False(t, trie.Match(key).Data.(bool))
+}
+
+func TestInsertOrUpdateNewKey(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{}
+
+	trie = trie.InsertOrUpdate(key, true, ieq)
+	assert.True(t, trie.isValid())
+	assert.True(t, trie.Match(key).Data.(bool))
+
+	newKey := Prefix{Address{uint128{0, 0}}, 1}
+	trie = trie.InsertOrUpdate(newKey, false, ieq)
+	assert.True(t, trie.isValid())
+	assert.True(t, trie.Match(key).Data.(bool))
+	assert.False(t, trie.Match(newKey).Data.(bool))
+}
+
+func TestInsertOrUpdateNarrowerKey(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{Address{uint128{0, 0}}, 1}
+
+	trie = trie.InsertOrUpdate(key, true, ieq)
+	assert.True(t, trie.isValid())
+	assert.True(t, trie.Match(key).Data.(bool))
+
+	newKey := Prefix{}
+	trie = trie.InsertOrUpdate(newKey, false, ieq)
+	assert.True(t, trie.isValid())
+	assert.True(t, trie.Match(key).Data.(bool))
+	assert.False(t, trie.Match(newKey).Data.(bool))
+}
+
+func TestInsertOrUpdateDisjointKeys(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{Address{uint128{0, 0}}, 1}
+
+	trie = trie.InsertOrUpdate(key, true, ieq)
+	assert.True(t, trie.isValid())
+	assert.True(t, trie.Match(key).Data.(bool))
+
+	newKey := Prefix{Address{uint128{0x8000000000000000, 0}}, 1}
+	trie = trie.InsertOrUpdate(newKey, false, ieq)
+	assert.True(t, trie.isValid())
+	assert.True(t, trie.Match(key).Data.(bool))
+	assert.False(t, trie.Match(newKey).Data.(bool))
+}
+
+func TestInsertOrUpdateInactive(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{Address{uint128{0, 0}}, 1}
+
+	trie = trie.InsertOrUpdate(key, true, ieq)
+	assert.True(t, trie.isValid())
+	assert.True(t, trie.Match(key).Data.(bool))
+
+	newKey := Prefix{Address{uint128{0x8000000000000000, 0}}, 1}
+	trie = trie.InsertOrUpdate(newKey, false, ieq)
+	assert.True(t, trie.isValid())
+	assert.True(t, trie.Match(key).Data.(bool))
+	assert.False(t, trie.Match(newKey).Data.(bool))
+
+	inactiveKey := Prefix{}
+	trie = trie.InsertOrUpdate(inactiveKey, "value", ieq)
+	assert.True(t, trie.isValid())
+	assert.True(t, trie.Match(key).Data.(bool))
+	assert.False(t, trie.Match(newKey).Data.(bool))
+	assert.Equal(t, "value", trie.Match(inactiveKey).Data.(string))
+}
+
+func TestUpdateChangeValue(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{}
+
+	trie, err := trie.Insert(key, true)
+	assert.True(t, trie.isValid())
+	assert.Nil(t, err)
+	assert.True(t, trie.Match(key).Data.(bool))
+
+	trie, err = trie.Update(key, false, ieq)
+	assert.True(t, trie.isValid())
+	assert.Nil(t, err)
+	assert.False(t, trie.Match(key).Data.(bool))
+}
+
+func TestUpdateNewKey(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{}
+
+	trie, err := trie.Insert(key, true)
+	assert.True(t, trie.isValid())
+	assert.Nil(t, err)
+	assert.True(t, trie.Match(key).Data.(bool))
+
+	newKey := Prefix{Address{uint128{0, 0}}, 1}
+	trie, err = trie.Update(newKey, false, ieq)
+	assert.True(t, trie.isValid())
+	assert.NotNil(t, err)
+	assert.True(t, trie.Match(key).Data.(bool))
+	assert.True(t, trie.Match(newKey).Data.(bool))
+}
+
+func TestUpdateNarrowerKey(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{Address{uint128{0, 0}}, 1}
+
+	trie, err := trie.Insert(key, true)
+	assert.True(t, trie.isValid())
+	assert.Nil(t, err)
+	assert.True(t, trie.Match(key).Data.(bool))
+
+	newKey := Prefix{}
+	trie, err = trie.Update(newKey, false, ieq)
+	assert.True(t, trie.isValid())
+	assert.NotNil(t, err)
+	assert.True(t, trie.Match(key).Data.(bool))
+	assert.Nil(t, trie.Match(newKey))
+}
+
+func TestUpdateDisjointKeys(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{Address{uint128{0, 0}}, 1}
+
+	trie, err := trie.Insert(key, true)
+	assert.True(t, trie.isValid())
+	assert.Nil(t, err)
+	assert.True(t, trie.Match(key).Data.(bool))
+
+	newKey := Prefix{Address{uint128{0x8000000000000000, 0}}, 1}
+	trie, err = trie.Update(newKey, false, ieq)
+	assert.True(t, trie.isValid())
+	assert.NotNil(t, err)
+	assert.True(t, trie.Match(key).Data.(bool))
+	assert.Nil(t, trie.Match(newKey))
+}
+
+func TestUpdateInactive(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{Address{uint128{0, 0}}, 1}
+
+	trie, err := trie.Insert(key, true)
+	assert.True(t, trie.isValid())
+	assert.Nil(t, err)
+	assert.True(t, trie.Match(key).Data.(bool))
+
+	newKey := Prefix{Address{uint128{0x8000000000000000, 0}}, 1}
+	trie, err = trie.Insert(newKey, false)
+	assert.True(t, trie.isValid())
+	assert.Nil(t, err)
+	assert.True(t, trie.Match(key).Data.(bool))
+	assert.False(t, trie.Match(newKey).Data.(bool))
+
+	inactiveKey := Prefix{}
+	trie, err = trie.Update(inactiveKey, "value", ieq)
+	assert.True(t, trie.isValid())
+	assert.NotNil(t, err)
+	assert.True(t, trie.Match(key).Data.(bool))
+	assert.False(t, trie.Match(newKey).Data.(bool))
+	assert.Nil(t, trie.Match(inactiveKey))
+}
+
 func TestMatchNilTrie(t *testing.T) {
 	var trie *trieNode
 
