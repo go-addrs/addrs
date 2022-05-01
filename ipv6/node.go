@@ -670,3 +670,19 @@ func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler, eq comparat
 		Same: handler.Same,
 	})
 }
+
+// Map runs the given mapper function on every data value in the table and
+// returns the *trieNode pointing to the result. As always, the original
+// structure is not modified, an entirely new structure is created.
+func (me *trieNode) Map(mapper func(Prefix, interface{}) interface{}, eq comparator) *trieNode {
+	return me.copyMutate(func(n *trieNode) {
+		n.Data = mapper(me.Prefix, me.Data)
+		if eq(me.Data, n.Data) {
+			n.Data = me.Data
+		}
+		n.children = [2]*trieNode{
+			me.children[0].Map(mapper, eq),
+			me.children[1].Map(mapper, eq),
+		}
+	})
+}

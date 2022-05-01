@@ -1716,3 +1716,74 @@ func TestDiff(t *testing.T) {
 		})
 	}
 }
+
+func TestMap(t *testing.T) {
+	tests := []struct {
+		desc     string
+		original []Prefix
+	}{
+		{
+			desc: "empty",
+		}, {
+			desc: "single_entry",
+			original: []Prefix{
+				Prefix{_a("2001:db8:203:113::"), 56},
+			},
+		}, {
+			desc: "bunch of entries",
+			original: []Prefix{
+				Prefix{_a("2001:db8:203:113::"), 56},
+				Prefix{_a("2001:db8:203:113::"), 64},
+				Prefix{_a("2001:db8:192:2::"), 59},
+				Prefix{_a("2001:db8:198:51::"), 56},
+				Prefix{_a("2001:db8:198:51::"), 57},
+				Prefix{_a("2001:db8:198:51::"), 58},
+				Prefix{_a("2001:db8:198:51::"), 59},
+				Prefix{_a("2001:db8:198:51::"), 60},
+				Prefix{_a("2001:db8:198:51::"), 61},
+				Prefix{_a("2001:db8:198:51::"), 62},
+				Prefix{_a("2001:db8:198:51::"), 63},
+				Prefix{_a("2001:db8:198:51::"), 64},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			original, expected := func() (left, right *trieNode) {
+				fill := func(prefixes []Prefix, value interface{}) (trie *trieNode) {
+					var err error
+					for _, p := range prefixes {
+						trie, err = trie.Insert(p, value)
+						require.Nil(t, err)
+					}
+					return
+				}
+				return fill(tt.original, false), fill(tt.original, true)
+			}()
+
+			result := original.Map(func(Prefix, interface{}) interface{} {
+				return true
+			}, ieq)
+			assert.Equal(t, original.NumNodes(), result.NumNodes())
+			expected.Diff(result, trieDiffHandler{
+				Removed: func(left *trieNode) bool {
+					assert.Fail(t, fmt.Sprintf("found a removed node: %+v, %+v", left.Prefix, left.Data))
+					return true
+				},
+				Added: func(right *trieNode) bool {
+					assert.Fail(t, fmt.Sprintf("found an added node: %+v, %+v", right.Prefix, right.Data))
+					return true
+				},
+				Modified: func(left, right *trieNode) bool {
+					assert.Fail(t, fmt.Sprintf("found a changed node: %+v: %+v -> %+v", left.Prefix, left.Data, right.Data))
+					return true
+				},
+			}, ieq)
+			result = original.Map(func(_ Prefix, value interface{}) interface{} {
+				return value
+			}, ieq)
+			assert.True(t, original == result)
+		})
+	}
+}
