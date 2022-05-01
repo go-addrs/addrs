@@ -238,6 +238,17 @@ func (me *trieNode) Match(searchKey Prefix) *trieNode {
 	return me
 }
 
+// IsEmpty returns whether the number of IP addresses is equal to zero
+func (me *trieNode) IsEmpty() bool {
+	if me == nil {
+		return true
+	}
+	if me.isActive {
+		return false
+	}
+	return (me.children[0].IsEmpty() && me.children[1].IsEmpty())
+}
+
 // NumNodes returns the number of entries in the trie
 func (me *trieNode) NumNodes() int64 {
 	if me == nil {
