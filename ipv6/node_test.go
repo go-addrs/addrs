@@ -1315,6 +1315,116 @@ func printTrie(trie *trieNode) {
 	recurse(trie, 0)
 }
 
+func TestAggregate(t *testing.T) {
+	tests := []struct {
+		desc   string
+		pairs  []pair128
+		golden []pair128
+	}{
+		{
+			desc:   "nothing",
+			pairs:  []pair128{},
+			golden: []pair128{},
+		},
+		{
+			desc: "simple aggregation",
+			pairs: []pair128{
+				pair128{key: Prefix{_a("2001:2d24:24::2"), 127}},
+				pair128{key: Prefix{_a("2001:2d24:24::1"), 128}},
+				pair128{key: Prefix{_a("2001:2d24:24::0"), 128}},
+			},
+			golden: []pair128{
+				pair128{key: Prefix{_a("2001:2d24:24::0"), 126}},
+			},
+		},
+		{
+			desc: "same as iterate",
+			pairs: []pair128{
+				pair128{key: Prefix{_a("1272:21::"), 40}},
+				pair128{key: Prefix{_a("3920:6c8:27::"), 49}},
+				pair128{key: Prefix{_a("3920:16c8:26::8000"), 49}},
+				pair128{key: Prefix{_a("2001:2d24:24::0"), 128}},
+				pair128{key: Prefix{_a("3920:6c8:24::"), 48}},
+				pair128{key: Prefix{_a("1272:16::"), 18}},
+				pair128{key: Prefix{_a("3920:6c8:26::"), 48}},
+				pair128{key: Prefix{_a("2001:2d24:24::0"), 124}},
+				pair128{key: Prefix{_a("3920:16c8:24::"), 48}},
+				pair128{key: Prefix{_a("3920:16c8:25::"), 48}},
+				pair128{key: Prefix{_a("3920:16c8:26::"), 49}},
+				pair128{key: Prefix{_a("3920:6c8:25::"), 48}},
+				pair128{key: Prefix{_a("3920:16c8:27::"), 48}},
+				pair128{key: Prefix{_a("1272:20:8000::"), 39}},
+				pair128{key: Prefix{_a("3920:6c8:25::8000"), 49}},
+			},
+			golden: []pair128{
+				pair128{key: Prefix{_a("1272:16::"), 18}},
+				pair128{key: Prefix{_a("2001:2d24:24::"), 124}},
+				pair128{key: Prefix{_a("3920:6c8:24::"), 47}},
+				pair128{key: Prefix{_a("3920:6c8:26::"), 48}},
+				pair128{key: Prefix{_a("3920:6c8:27::"), 49}},
+				pair128{key: Prefix{_a("3920:16c8:24::"), 47}},
+				pair128{key: Prefix{_a("3920:16c8:26::8000"), 49}},
+				pair128{key: Prefix{_a("3920:16c8:27::"), 48}},
+			},
+		},
+		{
+			desc: "mixed umbrellas",
+			pairs: []pair128{
+				pair128{key: Prefix{_a("2001:2d24:24::0"), 126}, data: true},
+				pair128{key: Prefix{_a("2001:2d24:24::0"), 127}, data: false},
+				pair128{key: Prefix{_a("2001:2d24:24::1"), 128}, data: true},
+				pair128{key: Prefix{_a("2001:2d24:24::0"), 128}, data: false},
+			},
+			golden: []pair128{
+				pair128{key: Prefix{_a("2001:2d24:24::0"), 126}, data: true},
+				pair128{key: Prefix{_a("2001:2d24:24::0"), 127}, data: false},
+				pair128{key: Prefix{_a("2001:2d24:24::1"), 128}, data: true},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			var trie *trieNode
+			check := func(t *testing.T) {
+				expectedIterations := 0
+				result := []pair128{}
+				trie.Aggregate(ieq).Walk(
+					func(key Prefix, data interface{}) bool {
+						result = append(result, pair128{key: key, data: data})
+						expectedIterations = 1
+						return true
+					},
+				)
+				assert.Equal(t, tt.golden, result)
+
+				iterations := 0
+				trie.Aggregate(ieq).Walk(
+					func(key Prefix, data interface{}) bool {
+						result = append(result, pair128{key: key, data: data})
+						iterations++
+						return false
+					},
+				)
+				assert.Equal(t, expectedIterations, iterations)
+			}
+
+			t.Run("normal insert", func(t *testing.T) {
+				for _, p := range tt.pairs {
+					trie, _ = trie.Insert(p.key, p.data)
+				}
+				check(t)
+			})
+			t.Run("get or insert", func(t *testing.T) {
+				for _, p := range tt.pairs {
+					trie, _ = trie.GetOrInsert(p.key, p.data)
+				}
+				check(t)
+			})
+		})
+	}
+}
+
 type comparable struct {
 	// Begin with a type (slice) that is not comparable with standard ==
 	data []string
@@ -1322,6 +1432,51 @@ type comparable struct {
 
 func (me *comparable) IEqual(other interface{}) bool {
 	return reflect.DeepEqual(me, other)
+}
+
+// Like the TestAggregate above but using a type that is comparable through the
+// equalComparable interface.
+func TestAggregateEqualComparable(t *testing.T) {
+	NextHop1 := &comparable{data: []string{"2001:2d24:24::1"}}
+	NextHop2 := &comparable{data: []string{"2001:2d24:24::111"}}
+	tests := []struct {
+		desc   string
+		pairs  []pair128
+		golden []pair128
+	}{
+		{
+			desc: "mixed umbrellas",
+			pairs: []pair128{
+				pair128{key: Prefix{_a("2001:2d24:24::0"), 126}, data: NextHop1},
+				pair128{key: Prefix{_a("2001:2d24:24::0"), 127}, data: NextHop2},
+				pair128{key: Prefix{_a("2001:2d24:24::1"), 128}, data: NextHop1},
+				pair128{key: Prefix{_a("2001:2d24:24::0"), 128}, data: NextHop2},
+			},
+			golden: []pair128{
+				pair128{key: Prefix{_a("2001:2d24:24::0"), 126}, data: NextHop1},
+				pair128{key: Prefix{_a("2001:2d24:24::0"), 127}, data: NextHop2},
+				pair128{key: Prefix{_a("2001:2d24:24::1"), 128}, data: NextHop1},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			var trie *trieNode
+			for _, p := range tt.pairs {
+				trie, _ = trie.Insert(p.key, p.data)
+			}
+
+			result := []pair128{}
+			trie.Aggregate(ieq).Walk(
+				func(key Prefix, data interface{}) bool {
+					result = append(result, pair128{key: key, data: data})
+					return true
+				},
+			)
+			assert.Equal(t, tt.golden, result)
+		})
+	}
 }
 
 // Like the TestAggregate above but using a type that is comparable through the
@@ -1685,6 +1840,14 @@ func TestDiff(t *testing.T) {
 						})
 					}
 				})
+
+				t.Run("aggregated", func(t *testing.T) {
+					left.Aggregate(ieq).Diff(right.Aggregate(ieq), getHandler(true), ieq)
+					assert.True(t,
+						reflect.DeepEqual(aggregatedExpected, actions),
+						cmp.Diff(aggregatedExpected, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
+					)
+				})
 			})
 
 			t.Run("backward", func(t *testing.T) {
@@ -1693,6 +1856,31 @@ func TestDiff(t *testing.T) {
 
 					var expected []diffAction
 					for _, action := range tt.actions {
+						var t actionType
+						pair := action.pair
+						val := action.val
+						switch action.t {
+						case actionTypeRemove:
+							t = actionTypeAdd
+						case actionTypeAdd:
+							t = actionTypeRemove
+						default:
+							t = action.t
+							pair.data, val = val, pair.data
+						}
+						expected = append(expected, diffAction{t, pair, val})
+					}
+					assert.True(t,
+						reflect.DeepEqual(expected, actions),
+						cmp.Diff(expected, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
+					)
+				})
+
+				t.Run("aggregated", func(t *testing.T) {
+					right.Aggregate(ieq).Diff(left.Aggregate(ieq), getHandler(true), ieq)
+
+					var expected []diffAction
+					for _, action := range aggregatedExpected {
 						var t actionType
 						pair := action.pair
 						val := action.val
@@ -1784,6 +1972,124 @@ func TestMap(t *testing.T) {
 				return value
 			}, ieq)
 			assert.True(t, original == result)
+		})
+	}
+}
+
+func TestNewAggregate(t *testing.T) {
+	tests := []struct {
+		desc              string
+		table, aggregated []pair128
+	}{
+		{
+			desc:       "empty",
+			table:      []pair128{},
+			aggregated: []pair128{},
+		}, {
+			desc: "trivial",
+			table: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}},
+			},
+			aggregated: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}},
+			},
+		}, {
+			desc: "sub_prefix_left",
+			table: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}},
+			},
+			aggregated: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+			},
+		}, {
+			desc: "different_data",
+			table: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}, data: true},
+			},
+			aggregated: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}, data: true},
+			},
+		}, {
+			desc: "disjoint",
+			table: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 114}},
+				pair128{key: Prefix{_a("2003::1b13:8000"), 114}},
+			},
+			aggregated: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 114}},
+				pair128{key: Prefix{_a("2003::1b13:8000"), 114}},
+			},
+		}, {
+			desc: "subprefix_different_data",
+			table: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+				pair128{key: Prefix{_a("2003::1b13:0"), 114}, data: true},
+				pair128{key: Prefix{_a("2003::1b13:4000"), 114}},
+			},
+			aggregated: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+				pair128{key: Prefix{_a("2003::1b13:0"), 114}, data: true},
+			},
+		}, {
+			desc: "aggregated_children",
+			table: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}},
+				pair128{key: Prefix{_a("2003::1b13:8000"), 113}},
+			},
+			aggregated: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+			},
+		}, {
+			desc: "adjacent_different_data",
+			table: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}},
+				pair128{key: Prefix{_a("2003::1b13:8000"), 113}, data: true},
+			},
+			aggregated: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}},
+				pair128{key: Prefix{_a("2003::1b13:8000"), 113}, data: true},
+			},
+		}, {
+			desc: "adjacent_different_lengths",
+			table: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}},
+				pair128{key: Prefix{_a("2003::1b13:8000"), 114}},
+			},
+			aggregated: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}},
+				pair128{key: Prefix{_a("2003::1b13:8000"), 114}},
+			},
+		}, {
+			desc: "aggregated_children_have_precedence",
+			table: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}, data: true},
+				pair128{key: Prefix{_a("2003::1b13:8000"), 113}, data: true},
+			},
+			aggregated: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}, data: true},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			table, aggregated := func() (a, b *trieNode) {
+				fill := func(pairs []pair128) (trie *trieNode) {
+					var err error
+					for _, p := range pairs {
+						trie, err = trie.Insert(p.key, p.data)
+						require.Nil(t, err)
+					}
+					return
+				}
+				return fill(tt.table), fill(tt.aggregated)
+			}()
+
+			assert.True(t, table.Aggregate(ieq).Equal(aggregated, ieq))
 		})
 	}
 }

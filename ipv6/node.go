@@ -671,6 +671,87 @@ func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler, eq comparat
 	})
 }
 
+type umbrella struct {
+	Data interface{}
+}
+
+func (me *trieNode) aggregate(parentUmbrella *umbrella, eq comparator) (result *trieNode) {
+	if me == nil {
+		return me
+	}
+
+	isActive := me.isActive
+	data := me.Data
+	children := me.children
+	createReturnValue := func() *trieNode {
+		if isActive == me.isActive && children == me.children && eq(data, me.Data) {
+			return me
+		}
+		return me.copyMutate(func(n *trieNode) {
+			n.isActive = isActive
+			if isActive {
+				if n.Data == nil || !eq(n.Data, data) {
+					n.Data = data
+				}
+			} else {
+				n.Data = nil
+			}
+			n.children = children
+		})
+	}
+
+	u := parentUmbrella
+	if isActive {
+		if parentUmbrella == nil || !eq(parentUmbrella.Data, data) {
+			u = &umbrella{data}
+		} else {
+			isActive = false
+			data = nil
+		}
+	}
+	children = [2]*trieNode{
+		children[0].aggregate(u, eq),
+		children[1].aggregate(u, eq),
+	}
+
+	childrenAggregate := func(a, b *trieNode) bool {
+		if a.active() && b.active() {
+			if a.Prefix.Length() == (me.Prefix.Length() + 1) {
+				if a.Prefix.Length() == b.Prefix.Length() {
+					if eq(a.Data, b.Data) {
+						return true
+					}
+				}
+			}
+		}
+		return false
+	}(children[0], children[1])
+
+	if childrenAggregate {
+		isActive = true
+		data = children[0].Data
+		children = [2]*trieNode{}
+	}
+
+	if isActive {
+		return createReturnValue()
+	}
+
+	if children[0] == nil {
+		return children[1]
+	}
+
+	if children[1] == nil {
+		return children[0]
+	}
+
+	return createReturnValue()
+}
+
+func (me *trieNode) Aggregate(eq comparator) *trieNode {
+	return me.aggregate(nil, eq)
+}
+
 // Map runs the given mapper function on every data value in the table and
 // returns the *trieNode pointing to the result. As always, the original
 // structure is not modified, an entirely new structure is created.
