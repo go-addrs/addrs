@@ -248,6 +248,51 @@ func TestRangeMinus(t *testing.T) {
 	}
 }
 
+func TestRangeSet(t *testing.T) {
+	r := Range{_a("2001::0241:0122"), _a("2001::ad23:824")}
+
+	// I calculated this manually from the above arbitrarily chosen range.
+	golden := NewSet_()
+	golden.Insert(_p("2001::241:122/127"))
+	golden.Insert(_p("2001::241:124/126"))
+	golden.Insert(_p("2001::241:128/125"))
+	golden.Insert(_p("2001::241:130/124"))
+	golden.Insert(_p("2001::241:140/122"))
+	golden.Insert(_p("2001::241:180/121"))
+	golden.Insert(_p("2001::241:200/119"))
+	golden.Insert(_p("2001::241:400/118"))
+	golden.Insert(_p("2001::241:800/117"))
+	golden.Insert(_p("2001::241:1000/116"))
+	golden.Insert(_p("2001::241:2000/115"))
+	golden.Insert(_p("2001::241:4000/114"))
+	golden.Insert(_p("2001::241:8000/113"))
+	golden.Insert(_p("2001::242:0/111"))
+	golden.Insert(_p("2001::244:0/110"))
+	golden.Insert(_p("2001::248:0/109"))
+	golden.Insert(_p("2001::250:0/108"))
+	golden.Insert(_p("2001::260:0/107"))
+	golden.Insert(_p("2001::280:0/105"))
+	golden.Insert(_p("2001::300:0/104"))
+	golden.Insert(_p("2001::400:0/102"))
+	golden.Insert(_p("2001::800:0/101"))
+	golden.Insert(_p("2001::1000:0/100"))
+	golden.Insert(_p("2001::2000:0/99"))
+	golden.Insert(_p("2001::4000:0/98"))
+	golden.Insert(_p("2001::8000:0/99"))
+	golden.Insert(_p("2001::a000:0/101"))
+	golden.Insert(_p("2001::a800:0/102"))
+	golden.Insert(_p("2001::ac00:0/104"))
+	golden.Insert(_p("2001::ad00:0/107"))
+	golden.Insert(_p("2001::ad20:0/111"))
+	golden.Insert(_p("2001::ad22:0/112"))
+	golden.Insert(_p("2001::ad23:0/117"))
+	golden.Insert(_p("2001::ad23:800/123"))
+	golden.Insert(_p("2001::ad23:820/126"))
+	golden.Insert(_p("2001::ad23:824/128"))
+
+	assert.True(t, golden.Set().Equal(r.Set()))
+}
+
 func TestRangePlus(t *testing.T) {
 	tests := []struct {
 		description string

@@ -87,6 +87,11 @@ func (me Address) Prefix() Prefix {
 	return Prefix{me, uint32(addressSize)}
 }
 
+// Set returns a set with only this address in it
+func (me Address) Set() Set {
+	return me.Prefix().Set()
+}
+
 // String returns a string representing the address in IPv6 notation
 func (me Address) String() string {
 	return me.ToNetIP().String()

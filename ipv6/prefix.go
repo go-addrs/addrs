@@ -149,6 +149,13 @@ func (me Prefix) Host() Prefix {
 	}
 }
 
+// Contains returns true if the given containee is wholly contained within this
+// Prefix. If the two Prefixes are equal, true is returned. The host bits in
+// the address are ignored when testing containership.
+func (me Prefix) Contains(other SetI) bool {
+	return me.Set().Contains(other)
+}
+
 // String returns the string representation of this prefix in colon cidr
 // format (e.g 2001::1/64)
 func (me Prefix) String() string {
@@ -199,4 +206,12 @@ func (me Prefix) Halves() (a, b Prefix) {
 		}
 	}
 	return
+}
+
+// Set returns the set that includes the same addresses as the prefix
+// It ignores any bits set in the host part of the address.
+func (me Prefix) Set() Set {
+	return Set{
+		trie: setNodeFromPrefix(me),
+	}
 }

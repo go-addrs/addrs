@@ -262,6 +262,120 @@ func TestNetworkHost(t *testing.T) {
 	}
 }
 
+func TestPrefixContainsPrefix(t *testing.T) {
+	tests := []struct {
+		description          string
+		container, containee Prefix
+	}{
+		{
+			description: "all",
+			container:   _p("::/0"),
+			containee:   _p("1:2:3::4/128"),
+		},
+		{
+			description: "same host",
+			container:   _p("1:2:3::4/128"),
+			containee:   _p("1:2:3::4/128"),
+		},
+		{
+			description: "same host route",
+			container:   _p("1:2:3::4/128"),
+			containee:   _p("1:2:3::4/128"),
+		},
+		{
+			description: "same prefix",
+			container:   _p("C000:1680::20/112"),
+			containee:   _p("C000:1680::20/112"),
+		},
+		{
+			description: "contained smaller",
+			container:   _p("C000:1680::/32"),
+			containee:   _p("C000:1680:20::/48"),
+		},
+		{
+			description: "ignore host part",
+			container:   _p("1:2:3::4/112"),
+			containee:   _p("1:2:3::5/128"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			assert.True(t, tt.container.Contains(tt.containee))
+			if tt.container == tt.containee {
+				assert.True(t, tt.containee.Contains(tt.container))
+			} else {
+				assert.False(t, tt.containee.Contains(tt.container))
+			}
+		})
+	}
+}
+
+func TestPrefixContainsAddress(t *testing.T) {
+	tests := []struct {
+		description     string
+		container       Prefix
+		containees, not []Address
+	}{
+		{
+			description: "all",
+			container:   _p("::/0"),
+			containees: []Address{
+				_a("2001:db8:3::4"),
+				_a("2001:db8:192:168::4:2"),
+			},
+		},
+		{
+			description: "host route",
+			container:   _p("2001:db8::1:2:3:4/128"),
+			containees: []Address{
+				_a("2001:db8::1:2:3:4"),
+			},
+			not: []Address{
+				_a("2001:db8::1:2:3:5"),
+				_a("2001:db8::1:2:3:3"),
+			},
+		},
+		{
+			description: "same prefix",
+			container:   _p("2001:db8:192:168::/64"),
+			containees: []Address{
+				_a("2001:db8:192:168::1234"),
+			},
+		},
+		{
+			description: "contained smaller",
+			container:   _p("2001:db8:192:168::/64"),
+			containees: []Address{
+				_a("2001:db8:192:168:20::"),
+			},
+		},
+		{
+			description: "ignore host part",
+			container:   _p("2001:db8:1:2::3:4/64"),
+			containees: []Address{
+				_a("2001:db8:1:2::3:5"),
+				_a("2001:db8:1:2:3::245"),
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			for i, containee := range tt.containees {
+				t.Run(fmt.Sprintf("contains %d", i), func(t *testing.T) {
+					assert.True(t, tt.container.Contains(containee))
+				})
+			}
+			for i, notContainee := range tt.not {
+				t.Run(fmt.Sprintf("doesn't contain %d", i), func(t *testing.T) {
+					assert.False(t, tt.container.Contains(notContainee))
+				})
+			}
+		})
+	}
+}
+
 func TestPrefixToNetIPNet(t *testing.T) {
 	assert.Equal(t, "2001:db8:85a3::8a2e:370:7334/64", _p("2001:db8:85a3::8a2e:370:7334/64").ToNetIPNet().String())
 }
@@ -327,6 +441,42 @@ func TestPrefixHalves(t *testing.T) {
 			a, b := tt.prefix.Halves()
 			assert.Equal(t, tt.a, a)
 			assert.Equal(t, tt.b, b)
+		})
+	}
+}
+
+func TestPrefixSet(t *testing.T) {
+	tests := []struct {
+		prefix  Prefix
+		in, out Address
+	}{
+		{
+			prefix: _p("::/1"),
+			in:     _a("2001::1"),
+			out:    _a("8000::"),
+		},
+		{
+			prefix: _p("2001:db8::/32"),
+			in:     _a("2001:db8::"),
+			out:    _a("2001:ef01::ab60:43"),
+		},
+		{
+			prefix: _p("2001:db8:85a3:8a2e::/64"),
+			in:     _a("2001:db8:85a3:8a2e::"),
+			out:    _a("3abc:db8:90a3::231:1"),
+		},
+		{
+			prefix: _p("2001:db8:85a3::8a2e:370:7334/127"),
+			in:     _a("2001:db8:85a3::8a2e:370:7334"),
+			out:    _a("2001:db8:85a3::8a2e:370:7336"),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.prefix.String(), func(t *testing.T) {
+			set := tt.prefix.Set()
+			assert.True(t, set.Contains(tt.in))
+			assert.False(t, set.Contains(tt.out))
 		})
 	}
 }
