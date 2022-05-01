@@ -6,7 +6,9 @@ import (
 	"testing"
 	"unsafe"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestActive(t *testing.T) {
@@ -1214,6 +1216,83 @@ func TestSuccessivelyBetter(t *testing.T) {
 	}
 }
 
+func TestWalk(t *testing.T) {
+	keys := []Prefix{
+		Prefix{_a("1272:21::"), 40},
+		Prefix{_a("3920:6c8:27::"), 49},
+		Prefix{_a("3920:16c8:26::8000"), 49},
+		Prefix{_a("2001:2d24:24::0"), 128},
+		Prefix{_a("3920:6c8:24::"), 48},
+		Prefix{_a("1272:16::"), 18},
+		Prefix{_a("3920:6c8:26::"), 48},
+		Prefix{_a("2001:2d24:24::0"), 124},
+		Prefix{_a("3920:16c8:24::"), 48},
+		Prefix{_a("3920:16c8:25::"), 48},
+		Prefix{_a("3920:16c8:26::"), 49},
+		Prefix{_a("3920:6c8:25::"), 48},
+		Prefix{_a("3920:16c8:27::"), 48},
+		Prefix{_a("1272:20:8000::"), 39},
+		Prefix{_a("3920:6c8:25::8000"), 49},
+	}
+
+	golden := []Prefix{
+		Prefix{_a("1272:16::"), 18},
+		Prefix{_a("1272:20:8000::"), 39},
+		Prefix{_a("1272:21::"), 40},
+		Prefix{_a("2001:2d24:24::"), 124},
+		Prefix{_a("2001:2d24:24::"), 128},
+		Prefix{_a("3920:6c8:24::"), 48},
+		Prefix{_a("3920:6c8:25::"), 48},
+		Prefix{_a("3920:6c8:25::8000"), 49},
+		Prefix{_a("3920:6c8:26::"), 48},
+		Prefix{_a("3920:6c8:27::"), 49},
+		Prefix{_a("3920:16c8:24::"), 48},
+		Prefix{_a("3920:16c8:25::"), 48},
+		Prefix{_a("3920:16c8:26::8000"), 49},
+		Prefix{_a("3920:16c8:27::"), 48},
+	}
+
+	var trie *trieNode
+	check := func(t *testing.T) {
+		result := []Prefix{}
+		trie.Walk(func(key Prefix, _ interface{}) bool {
+			result = append(result, key)
+			return true
+		})
+		assert.Equal(t, golden, result)
+
+		iterations := 0
+		trie.Walk(func(key Prefix, _ interface{}) bool {
+			iterations++
+			return false
+		})
+		assert.Equal(t, 1, iterations)
+
+		// Just ensure that iterating with a nil callback doesn't crash
+		trie.Walk(nil)
+	}
+
+	t.Run("normal insert", func(t *testing.T) {
+		trie = nil
+		for _, key := range keys {
+			trie, _ = trie.Insert(key, nil)
+		}
+		check(t)
+	})
+	t.Run("get or insert", func(t *testing.T) {
+		trie = nil
+		for _, key := range keys {
+			trie, _ = trie.GetOrInsert(key, nil)
+		}
+		check(t)
+	})
+}
+
+type pair128 struct {
+	key  Prefix
+	data interface{}
+}
+
 func printTrie(trie *trieNode) {
 	if trie == nil {
 		fmt.Println("<nil>")
@@ -1323,6 +1402,317 @@ func TestTrieNodeEqual(t *testing.T) {
 		t.Run(tt.desc, func(t *testing.T) {
 			assert.Equal(t, tt.equal, tt.a.Equal(tt.b, ieq))
 			assert.Equal(t, tt.equal, tt.b.Equal(tt.a, ieq))
+		})
+	}
+}
+
+type actionType int
+
+const (
+	actionTypeRemove actionType = iota
+	actionTypeAdd
+	actionTypeChange
+	actionTypeSame
+)
+
+type diffAction struct {
+	t    actionType
+	pair pair128
+	val  interface{}
+}
+
+func TestDiff(t *testing.T) {
+	tests := []struct {
+		desc        string
+		left, right []pair128
+		actions     []diffAction
+		aggregated  []diffAction
+	}{
+		{
+			desc: "empty",
+		}, {
+			desc: "right_empty",
+			left: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:0"), 112}}, nil},
+			},
+		}, {
+			desc: "right_empty_with_subprefixes",
+			left: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+				pair128{key: Prefix{_a("2003::1b13:8000"), 113}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:0"), 112}}, nil},
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:8000"), 113}}, nil},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:0"), 112}}, nil},
+			},
+		}, {
+			desc: "right_empty_with_subprefix_on_left",
+			left: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+				pair128{key: Prefix{_a("2003::1b13:4000"), 114}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:0"), 112}}, nil},
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:4000"), 114}}, nil},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:0"), 112}}, nil},
+			},
+		}, {
+			desc: "right_empty_with_subprefix_on_right",
+			left: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+				pair128{key: Prefix{_a("2003::1b13:C000"), 114}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:0"), 112}}, nil},
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:C000"), 114}}, nil},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:0"), 112}}, nil},
+			},
+		}, {
+			desc: "no_diff",
+			left: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+			},
+			right: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeSame, pair128{key: Prefix{_a("2003::1b13:0"), 112}}, nil},
+			},
+		}, {
+			desc: "different_data",
+			left: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}, data: 2},
+			},
+			right: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}, data: 3},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeChange, pair128{key: Prefix{_a("2003::1b13:0"), 112}, data: 2}, 3},
+			},
+		}, {
+			desc: "right_side_aggregable",
+			left: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}, data: 2},
+			},
+			right: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}, data: 3},
+				pair128{key: Prefix{_a("2003::1b13:8000"), 113}, data: 3},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:0"), 112}, data: 2}, nil},
+				diffAction{actionTypeAdd, pair128{key: Prefix{_a("2003::1b13:0"), 113}, data: 3}, nil},
+				diffAction{actionTypeAdd, pair128{key: Prefix{_a("2003::1b13:8000"), 113}, data: 3}, nil},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeChange, pair128{key: Prefix{_a("2003::1b13:0"), 112}, data: 2}, 3},
+			},
+		}, {
+			desc: "both_sides_aggregable",
+			left: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}, data: 2},
+				pair128{key: Prefix{_a("2003::1b13:8000"), 113}, data: 2},
+			},
+			right: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}, data: 3},
+				pair128{key: Prefix{_a("2003::1b13:8000"), 113}, data: 3},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeChange, pair128{key: Prefix{_a("2003::1b13:0"), 113}, data: 2}, 3},
+				diffAction{actionTypeChange, pair128{key: Prefix{_a("2003::1b13:8000"), 113}, data: 2}, 3},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeChange, pair128{key: Prefix{_a("2003::1b13:0"), 112}, data: 2}, 3},
+			},
+		}, {
+			desc: "disjoint",
+			left: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}},
+			},
+			right: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:8000"), 113}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:0"), 113}}, nil},
+				diffAction{actionTypeAdd, pair128{key: Prefix{_a("2003::1b13:8000"), 113}}, nil},
+			},
+		}, {
+			desc: "contained_right",
+			left: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+			},
+			right: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:8000"), 113}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:0"), 112}}, nil},
+				diffAction{actionTypeAdd, pair128{key: Prefix{_a("2003::1b13:8000"), 113}}, nil},
+			},
+		}, {
+			desc: "contained_right_subprefix",
+			left: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}},
+				pair128{key: Prefix{_a("2003::1b13:8000"), 113}},
+			},
+			right: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:8000"), 113}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:0"), 113}}, nil},
+				diffAction{actionTypeSame, pair128{key: Prefix{_a("2003::1b13:8000"), 113}}, nil},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:0"), 112}}, nil},
+				diffAction{actionTypeAdd, pair128{key: Prefix{_a("2003::1b13:8000"), 113}}, nil},
+			},
+		}, {
+			desc: "contained_left",
+			left: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+			},
+			right: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:0"), 112}}, nil},
+				diffAction{actionTypeAdd, pair128{key: Prefix{_a("2003::1b13:0"), 113}}, nil},
+			},
+		}, {
+			desc: "contained_left_subprefix",
+			left: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}},
+				pair128{key: Prefix{_a("2003::1b13:8000"), 113}},
+			},
+			right: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeSame, pair128{key: Prefix{_a("2003::1b13:0"), 113}}, nil},
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:8000"), 113}}, nil},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:0"), 112}}, nil},
+				diffAction{actionTypeAdd, pair128{key: Prefix{_a("2003::1b13:0"), 113}}, nil},
+			},
+		}, {
+			desc: "aggregated same",
+			left: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 113}},
+				pair128{key: Prefix{_a("2003::1b13:8000"), 113}},
+			},
+			right: []pair128{
+				pair128{key: Prefix{_a("2003::1b13:0"), 112}},
+			},
+			actions: []diffAction{
+				diffAction{actionTypeAdd, pair128{key: Prefix{_a("2003::1b13:0"), 112}}, nil},
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:0"), 113}}, nil},
+				diffAction{actionTypeRemove, pair128{key: Prefix{_a("2003::1b13:8000"), 113}}, nil},
+			},
+			aggregated: []diffAction{
+				diffAction{actionTypeSame, pair128{key: Prefix{_a("2003::1b13:0"), 112}}, nil},
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.desc, func(t *testing.T) {
+			left, right := func() (left, right *trieNode) {
+				fill := func(pairs []pair128) (trie *trieNode) {
+					var err error
+					for _, p := range pairs {
+						trie, err = trie.Insert(p.key, p.data)
+						require.Nil(t, err)
+					}
+					return
+				}
+				return fill(tt.left), fill(tt.right)
+			}()
+
+			var actions []diffAction
+			getHandler := func(ret bool) trieDiffHandler {
+				actions = nil
+				return trieDiffHandler{
+					Removed: func(left *trieNode) bool {
+						require.True(t, left.isActive)
+						actions = append(actions, diffAction{actionTypeRemove, pair128{key: left.Prefix, data: left.Data}, nil})
+						return ret
+					},
+					Added: func(right *trieNode) bool {
+						require.True(t, right.isActive)
+						actions = append(actions, diffAction{actionTypeAdd, pair128{key: right.Prefix, data: right.Data}, nil})
+						return ret
+					},
+					Modified: func(left, right *trieNode) bool {
+						require.True(t, left.isActive)
+						require.True(t, right.isActive)
+						actions = append(actions, diffAction{actionTypeChange, pair128{key: left.Prefix, data: left.Data}, right.Data})
+						return ret
+					},
+					Same: func(common *trieNode) bool {
+						require.True(t, common.isActive)
+						actions = append(actions, diffAction{actionTypeSame, pair128{key: common.Prefix, data: common.Data}, nil})
+						return ret
+					},
+				}
+			}
+
+			aggregatedExpected := tt.aggregated
+			if aggregatedExpected == nil {
+				aggregatedExpected = tt.actions
+			}
+
+			t.Run("forward", func(t *testing.T) {
+				t.Run("normal", func(t *testing.T) {
+					left.Diff(right, getHandler(true), ieq)
+					assert.True(t,
+						reflect.DeepEqual(tt.actions, actions),
+						cmp.Diff(tt.actions, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
+					)
+					if len(tt.actions) >= 1 {
+						// Run the same thing but return false to stop iteration
+						t.Run("stop", func(t *testing.T) {
+							left.Diff(right, getHandler(false), ieq)
+							assert.True(t, reflect.DeepEqual(tt.actions[:1], actions))
+						})
+					}
+				})
+			})
+
+			t.Run("backward", func(t *testing.T) {
+				t.Run("normal", func(t *testing.T) {
+					right.Diff(left, getHandler(true), ieq)
+
+					var expected []diffAction
+					for _, action := range tt.actions {
+						var t actionType
+						pair := action.pair
+						val := action.val
+						switch action.t {
+						case actionTypeRemove:
+							t = actionTypeAdd
+						case actionTypeAdd:
+							t = actionTypeRemove
+						default:
+							t = action.t
+							pair.data, val = val, pair.data
+						}
+						expected = append(expected, diffAction{t, pair, val})
+					}
+					assert.True(t,
+						reflect.DeepEqual(expected, actions),
+						cmp.Diff(expected, actions, cmp.Exporter(func(reflect.Type) bool { return true })),
+					)
+				})
+			})
 		})
 	}
 }

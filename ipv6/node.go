@@ -490,3 +490,183 @@ func (me *trieNode) active() bool {
 	}
 	return me.isActive
 }
+
+// Walk walks the entire tree and calls the given function for each active
+// node. The order of visiting nodes is essentially lexigraphical:
+// - disjoint prefixes are visited in lexigraphical order
+// - shorter prefixes are visited immediately before longer prefixes that they contain
+//
+// It returns false if iteration was stopped due to a callback return false or
+// true if it iterated all items.
+func (me *trieNode) Walk(callback func(Prefix, interface{}) bool) bool {
+	if callback == nil {
+		callback = func(Prefix, interface{}) bool {
+			return true
+		}
+	}
+
+	var empty *trieNode
+	handler := trieDiffHandler{
+		Added: func(n *trieNode) bool {
+			return callback(n.Prefix, n.Data)
+		},
+	}
+	return empty.Diff(me, handler, func(a, b interface{}) bool {
+		return false
+	})
+}
+
+type trieDiffHandler struct {
+	Removed  func(left *trieNode) bool
+	Added    func(right *trieNode) bool
+	Modified func(left, right *trieNode) bool
+	Same     func(common *trieNode) bool
+}
+
+func (left *trieNode) diff(right *trieNode, handler trieDiffHandler) bool {
+	if left == right && handler.Same == nil {
+		return true
+	}
+
+	// Compare the two nodes.
+	// If one of them is nil, we treat it as if it is contained by the non-nil one.
+	// In that case, `child` doesn't matter so we leave it initialized at zero.
+	// If both are nil, there is nothing to do.
+	var result, child int
+	switch {
+	case left != nil && right != nil:
+		result, _, _, child = compare(left.Prefix, right.Prefix)
+
+	case left != nil:
+		result = compareContains
+
+	case right != nil:
+		result = compareIsContained
+
+	default:
+		return true
+	}
+
+	// Call handlers. If the nodes are disjoint, nothing is called yet.
+	switch result {
+	case compareSame:
+		// They have the same key
+		if !handler.Modified(left, right) {
+			return false
+		}
+
+	case compareContains:
+		// Left node's key contains the right node's key
+		if !handler.Removed(left) {
+			return false
+		}
+
+	case compareIsContained:
+		// Right node's key contains the left node's key
+		if !handler.Added(right) {
+			return false
+		}
+	}
+
+	// Based on the comparison above, determine where to descend to child nodes
+	// before recursing.
+	//
+	// The side that doesn't descend is included in the pair of nodes as either
+	// the first (0) or second (1) element based on the comparison (child) with
+	// the other side being an empty set (nil by default).
+	//
+	// If the two sides are disjoint, neither one descends and the two sides
+	// are split apart to compare each independently with an empty set.
+
+	var newLeft, newRight [2]*trieNode
+	switch result {
+	case compareSame:
+		newLeft = left.children
+		newRight = right.children
+
+	case compareIsContained:
+		newLeft[child] = left
+		newRight = right.children
+
+	case compareContains:
+		newLeft = left.children
+		newRight[child] = right
+
+	case compareDisjoint:
+		// Divide and conquer. Compare each with an empty set. Order based on
+		// the comparison.
+		if child == 0 {
+			newLeft[1] = left
+			newRight[0] = right
+		} else {
+			newLeft[0] = left
+			newRight[1] = right
+		}
+	}
+
+	// Recurse into children
+	if !newLeft[0].diff(newRight[0], handler) {
+		return false
+	}
+	if !newLeft[1].diff(newRight[1], handler) {
+		return false
+	}
+	return true
+}
+
+// Diff compares the two tries to find entries that are removed, added, or
+// changed between the two. It calls the appropriate callback
+func (left *trieNode) Diff(right *trieNode, handler trieDiffHandler, eq comparator) bool {
+	noop := func(*trieNode) bool {
+		return true
+	}
+
+	common := noop
+
+	// Ensure I don't have to check for nil everywhere.
+	if handler.Removed == nil {
+		handler.Removed = noop
+	}
+	if handler.Added == nil {
+		handler.Added = noop
+	}
+	if handler.Modified == nil {
+		handler.Modified = func(l, r *trieNode) bool {
+			return true
+		}
+	}
+	if handler.Same != nil {
+		common = handler.Same
+	}
+
+	return left.diff(right, trieDiffHandler{
+		Removed: func(left *trieNode) bool {
+			if left.isActive {
+				return handler.Removed(left)
+			}
+			return true
+		},
+		Added: func(right *trieNode) bool {
+			if right.isActive {
+				return handler.Added(right)
+			}
+			return true
+		},
+		Modified: func(left, right *trieNode) bool {
+			switch {
+			case left.isActive && right.isActive:
+				if !eq(left.Data, right.Data) {
+					return handler.Modified(left, right)
+				} else {
+					return common(left)
+				}
+			case left.isActive:
+				return handler.Removed(left)
+			case right.isActive:
+				return handler.Added(right)
+			}
+			return true
+		},
+		Same: handler.Same,
+	})
+}
