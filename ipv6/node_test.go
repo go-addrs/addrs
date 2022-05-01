@@ -1214,6 +1214,27 @@ func TestSuccessivelyBetter(t *testing.T) {
 			}
 		}
 	}
+
+	// Delete the nodes in the same order they were added and check that the
+	// broader keys are no longer found in the trie as they're deleted but
+	// the more specific ones are still found.
+	for index, key := range keys {
+		var err error
+		trie, err = trie.Delete(key)
+		assert.Nil(t, err)
+		assert.Equal(t, int64(len(keys)-index-1), trie.NumNodes())
+		assert.True(t, trie.isValid())
+		assert.Equal(t, len(keys)-index-1, trie.height())
+
+		for i, searchKey := range keys {
+			node := trie.Match(searchKey)
+			if i <= index {
+				assert.Nil(t, node)
+			} else {
+				assert.Equal(t, node.Prefix, searchKey)
+			}
+		}
+	}
 }
 
 func TestWalk(t *testing.T) {
@@ -1559,6 +1580,128 @@ func TestTrieNodeEqual(t *testing.T) {
 			assert.Equal(t, tt.equal, tt.b.Equal(tt.a, ieq))
 		})
 	}
+}
+
+func TestFlatten(t *testing.T) {
+	t.Run("active node needs no children", func(t *testing.T) {
+		prefix := _p("1:2:3::/48")
+		n := trieNode{
+			Prefix:   prefix,
+			isActive: true,
+			children: [2]*trieNode{
+				&trieNode{},
+				&trieNode{},
+			},
+		}
+		n.flatten()
+		assert.Equal(t, prefix, n.Prefix)
+		assert.True(t, n.isActive)
+		assert.Nil(t, n.children[0])
+		assert.Nil(t, n.children[1])
+	})
+	t.Run("children of unequal size", func(t *testing.T) {
+		prefix := _p("1:2:3::/48")
+		left := _p("1:2:3::/52")
+		right := _p("1:2:3:8000::/49")
+		n := trieNode{
+			Prefix: prefix,
+			children: [2]*trieNode{
+				&trieNode{Prefix: left},
+				&trieNode{Prefix: right},
+			},
+		}
+		n.flatten()
+		assert.Equal(t, prefix, n.Prefix)
+		assert.False(t, n.isActive)
+		assert.Equal(t, left, n.children[0].Prefix)
+		assert.Equal(t, right, n.children[1].Prefix)
+	})
+	t.Run("children smaller than half", func(t *testing.T) {
+		prefix := _p("1:2:3::/48")
+		left := _p("1:2:3::/52")
+		right := _p("1:2:3:8000::/52")
+		n := trieNode{
+			Prefix: prefix,
+			children: [2]*trieNode{
+				&trieNode{Prefix: left},
+				&trieNode{Prefix: right},
+			},
+		}
+		n.flatten()
+		assert.Equal(t, prefix, n.Prefix)
+		assert.False(t, n.isActive)
+		assert.Equal(t, left, n.children[0].Prefix)
+		assert.Equal(t, right, n.children[1].Prefix)
+	})
+
+	t.Run("children not both active (left)", func(t *testing.T) {
+		prefix := _p("1:2:3::/48")
+		left := _p("1:2:3::/49")
+		right := _p("1:2:3:8000::/49")
+		n := trieNode{
+			Prefix: prefix,
+			children: [2]*trieNode{
+				&trieNode{
+					Prefix:   left,
+					isActive: true,
+				},
+				&trieNode{
+					Prefix: right,
+				},
+			},
+		}
+		n.flatten()
+		assert.Equal(t, prefix, n.Prefix)
+		assert.False(t, n.isActive)
+		assert.Equal(t, left, n.children[0].Prefix)
+		assert.Equal(t, right, n.children[1].Prefix)
+	})
+
+	t.Run("children not both active (right)", func(t *testing.T) {
+		prefix := _p("1:2:3::/48")
+		left := _p("1:2:3::/49")
+		right := _p("1:2:3:8000::/49")
+		n := trieNode{
+			Prefix: prefix,
+			children: [2]*trieNode{
+				&trieNode{
+					Prefix: left,
+				},
+				&trieNode{
+					Prefix:   right,
+					isActive: true,
+				},
+			},
+		}
+		n.flatten()
+		assert.Equal(t, prefix, n.Prefix)
+		assert.False(t, n.isActive)
+		assert.Equal(t, left, n.children[0].Prefix)
+		assert.Equal(t, right, n.children[1].Prefix)
+	})
+	t.Run("children both active", func(t *testing.T) {
+		prefix := _p("1:2:3::/48")
+		left := _p("1:2:3::/49")
+		right := _p("1:2:3:8000::/49")
+		n := trieNode{
+			Prefix: prefix,
+			children: [2]*trieNode{
+				&trieNode{
+					Prefix:   left,
+					isActive: true,
+				},
+				&trieNode{
+					Prefix:   right,
+					isActive: true,
+				},
+			},
+		}
+		n.flatten()
+		assert.Equal(t, prefix, n.Prefix)
+		assert.True(t, n.isActive)
+		assert.Nil(t, n.children[0])
+		assert.Nil(t, n.children[1])
+	})
 }
 
 type actionType int

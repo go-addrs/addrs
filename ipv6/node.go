@@ -320,8 +320,40 @@ func (me *trieNode) Insert(key Prefix, data interface{}) (newHead *trieNode, err
 }
 
 type insertOpts struct {
-	insert, update bool
-	eq             comparator
+	insert, update, flatten bool
+	eq                      comparator
+}
+
+// flatten assumes that `me` is a new node. It should not be called that had
+// already existed as a node in the trie because it does not make a copy.
+func (me *trieNode) flatten() {
+	if me.isActive {
+		// If the current node is active, then anything referenced by the
+		// children is redundant, they can be removed.
+		me.children = [2]*trieNode{}
+		return
+	}
+	left, right := me.children[0], me.children[1]
+	if left == nil || right == nil {
+		panic("this should never happen; it means that the structure is not optimized")
+	}
+	if left.Prefix.length != right.Prefix.length {
+		// If the childen have different size prefixes, then we cannot combine
+		// them. Do nothing.
+		return
+	}
+	if left.Prefix.length != me.Prefix.length+1 {
+		// If the children aren't exactly half the current node's prefix then
+		// we cannot combine them. Do nothing.
+		return
+	}
+	if !left.isActive || !right.isActive {
+		// If the children aren't both active, it means they are sparse and
+		// cannot be combined. Do nothing.
+		return
+	}
+	me.children = [2]*trieNode{}
+	me.isActive = true
 }
 
 // insert adds a node into the trie and return the new root of the trie. It is
@@ -349,22 +381,36 @@ func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, 
 		if !me.isActive && !opts.insert {
 			return me, fmt.Errorf("the key doesn't exist to update")
 		}
+		if opts.flatten {
+			// avoid copy-on-write when it will be flattened resulting in no effective change
+			return me, nil
+		}
 		return node.mutate(func(n *trieNode) {
 			if me.isActive && opts.eq(me.Data, node.Data) {
 				node.Data = me.Data
 			}
 			n.children = me.children
 			n.isActive = true
+			if opts.flatten {
+				n.flatten()
+			}
 		}), nil
 
 	case compareContains:
 		// Trie node's key contains the new node's key. Insert it recursively.
+		if opts.flatten && me.isActive {
+			// avoid copy-on-write when it will be flattened resulting in no effective change
+			return me, nil
+		}
 		newChild, err := me.children[child].insert(node, opts)
 		if err != nil {
 			return me, err
 		}
 		newNode := me.copyMutate(func(n *trieNode) {
 			n.children[child] = newChild
+			if opts.flatten {
+				n.flatten()
+			}
 		})
 		return newNode, nil
 
@@ -376,6 +422,9 @@ func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, 
 		node = node.mutate(func(n *trieNode) {
 			n.children[child] = me
 			n.isActive = true
+			if opts.flatten {
+				n.flatten()
+			}
 		})
 		return node, nil
 
@@ -404,7 +453,11 @@ func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, 
 			},
 			children: children,
 		}
-		newNode.mutate(func(n *trieNode) {})
+		newNode.mutate(func(n *trieNode) {
+			if opts.flatten {
+				n.flatten()
+			}
+		})
 		return newNode, nil
 	}
 	panic("unreachable code")
@@ -455,6 +508,21 @@ func (me *trieNode) del(key Prefix, opts deleteOpts) (newHead *trieNode, err err
 		return newNode, nil
 
 	case compareContains:
+		if me.isActive && opts.flatten {
+			// TODO This is for sets. Break it out of here.
+			// split this prefix into ranges and insert them
+			super, sub := me.Prefix.Range(), key.Range()
+			remainingRanges := super.Minus(sub)
+			var s *setNode
+			if len(remainingRanges) == 1 {
+				s = setNodeFromRange(remainingRanges[0])
+			} else {
+				a := setNodeFromRange(remainingRanges[0])
+				b := setNodeFromRange(remainingRanges[1])
+				s = a.Union(b)
+			}
+			return (*trieNode)(s), nil
+		}
 		// Delete recursively.
 		newChild, err := me.children[child].del(key, opts)
 		if err != nil {
