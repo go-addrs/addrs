@@ -410,6 +410,78 @@ func (me *trieNode) insert(node *trieNode, opts insertOpts) (newHead *trieNode, 
 	panic("unreachable code")
 }
 
+type deleteOpts struct {
+	flatten bool
+}
+
+// Delete removes a node from the trie given a key and returns the new root of
+// the trie. It is important to note that the root of the trie can change.
+func (me *trieNode) Delete(key Prefix) (newHead *trieNode, err error) {
+	return me.del(key, deleteOpts{})
+}
+
+func reverseChild(child int) int {
+	return (child + 1) % 2
+}
+
+func (me *trieNode) del(key Prefix, opts deleteOpts) (newHead *trieNode, err error) {
+	if me == nil {
+		if opts.flatten {
+			return nil, nil
+		}
+		return me, fmt.Errorf("cannot delete from a nil")
+	}
+
+	result, _, _, child := compare(me.Prefix, key)
+	switch result {
+	case compareSame:
+		if opts.flatten {
+			return nil, nil
+		}
+		// Delete this node
+		if me.children[0] == nil {
+			// At this point, it doesn't matter if it is nil or not
+			return me.children[1], nil
+		}
+		if me.children[1] == nil {
+			return me.children[0], nil
+		}
+
+		// The two children are disjoint so keep this inactive node.
+		newNode := me.copyMutate(func(n *trieNode) {
+			n.isActive = false
+			n.Data = nil
+		})
+		return newNode, nil
+
+	case compareContains:
+		// Delete recursively.
+		newChild, err := me.children[child].del(key, opts)
+		if err != nil {
+			return me, err
+		}
+
+		if newChild == nil && !me.isActive {
+			// Promote the other child up
+			return me.children[reverseChild(child)], nil
+		}
+		newNode := me.copyMutate(func(n *trieNode) {
+			n.children[child] = newChild
+		})
+		return newNode, nil
+
+	case compareIsContained:
+		if opts.flatten {
+			return nil, nil
+		}
+		return me, fmt.Errorf("key not found")
+
+	case compareDisjoint:
+		return me, fmt.Errorf("key not found")
+	}
+	panic("unreachable code")
+}
+
 // active returns whether a node represents an active prefix in the tree (true)
 // or an intermediate node (false). It is safe to call on a nil pointer.
 func (me *trieNode) active() bool {

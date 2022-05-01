@@ -2,6 +2,7 @@ package ipv6
 
 import (
 	"fmt"
+	"reflect"
 	"testing"
 	"unsafe"
 
@@ -962,6 +963,210 @@ func TestContains(t *testing.T) {
 	}
 }
 
+func TestDeleteFromNilTree(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{}
+	trie, err := trie.Delete(key)
+	assert.Nil(t, trie)
+	assert.NotNil(t, err)
+}
+
+func TestDeleteSimple(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{
+		_a("1720:16:200::"),
+		128,
+	}
+	trie, err := trie.Insert(key, nil)
+	trie, err = trie.Delete(key)
+	assert.Nil(t, err)
+	assert.Nil(t, trie)
+}
+
+func TestDeleteLeftChild(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{
+		_a("1720:16:200::"),
+		48,
+	}
+	trie, err := trie.Insert(key, nil)
+	childKey := Prefix{
+		_a("1720:16:200::"),
+		49,
+	}
+	trie, err = trie.Insert(childKey, nil)
+	trie, err = trie.Delete(key)
+	assert.Nil(t, err)
+	assert.NotNil(t, trie)
+
+	assert.Nil(t, trie.Match(key))
+	assert.NotNil(t, trie.Match(childKey))
+}
+
+func TestDeleteRightChild(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{
+		_a("1720:16:200::"),
+		48,
+	}
+	trie, err := trie.Insert(key, nil)
+	childKey := Prefix{
+		_a("1720:16:200::8000"),
+		49,
+	}
+	trie, err = trie.Insert(childKey, nil)
+	trie, err = trie.Delete(key)
+	assert.Nil(t, err)
+	assert.NotNil(t, trie)
+
+	assert.Nil(t, trie.Match(key))
+	assert.NotNil(t, trie.Match(childKey))
+}
+
+func TestDeleteBothChildren(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{
+		_a("1720:16:200::"),
+		48,
+	}
+	trie, err := trie.Insert(key, nil)
+	leftChild := Prefix{
+		_a("1720:16:200::"),
+		49,
+	}
+	trie, err = trie.Insert(leftChild, nil)
+	rightChild := Prefix{
+		_a("1720:16:200::8000"),
+		49,
+	}
+	trie, err = trie.Insert(rightChild, nil)
+	trie, err = trie.Delete(key)
+	assert.Nil(t, err)
+	assert.NotNil(t, trie)
+
+	assert.Nil(t, trie.Match(key))
+	assert.NotNil(t, trie.Match(leftChild))
+	assert.NotNil(t, trie.Match(rightChild))
+}
+
+func TestDeleteRecursiveNil(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{
+		_a("1720:16:200::"),
+		48,
+	}
+	trie, err := trie.Insert(key, nil)
+	childKey := Prefix{
+		_a("1720:16:200::"),
+		49,
+	}
+	trie, err = trie.Delete(childKey)
+	assert.NotNil(t, err)
+	assert.NotNil(t, trie)
+
+	assert.NotNil(t, trie.Match(key))
+	match := trie.Match(childKey)
+	assert.NotEqual(t, childKey, match.Prefix)
+}
+
+func TestDeleteRecursiveLeftChild(t *testing.T) {
+	// NOTE: There's no specific test for other child combinations because I
+	// didn't feel it added much. It uses already well-tested code paths.
+	var trie *trieNode
+
+	key := Prefix{
+		_a("1720:16:200::"),
+		48,
+	}
+	trie, err := trie.Insert(key, nil)
+	childKey := Prefix{
+		_a("1720:16:200::"),
+		49,
+	}
+	trie, err = trie.Insert(childKey, nil)
+	trie, err = trie.Delete(childKey)
+	assert.Nil(t, err)
+	assert.NotNil(t, trie)
+
+	assert.NotNil(t, trie.Match(key))
+	match := trie.Match(childKey)
+	assert.NotEqual(t, childKey, match.Prefix)
+}
+
+func TestDeleteRecursiveLeftChild128Promote(t *testing.T) {
+	// NOTE: There's no specific test for other child combinations because I
+	// didn't feel it added much. It uses already well-tested code paths.
+	var trie *trieNode
+
+	key := Prefix{
+		_a("1720:16:200:8000::"),
+		49,
+	}
+	trie, err := trie.Insert(key, nil)
+	childKey := Prefix{
+		_a("1720:16:200::"),
+		49,
+	}
+	trie, err = trie.Insert(childKey, nil)
+	trie, err = trie.Delete(childKey)
+	assert.Nil(t, err)
+	assert.NotNil(t, trie)
+
+	assert.NotNil(t, trie.Match(key))
+	match := trie.Match(childKey)
+	assert.Nil(t, match)
+	assert.Equal(t, 1, trie.height())
+	assert.Equal(t, int64(1), trie.NumNodes())
+}
+
+func TestDeleteKeyTooBroad(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{
+		_a("1720:16:200::"),
+		49,
+	}
+	trie, err := trie.Insert(key, nil)
+
+	broadKey := Prefix{
+		_a("1720:16:200::"),
+		48,
+	}
+	trie, err = trie.Delete(broadKey)
+	assert.NotNil(t, err)
+	assert.NotNil(t, trie)
+
+	assert.NotNil(t, trie.Match(key))
+	assert.Nil(t, trie.Match(broadKey))
+}
+
+func TestDeleteKeyDisjoint(t *testing.T) {
+	var trie *trieNode
+
+	key := Prefix{
+		_a("1720:16:200::"),
+		49,
+	}
+	trie, err := trie.Insert(key, nil)
+
+	disjointKey := Prefix{
+		_a("1720:16:200:8000::"),
+		49,
+	}
+	trie, err = trie.Delete(disjointKey)
+	assert.NotNil(t, err)
+	assert.NotNil(t, trie)
+
+	assert.NotNil(t, trie.Match(key))
+	assert.Nil(t, trie.Match(disjointKey))
+}
+
 func TestSuccessivelyBetter(t *testing.T) {
 	var trie *trieNode
 
@@ -1007,6 +1212,37 @@ func TestSuccessivelyBetter(t *testing.T) {
 			}
 		}
 	}
+}
+
+func printTrie(trie *trieNode) {
+	if trie == nil {
+		fmt.Println("<nil>")
+		return
+	}
+	var recurse func(trie *trieNode, level int)
+
+	recurse = func(trie *trieNode, level int) {
+		if trie == nil {
+			return
+		}
+		for i := 0; i < level; i++ {
+			fmt.Printf("   ")
+		}
+		fmt.Printf("%+v, %v, %d\n", trie, trie.isActive, trie.size)
+		recurse(trie.children[0], level+1)
+		recurse(trie.children[1], level+1)
+	}
+
+	recurse(trie, 0)
+}
+
+type comparable struct {
+	// Begin with a type (slice) that is not comparable with standard ==
+	data []string
+}
+
+func (me *comparable) IEqual(other interface{}) bool {
+	return reflect.DeepEqual(me, other)
 }
 
 // Like the TestAggregate above but using a type that is comparable through the
