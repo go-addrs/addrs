@@ -483,10 +483,7 @@ func TestWalkAddress(t *testing.T) {
 			tt.prefix.walkAddresses(func(ip Address) bool {
 				count++
 				ips = append(ips, ip)
-				if count == 100 {
-					return false
-				}
-				return true
+				return count != 100
 			})
 			assert.Equal(t, tt.first, ips[0])
 			assert.Equal(t, tt.last, ips[len(ips)-1])

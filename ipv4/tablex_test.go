@@ -148,6 +148,7 @@ func TestInsert(t *testing.T) {
 
 	data, ok = m.Get(_p("10.225.24.0/24"))
 	assert.False(t, ok)
+	assert.Nil(t, data)
 }
 
 func TestInsertOrUpdatePrefix(t *testing.T) {
@@ -162,6 +163,7 @@ func TestInsertOrUpdatePrefix(t *testing.T) {
 
 	data, ok = m.Get(_p("10.225.24.0/24"))
 	assert.False(t, ok)
+	assert.Nil(t, data)
 }
 
 func TestRemovePrefix(t *testing.T) {
@@ -892,6 +894,7 @@ func TestTableXMap(t *testing.T) {
 
 	value, ok = result.Get(_p("0.0.0.0/0"))
 	assert.False(t, ok)
+	assert.Nil(t, value)
 }
 
 type creativeComparable struct {

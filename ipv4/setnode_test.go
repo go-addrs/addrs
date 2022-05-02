@@ -6,8 +6,8 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func printTrieSet(trie *setNode) {
-	printTrie((*trieNode)(trie))
+func PrintTrieSet(trie *setNode) {
+	PrintTrie((*trieNode)(trie))
 }
 
 func TestTrieNodeSet32Union(t *testing.T) {

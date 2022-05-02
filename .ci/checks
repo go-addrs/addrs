@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash -ex
 
 # TODO Get CI going on PRs for both go < 1.18 and >= 1.18
 
@@ -12,8 +12,11 @@ then
 fi
 
 go vet ./...
+# This exits with 1 even when it successfully installs staticcheck
+go install honnef.co/go/tools/cmd/staticcheck || true
+staticcheck ./...
 # If you run go fmt before 1.18, it is broken
-# go fmt ./...
+go fmt ./...
 
 # Check that git is clean
 git update-index --refresh

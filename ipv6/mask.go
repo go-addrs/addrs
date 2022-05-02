@@ -72,7 +72,7 @@ func (me Mask) ToNetIPMask() net.IPMask {
 
 // String returns the net.IPMask representation of this Mask
 func (me Mask) String() string {
-	return Address{me.ui}.String()
+	return AddressFromUint64(me.ui.high, me.ui.low).String()
 }
 
 // Uint64 returns the mask as two uint64s

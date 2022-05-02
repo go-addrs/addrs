@@ -283,8 +283,7 @@ func (me TableX) longestMatch(prefix PrefixI) (value interface{}, matched match,
 		prefix = Prefix{}
 	}
 	sp := prefix.Prefix()
-	var node *trieNode
-	node = me.trie.Match(sp)
+	var node *trieNode = me.trie.Match(sp)
 	if node == nil {
 		return nil, matchNone, Prefix{}
 	}

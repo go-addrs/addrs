@@ -97,11 +97,6 @@ func (me Address) NumAddresses() int {
 	return addressSize
 }
 
-// uint128 returns the address as a uint128
-func (me Address) uint128() uint128 {
-	return me.ui
-}
-
 // Uint64 returns the address as two uint64
 func (me Address) Uint64() (uint64, uint64) {
 	return me.ui.uint64()
