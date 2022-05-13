@@ -31,10 +31,12 @@ func TestStructSizes(t *testing.T) {
 	// constants to uintptr.
 
 	key := Prefix{}
+	assert.NotNil(t, key) // staticcheck has an issue without this
 	keySize := int(unsafe.Sizeof(key))
 	keyAlign := int(unsafe.Alignof(key))
 
 	node := trieNode{}
+	assert.NotNil(t, node) // staticcheck has an issue without this
 	nodeSize := int(unsafe.Sizeof(node))
 	nodeAlign := int(unsafe.Alignof(node))
 
@@ -578,8 +580,7 @@ func TestMatchPartialByteMatches(t *testing.T) {
 			}))
 
 			// byte with 0 in the last bit to match based on nodeLength
-			var mismatch uint128
-			mismatch = uint128{0xff00000000000000, 0}.and(uint128{0x8000000000000000, 0}.rightShift(int(tt.nodeLength - 1)).complement())
+			var mismatch uint128 = uint128{0xff00000000000000, 0}.and(uint128{0x8000000000000000, 0}.rightShift(int(tt.nodeLength - 1)).complement())
 
 			assert.Nil(trie.Match(Prefix{
 				// Always use a byte with a 0 is the last matched bit
@@ -982,6 +983,7 @@ func TestDeleteSimple(t *testing.T) {
 		128,
 	}
 	trie, err := trie.Insert(key, nil)
+	assert.Nil(t, err)
 	trie, err = trie.Delete(key)
 	assert.Nil(t, err)
 	assert.Nil(t, trie)
@@ -995,11 +997,13 @@ func TestDeleteLeftChild(t *testing.T) {
 		48,
 	}
 	trie, err := trie.Insert(key, nil)
+	assert.Nil(t, err)
 	childKey := Prefix{
 		_a("1720:16:200::"),
 		49,
 	}
 	trie, err = trie.Insert(childKey, nil)
+	assert.Nil(t, err)
 	trie, err = trie.Delete(key)
 	assert.Nil(t, err)
 	assert.NotNil(t, trie)
@@ -1016,11 +1020,13 @@ func TestDeleteRightChild(t *testing.T) {
 		48,
 	}
 	trie, err := trie.Insert(key, nil)
+	assert.Nil(t, err)
 	childKey := Prefix{
 		_a("1720:16:200::8000"),
 		49,
 	}
 	trie, err = trie.Insert(childKey, nil)
+	assert.Nil(t, err)
 	trie, err = trie.Delete(key)
 	assert.Nil(t, err)
 	assert.NotNil(t, trie)
@@ -1037,16 +1043,19 @@ func TestDeleteBothChildren(t *testing.T) {
 		48,
 	}
 	trie, err := trie.Insert(key, nil)
+	assert.Nil(t, err)
 	leftChild := Prefix{
 		_a("1720:16:200::"),
 		49,
 	}
 	trie, err = trie.Insert(leftChild, nil)
+	assert.Nil(t, err)
 	rightChild := Prefix{
-		_a("1720:16:200::8000"),
+		_a("1720:16:200:8000::"),
 		49,
 	}
 	trie, err = trie.Insert(rightChild, nil)
+	assert.Nil(t, err)
 	trie, err = trie.Delete(key)
 	assert.Nil(t, err)
 	assert.NotNil(t, trie)
@@ -1064,6 +1073,7 @@ func TestDeleteRecursiveNil(t *testing.T) {
 		48,
 	}
 	trie, err := trie.Insert(key, nil)
+	assert.Nil(t, err)
 	childKey := Prefix{
 		_a("1720:16:200::"),
 		49,
@@ -1087,11 +1097,13 @@ func TestDeleteRecursiveLeftChild(t *testing.T) {
 		48,
 	}
 	trie, err := trie.Insert(key, nil)
+	assert.Nil(t, err)
 	childKey := Prefix{
 		_a("1720:16:200::"),
 		49,
 	}
 	trie, err = trie.Insert(childKey, nil)
+	assert.Nil(t, err)
 	trie, err = trie.Delete(childKey)
 	assert.Nil(t, err)
 	assert.NotNil(t, trie)
@@ -1111,11 +1123,13 @@ func TestDeleteRecursiveLeftChild128Promote(t *testing.T) {
 		49,
 	}
 	trie, err := trie.Insert(key, nil)
+	assert.Nil(t, err)
 	childKey := Prefix{
 		_a("1720:16:200::"),
 		49,
 	}
 	trie, err = trie.Insert(childKey, nil)
+	assert.Nil(t, err)
 	trie, err = trie.Delete(childKey)
 	assert.Nil(t, err)
 	assert.NotNil(t, trie)
@@ -1135,6 +1149,7 @@ func TestDeleteKeyTooBroad(t *testing.T) {
 		49,
 	}
 	trie, err := trie.Insert(key, nil)
+	assert.Nil(t, err)
 
 	broadKey := Prefix{
 		_a("1720:16:200::"),
@@ -1156,6 +1171,7 @@ func TestDeleteKeyDisjoint(t *testing.T) {
 		49,
 	}
 	trie, err := trie.Insert(key, nil)
+	assert.Nil(t, err)
 
 	disjointKey := Prefix{
 		_a("1720:16:200:8000::"),
@@ -1314,7 +1330,7 @@ type pair128 struct {
 	data interface{}
 }
 
-func printTrie(trie *trieNode) {
+func PrintTrie(trie *trieNode) {
 	if trie == nil {
 		fmt.Println("<nil>")
 		return
