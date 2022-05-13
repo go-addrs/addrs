@@ -80,6 +80,13 @@ func (me Range) Plus(other Range) []Range {
 	return plus(other, me)
 }
 
+// Set returns a Set_ containing the same ips as this range
+func (me Range) Set() Set {
+	return Set{
+		trie: setNodeFromRange(me),
+	}
+}
+
 // prev returns the address just before the range (or maxint) if the range
 // starts at the beginning of the IP space due to overflow)
 func (me Range) prev() Address {

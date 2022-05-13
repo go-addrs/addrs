@@ -179,6 +179,39 @@ func TestOr(t *testing.T) {
 	}
 }
 
+func TestXor(t *testing.T) {
+	tests := []struct {
+		description string
+		num         uint128
+		orWith      uint128
+		expected    uint128
+	}{
+		{
+			description: "same",
+			num:         uint128{0x20010db885a30000, 0x00008a2e03707434},
+			orWith:      uint128{0x20010db885a30000, 0x00008a2e03707434},
+			expected:    uint128{0x0, 0x0},
+		},
+		{
+			description: "different",
+			num:         uint128{0x20010db885a30000, 0x00008a2e03707434},
+			orWith:      uint128{0x27810ec88f12c000, 0x11008a5fa37d1934},
+			expected:    uint128{0x78003700ab1c000, 0x11000071a00d6d00},
+		},
+		{
+			description: "extreme",
+			num:         uint128{0x0, 0x0},
+			orWith:      uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF},
+			expected:    uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			assert.Equal(t, tt.expected, tt.num.xor(tt.orWith))
+		})
+	}
+}
+
 func TestLeftShift(t *testing.T) {
 	assert.Equal(t, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}.leftShift(0))
 	assert.Equal(t, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFF00000000}, uint128{0xFFFFFFFFFFFFFFFF, 0xFFFFFFFFFFFFFFFF}.leftShift(32))

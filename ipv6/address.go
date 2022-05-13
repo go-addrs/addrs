@@ -82,9 +82,14 @@ func (me Address) lessThan(other Address) bool {
 	return me.ui.compare(other.ui) < 0
 }
 
-// Prefix returns a host prefix (/32) with the address
+// Prefix returns a host prefix (/128) with the address
 func (me Address) Prefix() Prefix {
 	return Prefix{me, uint32(addressSize)}
+}
+
+// Set returns a set with only this address in it
+func (me Address) Set() Set {
+	return me.Prefix().Set()
 }
 
 // String returns a string representing the address in IPv6 notation
