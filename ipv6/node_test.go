@@ -1446,20 +1446,20 @@ func TestAggregate(t *testing.T) {
 	}
 }
 
-type comparable struct {
-	// Begin with a type (slice) that is not comparable with standard ==
+type thing struct {
+	// Begin with a type (slice) that is not thing with standard ==
 	data []string
 }
 
-func (me *comparable) IEqual(other interface{}) bool {
+func (me *thing) IEqual(other interface{}) bool {
 	return reflect.DeepEqual(me, other)
 }
 
-// Like the TestAggregate above but using a type that is comparable through the
+// Like the TestAggregate above but using a type that is thing through the
 // equalComparable interface.
 func TestAggregateEqualComparable(t *testing.T) {
-	NextHop1 := &comparable{data: []string{"2001:2d24:24::1"}}
-	NextHop2 := &comparable{data: []string{"2001:2d24:24::111"}}
+	NextHop1 := &thing{data: []string{"2001:2d24:24::1"}}
+	NextHop2 := &thing{data: []string{"2001:2d24:24::111"}}
 	tests := []struct {
 		desc   string
 		pairs  []pair128

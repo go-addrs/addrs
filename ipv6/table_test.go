@@ -1,3 +1,6 @@
+//go:build go1.18
+// +build go1.18
+
 package ipv6
 
 import (
@@ -7,9 +10,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestInsertOrUpdate(t *testing.T) {
-	m := TableX{}.Table_()
-	m.Insert(_a("2001::"), nil)
+func TestTableTInsertOrUpdate(t *testing.T) {
+	m := Table[int]{}.Table_()
+	m.Insert(_a("2001::"), 0)
 	m.InsertOrUpdate(_a("2001::"), 3)
 	assert.Equal(t, int64(1), m.NumEntries())
 
@@ -18,8 +21,8 @@ func TestInsertOrUpdate(t *testing.T) {
 	assert.Equal(t, 3, data)
 }
 
-func TestInsertOrUpdateDuplicate(t *testing.T) {
-	m := NewTableX_()
+func TestTableTInsertOrUpdateDuplicate(t *testing.T) {
+	m := NewTable_[int]()
 	m.InsertOrUpdate(_a("2001::"), 3)
 	assert.Equal(t, int64(1), m.NumEntries())
 	data, ok := m.Get(_a("2001::"))
@@ -33,127 +36,125 @@ func TestInsertOrUpdateDuplicate(t *testing.T) {
 	assert.Equal(t, 4, data)
 }
 
-func TestGetOnlyExactMatch(t *testing.T) {
-	m := NewTableX_()
+func TestTableTGetOnlyExactMatch(t *testing.T) {
+	m := NewTable_[int]()
 	m.Insert(_p("2001::/112"), 3)
 	assert.Equal(t, int64(1), m.NumEntries())
 
-	_, ok := m.Get(_a("2001::8000"))
+	_, ok := m.Get(_a("2001::1"))
 	assert.False(t, ok)
 }
 
-func TestGetNotFound(t *testing.T) {
-	m := NewTableX_()
-	succeeded := m.Insert(_a("2001::"), 3)
+func TestTableTGetNotFound(t *testing.T) {
+	m := NewTable_[int]()
+	succeeded := m.Insert(_a("2001::1"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.NumEntries())
 
-	_, ok := m.Get(_a("2001:0:0:1::"))
+	_, ok := m.Get(_a("2001:0:1::1"))
 	assert.False(t, ok)
 }
 
-func TestGetOrInsertOnlyExactMatch(t *testing.T) {
-	m := NewTableX_()
+func TestTableTGetOrInsertOnlyExactMatch(t *testing.T) {
+	m := NewTable_[int]()
 	m.Insert(_p("2001::/112"), 3)
 	assert.Equal(t, int64(1), m.NumEntries())
 
-	value := m.GetOrInsert(_a("2001::8000"), 5)
+	value := m.GetOrInsert(_a("2001::1"), 5)
 	assert.Equal(t, 5, value)
 	assert.Equal(t, int64(2), m.NumEntries())
 }
 
-func TestGetOrInsertNotFound(t *testing.T) {
-	m := NewTableX_()
-	succeeded := m.Insert(_a("2001::"), 3)
+func TestTableTGetOrInsertNotFound(t *testing.T) {
+	m := NewTable_[int]()
+	succeeded := m.Insert(_a("2001::1"), 3)
 	assert.True(t, succeeded)
 
-	value := m.GetOrInsert(_a("2001:0:0:1::"), 5)
+	value := m.GetOrInsert(_a("2001:0:1::1"), 5)
 	assert.Equal(t, 5, value)
 	assert.Equal(t, int64(2), m.NumEntries())
 }
 
-func TestGetOrInsertPrefixOnlyExactMatch(t *testing.T) {
-	m := NewTableX_()
+func TestTableTGetOrInsertPrefixOnlyExactMatch(t *testing.T) {
+	m := NewTable_[int]()
 	m.Insert(_p("2001::/112"), 3)
 	assert.Equal(t, int64(1), m.NumEntries())
 
-	value := m.GetOrInsert(_p("2001::0001/127"), 5)
+	value := m.GetOrInsert(_p("2001::2/127"), 5)
 	assert.Equal(t, 5, value)
 	assert.Equal(t, int64(2), m.NumEntries())
 }
 
-func TestGetOrInsertPrefixNotFound(t *testing.T) {
-	m := NewTableX_()
-	succeeded := m.Insert(_a("2001::0001"), 3)
+func TestTableTGetOrInsertPrefixNotFound(t *testing.T) {
+	m := NewTable_[int]()
+	succeeded := m.Insert(_a("2001::1"), 3)
 	assert.True(t, succeeded)
 
-	value := m.GetOrInsert(_p("2001::0002/127"), 5)
+	value := m.GetOrInsert(_p("2001:0:1::2/127"), 5)
 	assert.Equal(t, 5, value)
 	assert.Equal(t, int64(2), m.NumEntries())
 }
 
-func TestMatchLongestPrefixMatch(t *testing.T) {
-	m := NewTableX_()
-	m.Insert(_p("2001::1:0/112"), 3)
+func TestTableTMatchLongestPrefixMatch(t *testing.T) {
+	m := NewTable_[int]()
+	m.Insert(_p("2001::/112"), 3)
 	assert.Equal(t, int64(1), m.NumEntries())
 	m.Insert(_p("2001::/96"), 4)
 	assert.Equal(t, int64(2), m.NumEntries())
 
-	data, matched, n := m.LongestMatch(_a("2001::1:1"))
-	assert.NotEqual(t, matchContains, n)
+	data, matched, n := m.LongestMatch(_a("2001::1"))
 	assert.True(t, matched)
-	assert.Equal(t, _p("2001::1:0/112"), n)
+	assert.Equal(t, _p("2001::/112"), n)
 	assert.Equal(t, 3, data)
 }
 
-func TestMatchNotFound(t *testing.T) {
-	m := NewTableX_()
-	succeeded := m.Insert(_a("2001::"), 3)
+func TestMTableatchNotFound(t *testing.T) {
+	m := NewTable_[int]()
+	succeeded := m.Insert(_a("2001::1"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.NumEntries())
 
-	_, matched, _ := m.LongestMatch(_a("2001:0:0:1::"))
+	_, matched, _ := m.LongestMatch(_a("2001:0:1::1"))
 	assert.False(t, matched)
 }
 
-func TestRemove(t *testing.T) {
-	m := NewTableX_()
-	succeeded := m.Insert(_a("2001::"), 3)
+func TestTableTRemove(t *testing.T) {
+	m := NewTable_[int]()
+	succeeded := m.Insert(_a("2001::1"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.NumEntries())
 
-	m.Remove(_a("2001::"))
+	m.Remove(_a("2001::1"))
 	assert.Equal(t, int64(0), m.NumEntries())
 }
 
-func TestRemoveNotFound(t *testing.T) {
-	m := NewTableX_()
-	succeeded := m.Insert(_a("2001::"), 3)
+func TestTableTRemoveNotFound(t *testing.T) {
+	m := NewTable_[int]()
+	succeeded := m.Insert(_a("2001::1"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.NumEntries())
 
-	m.Remove(_a("2001:0:0:1::"))
+	m.Remove(_a("2001:0:1::1"))
 	assert.Equal(t, int64(1), m.NumEntries())
 }
 
-func TestInsert(t *testing.T) {
-	m := NewTableX_()
-	succeeded := m.Insert(_p("2001::1:0/112"), 3)
+func TestTableTInsert(t *testing.T) {
+	m := NewTable_[int]()
+	succeeded := m.Insert(_p("2001::/112"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.NumEntries())
 
-	data, ok := m.Get(_p("2001::1:0/112"))
+	data, ok := m.Get(_p("2001::/112"))
 	assert.True(t, ok)
 	assert.Equal(t, 3, data)
 
-	data, ok = m.Get(_p("2001:0:1::1:0/112"))
+	_, ok = m.Get(_p("2001:0:1::/112"))
 	assert.False(t, ok)
-	assert.Nil(t, data)
 }
 
-func TestInsertOrUpdatePrefix(t *testing.T) {
-	m := NewTableX_()
-	m.Insert(_p("2001::/112"), nil)
+func TestTableTInsertOrUpdatePrefix(t *testing.T) {
+	m := NewTable_[int]()
+	m.Insert(_p("2001::/112"), 0)
 	m.InsertOrUpdate(_p("2001::/112"), 3)
 	assert.Equal(t, int64(1), m.NumEntries())
 
@@ -161,63 +162,52 @@ func TestInsertOrUpdatePrefix(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, 3, data)
 
-	data, ok = m.Get(_p("2001:0:0:1::/112"))
+	_, ok = m.Get(_p("2001:0:1::/112"))
 	assert.False(t, ok)
-	assert.Nil(t, data)
 }
 
-func TestRemovePrefix(t *testing.T) {
-	m := NewTableX_()
+func TestTableTRemovePrefixNotFound(t *testing.T) {
+	m := NewTable_[int]()
 	succeeded := m.Insert(_p("2001::/112"), 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.NumEntries())
 
-	m.Remove(_p("2001::/112"))
-	assert.Equal(t, int64(0), m.NumEntries())
-}
-
-func TestRemovePrefixNotFound(t *testing.T) {
-	m := NewTableX_()
-	succeeded := m.Insert(_p("2001::/112"), 3)
-	assert.True(t, succeeded)
-	assert.Equal(t, int64(1), m.NumEntries())
-
-	m.Remove(_p("2001:0:0:1::/112"))
+	m.Remove(_p("2001:0:1::/112"))
 	assert.Equal(t, int64(1), m.NumEntries())
 }
 
-func TestMatchPrefixLongestPrefixMatch(t *testing.T) {
-	m := NewTableX_()
-	m.Insert(_p("2001::1:0/112"), 3)
+func TestTableTMatchPrefixLongestPrefixMatch(t *testing.T) {
+	m := NewTable_[int]()
+	m.Insert(_p("2001::/112"), 3)
 	assert.Equal(t, int64(1), m.NumEntries())
 	m.Insert(_p("2001::/96"), 4)
 	assert.Equal(t, int64(2), m.NumEntries())
 
-	key := _p("2001::1:0/114")
-	data, matched, n := m.LongestMatch(key)
-	assert.NotEqual(t, key, n)
+	prefix := _p("2001::/118")
+	data, matched, n := m.LongestMatch(prefix)
+	assert.NotEqual(t, prefix, n)
 	assert.True(t, matched)
 	assert.Equal(t, 3, data)
-	assert.Equal(t, _p("2001::1:0/112"), n)
+	assert.Equal(t, _p("2001::/112"), n)
 }
 
-func TestMatchPrefixNotFound(t *testing.T) {
-	m := NewTableX_()
+func TestTableTMatchPrefixNotFound(t *testing.T) {
+	m := NewTable_[int]()
 	m.Insert(_p("2001::/112"), 3)
 	assert.Equal(t, int64(1), m.NumEntries())
 
-	_, matched, _ := m.LongestMatch(_p("2001:0:0:1::/112"))
+	_, matched, _ := m.LongestMatch(_p("2001:0:1::/112"))
 	assert.False(t, matched)
 }
 
-func TestExample1(t *testing.T) {
-	m := TableX{}.Table_()
+func TestTableTExample1(t *testing.T) {
+	m := Table[bool]{}.Table_()
 	m.Insert(_p("2001::2/127"), true)
 	m.Insert(_p("2001::1/128"), true)
 	m.Insert(_p("2001::/128"), true)
 
 	var result []string
-	m.Table().Walk(func(prefix Prefix, value interface{}) bool {
+	m.Table().Walk(func(prefix Prefix, value bool) bool {
 		result = append(result, prefix.String())
 		return true
 	})
@@ -232,7 +222,7 @@ func TestExample1(t *testing.T) {
 	)
 
 	result = []string{}
-	m.Table().Aggregate().Walk(func(prefix Prefix, value interface{}) bool {
+	m.Table().Aggregate().Walk(func(prefix Prefix, value bool) bool {
 		result = append(result, prefix.String())
 		return true
 	})
@@ -245,23 +235,23 @@ func TestExample1(t *testing.T) {
 	)
 }
 
-type pair struct {
+type pairT struct {
 	prefix string
-	value  interface{}
+	value  bool
 }
 
-func TestExample2(t *testing.T) {
-	m := NewTableX_()
+func TestTableTExample2(t *testing.T) {
+	m := NewTable_[bool]()
 	m.Insert(_p("2001::/126"), true)
 	m.Insert(_p("2001::/127"), false)
 	m.Insert(_p("2001::1/128"), true)
 	m.Insert(_p("2001::/128"), false)
 
-	var result []pair
-	m.Table().Walk(func(prefix Prefix, value interface{}) bool {
+	var result []pairT
+	m.Table().Walk(func(prefix Prefix, value bool) bool {
 		result = append(
 			result,
-			pair{
+			pairT{
 				prefix: prefix.String(),
 				value:  value,
 			},
@@ -270,20 +260,20 @@ func TestExample2(t *testing.T) {
 	})
 	assert.Equal(
 		t,
-		[]pair{
-			pair{prefix: "2001::/126", value: true},
-			pair{prefix: "2001::/127", value: false},
-			pair{prefix: "2001::/128", value: false},
-			pair{prefix: "2001::1/128", value: true},
+		[]pairT{
+			pairT{prefix: "2001::/126", value: true},
+			pairT{prefix: "2001::/127", value: false},
+			pairT{prefix: "2001::/128", value: false},
+			pairT{prefix: "2001::1/128", value: true},
 		},
 		result,
 	)
 
-	result = []pair{}
-	m.Table().Aggregate().Walk(func(prefix Prefix, value interface{}) bool {
+	result = []pairT{}
+	m.Table().Aggregate().Walk(func(prefix Prefix, value bool) bool {
 		result = append(
 			result,
-			pair{
+			pairT{
 				prefix: prefix.String(),
 				value:  value,
 			},
@@ -292,35 +282,35 @@ func TestExample2(t *testing.T) {
 	})
 	assert.Equal(
 		t,
-		[]pair{
-			pair{prefix: "2001::/126", value: true},
-			pair{prefix: "2001::/127", value: false},
-			pair{prefix: "2001::1/128", value: true},
+		[]pairT{
+			pairT{prefix: "2001::/126", value: true},
+			pairT{prefix: "2001::/127", value: false},
+			pairT{prefix: "2001::1/128", value: true},
 		},
 		result,
 	)
 }
 
-func TestExample3(t *testing.T) {
-	m := NewTableX_()
-	m.Insert(_p("172:21::/40"), nil)
-	m.Insert(_p("192:68:27::/49"), nil)
-	m.Insert(_p("192:168:26:8000::/49"), nil)
-	m.Insert(_p("10:224:24::/64"), nil)
-	m.Insert(_p("192:68:24::/48"), nil)
-	m.Insert(_p("172:16::/24"), nil)
-	m.Insert(_p("192:68:26::/48"), nil)
-	m.Insert(_p("10:224:24::/60"), nil)
-	m.Insert(_p("192:168:24::/48"), nil)
-	m.Insert(_p("192:168:25::/48"), nil)
-	m.Insert(_p("192:168:26::/49"), nil)
-	m.Insert(_p("192:68:25::/48"), nil)
-	m.Insert(_p("192:168:27::/48"), nil)
-	m.Insert(_p("172:20:8000::/38"), nil)
-	m.Insert(_p("192:68:27:8000::/49"), nil)
+func TestTableTExample3(t *testing.T) {
+	m := NewTable_[bool]()
+	m.Insert(_p("172:21::/40"), false)
+	m.Insert(_p("192:68:27::/49"), false)
+	m.Insert(_p("192:168:26:8000::/49"), false)
+	m.Insert(_p("10:224:24::/64"), false)
+	m.Insert(_p("192:68:24::/48"), false)
+	m.Insert(_p("172:16::/24"), false)
+	m.Insert(_p("192:68:26::/48"), false)
+	m.Insert(_p("10:224:24::/60"), false)
+	m.Insert(_p("192:168:24::/48"), false)
+	m.Insert(_p("192:168:25::/48"), false)
+	m.Insert(_p("192:168:26::/49"), false)
+	m.Insert(_p("192:68:25::/48"), false)
+	m.Insert(_p("192:168:27::/48"), false)
+	m.Insert(_p("172:20:8000::/38"), false)
+	m.Insert(_p("192:68:27:8000::/49"), false)
 
 	var result []string
-	m.Table().Walk(func(prefix Prefix, value interface{}) bool {
+	m.Table().Walk(func(prefix Prefix, value bool) bool {
 		result = append(result, prefix.String())
 		return true
 	})
@@ -346,14 +336,14 @@ func TestExample3(t *testing.T) {
 		result,
 	)
 	iterations := 0
-	m.Table().Walk(func(prefix Prefix, value interface{}) bool {
+	m.Table().Walk(func(prefix Prefix, value bool) bool {
 		iterations++
 		return false
 	})
 	assert.Equal(t, 1, iterations)
 
 	result = []string{}
-	m.Table().Aggregate().Walk(func(prefix Prefix, value interface{}) bool {
+	m.Table().Aggregate().Walk(func(prefix Prefix, value bool) bool {
 		result = append(result, prefix.String())
 		return true
 	})
@@ -368,95 +358,96 @@ func TestExample3(t *testing.T) {
 		result,
 	)
 	iterations = 0
-	m.Table().Aggregate().Walk(func(prefix Prefix, value interface{}) bool {
+	m.Table().Aggregate().Walk(func(prefix Prefix, value bool) bool {
 		iterations++
 		return false
 	})
 	assert.Equal(t, 1, iterations)
-}
+} 
 
-func TestTableXnsert(t *testing.T) {
-	m := NewTableX_()
-	assert.Equal(t, int64(0), m.m.trie.NumNodes())
+func TestTableTnsert(t *testing.T) {
+	m := NewTable_[bool]()
+	assert.Equal(t, int64(0), m.t.m.trie.NumNodes())
 
-	key := Prefix{Address{uint128{0x2001, 0x0}}, 112}
+	key := Prefix{Address{uint128{0x2001, 0x0180000}}, 112}
 	succeeded := m.Insert(key, true)
 	assert.True(t, succeeded)
-	assert.Equal(t, int64(1), m.m.trie.NumNodes())
-	assert.True(t, m.m.trie.isValid())
+	assert.Equal(t, int64(1), m.t.m.trie.NumNodes())
+	assert.True(t, m.t.m.trie.isValid())
 }
 
-func TestTableXnsertOrUpdate(t *testing.T) {
-	m := NewTableX_()
-	assert.Equal(t, int64(0), m.m.trie.NumNodes())
+func TestTableTnsertOrUpdate(t *testing.T) {
+	m := NewTable_[bool]()
+	assert.Equal(t, int64(0), m.t.m.trie.NumNodes())
 
-	key := Prefix{Address{uint128{0x2001, 0x0}}, 112}
+	key := Prefix{Address{uint128{0x2001, 0x0180000}}, 112}
 	m.InsertOrUpdate(key, true)
-	assert.Equal(t, int64(1), m.m.trie.NumNodes())
+	assert.Equal(t, int64(1), m.t.m.trie.NumNodes())
 	value, match, matchedKey := m.LongestMatch(key)
 	assert.Equal(t, key, matchedKey)
 	assert.True(t, match)
 	assert.Equal(t, key, matchedKey)
-	assert.True(t, value.(bool))
+	assert.True(t, value)
 
 	m.InsertOrUpdate(key, false)
-	assert.Equal(t, int64(1), m.m.trie.NumNodes())
+	assert.Equal(t, int64(1), m.t.m.trie.NumNodes())
 	value, match, matchedKey = m.LongestMatch(key)
 	assert.Equal(t, key, matchedKey)
 	assert.True(t, match)
 	assert.Equal(t, key, matchedKey)
-	assert.False(t, value.(bool))
-	assert.True(t, m.m.trie.isValid())
+	assert.False(t, value)
+	assert.True(t, m.t.m.trie.isValid())
 }
 
-func TestTableUpdate(t *testing.T) {
-	m := NewTableX_()
-	assert.Equal(t, int64(0), m.m.trie.NumNodes())
 
-	key := Prefix{Address{uint128{0x2001, 0x0}}, 112}
+func TestTableTUpdate(t *testing.T) {
+	m := NewTable_[bool]()
+	assert.Equal(t, int64(0), m.t.m.trie.NumNodes())
+
+	key := Prefix{Address{uint128{0x2001, 0x0180000}}, 112}
 	m.Insert(key, false)
 
 	succeeded := m.Update(key, true)
 	assert.True(t, succeeded)
-	assert.Equal(t, int64(1), m.m.trie.NumNodes())
+	assert.Equal(t, int64(1), m.t.m.trie.NumNodes())
 	value, match, matchedKey := m.LongestMatch(key)
 	assert.Equal(t, key, matchedKey)
 	assert.True(t, match)
 	assert.Equal(t, key, matchedKey)
-	assert.True(t, value.(bool))
+	assert.True(t, value)
 
 	succeeded = m.Update(key, false)
 	assert.True(t, succeeded)
-	assert.Equal(t, int64(1), m.m.trie.NumNodes())
+	assert.Equal(t, int64(1), m.t.m.trie.NumNodes())
 	value, match, matchedKey = m.LongestMatch(key)
 	assert.Equal(t, key, matchedKey)
 	assert.True(t, match)
 	assert.Equal(t, key, matchedKey)
-	assert.False(t, value.(bool))
-	assert.True(t, m.m.trie.isValid())
+	assert.False(t, value)
+	assert.True(t, m.t.m.trie.isValid())
 }
 
-func TestTableGetOrInsert(t *testing.T) {
-	m := NewTableX_()
-	assert.Equal(t, int64(0), m.m.trie.NumNodes())
+func TestTableTGetOrInsert(t *testing.T) {
+	m := NewTable_[bool]()
+	assert.Equal(t, int64(0), m.t.m.trie.NumNodes())
 
-	key := Prefix{Address{uint128{0x2001, 0x0}}, 112}
+	key := Prefix{Address{uint128{0x2001, 0x0180000}}, 112}
 	value := m.GetOrInsert(key, true)
-	assert.True(t, value.(bool))
-	assert.Equal(t, int64(1), m.m.trie.NumNodes())
-	assert.True(t, m.m.trie.isValid())
+	assert.True(t, value)
+	assert.Equal(t, int64(1), m.t.m.trie.NumNodes())
+	assert.True(t, m.t.m.trie.isValid())
 }
 
-func TestTableMatch(t *testing.T) {
-	m := NewTableX_()
+func TestTableTMatch(t *testing.T) {
+	m := NewTable_[bool]()
 
 	insertKey := Prefix{Address{uint128{0x2001, 0x0180000}}, 112}
 	m.Insert(insertKey, true)
 
 	t.Run("None", func(t *testing.T) {
-		_, found, _ := m.LongestMatch(Prefix{Address{uint128{0x2001, 0x010000}}, 112})
+		_, found, _ := m.LongestMatch(Prefix{Address{uint128{0x2001, 0x0100000}}, 112})
 		assert.False(t, found)
-		assert.True(t, m.m.trie.isValid())
+		assert.True(t, m.t.m.trie.isValid())
 	})
 
 	t.Run("Exact", func(t *testing.T) {
@@ -465,24 +456,24 @@ func TestTableMatch(t *testing.T) {
 		assert.Equal(t, prefix, key)
 		assert.True(t, found)
 		assert.Equal(t, insertKey, key)
-		assert.True(t, value.(bool))
-		assert.True(t, m.m.trie.isValid())
+		assert.True(t, value)
+		assert.True(t, m.t.m.trie.isValid())
 	})
 
 	t.Run("Contains", func(t *testing.T) {
 		prefix := Prefix{Address{uint128{0x2001, 0x0180017}}, 128}
 		value, found, key := m.LongestMatch(prefix)
-		assert.True(t, found)
 		assert.NotEqual(t, prefix, key)
+		assert.True(t, found)
 		assert.Equal(t, insertKey, key)
-		assert.True(t, value.(bool))
-		assert.True(t, m.m.trie.isValid())
+		assert.True(t, value)
+		assert.True(t, m.t.m.trie.isValid())
 	})
 }
 
-func TestTableRemovePrefix(t *testing.T) {
+func TestTableTRemovePrefix(t *testing.T) {
 	t.Run("Success", func(t *testing.T) {
-		m := NewTableX_()
+		m := NewTable_[bool]()
 
 		insertKey := Prefix{Address{uint128{0x2001, 0x0180000}}, 112}
 		m.Insert(insertKey, true)
@@ -490,12 +481,12 @@ func TestTableRemovePrefix(t *testing.T) {
 		key := Prefix{Address{uint128{0x2001, 0x0180000}}, 112}
 		succeeded := m.Remove(key)
 		assert.True(t, succeeded)
-		assert.Equal(t, int64(0), m.m.trie.NumNodes())
-		assert.True(t, m.m.trie.isValid())
+		assert.Equal(t, int64(0), m.t.m.trie.NumNodes())
+		assert.True(t, m.t.m.trie.isValid())
 	})
 
 	t.Run("Not Found", func(t *testing.T) {
-		m := NewTableX_()
+		m := NewTable_[bool]()
 
 		insertKey := Prefix{Address{uint128{0x2001, 0x0180000}}, 112}
 		m.Insert(insertKey, true)
@@ -503,12 +494,12 @@ func TestTableRemovePrefix(t *testing.T) {
 		key := Prefix{Address{uint128{0x2001, 0x0100000}}, 112}
 		succeeded := m.Remove(key)
 		assert.False(t, succeeded)
-		assert.Equal(t, int64(1), m.m.trie.NumNodes())
-		assert.True(t, m.m.trie.isValid())
+		assert.Equal(t, int64(1), m.t.m.trie.NumNodes())
+		assert.True(t, m.t.m.trie.isValid())
 	})
 
 	t.Run("Not Exact", func(t *testing.T) {
-		m := NewTableX_()
+		m := NewTable_[bool]()
 
 		insertKey := Prefix{Address{uint128{0x2001, 0x0180000}}, 112}
 		m.Insert(insertKey, true)
@@ -516,30 +507,30 @@ func TestTableRemovePrefix(t *testing.T) {
 		key := Prefix{Address{uint128{0x2001, 0x0180017}}, 128}
 		succeeded := m.Remove(key)
 		assert.False(t, succeeded)
-		assert.Equal(t, int64(1), m.m.trie.NumNodes())
-		assert.True(t, m.m.trie.isValid())
+		assert.Equal(t, int64(1), m.t.m.trie.NumNodes())
+		assert.True(t, m.t.m.trie.isValid())
 	})
 }
 
-func TestTableWalk(t *testing.T) {
-	m := NewTableX_()
+func TestTableTWalk(t *testing.T) {
+	m := NewTable_[bool]()
 
 	insertKey := Prefix{Address{uint128{0x2001, 0x0180000}}, 112}
 	m.Insert(insertKey, true)
 
 	found := false
-	m.Table().Walk(func(key Prefix, value interface{}) bool {
+	m.Table().Walk(func(key Prefix, value bool) bool {
 		assert.Equal(t, insertKey, key)
-		assert.True(t, value.(bool))
+		assert.True(t, value)
 		found = true
 		return true
 	})
 	assert.True(t, found)
-	assert.True(t, m.m.trie.isValid())
+	assert.True(t, m.t.m.trie.isValid())
 }
 
-func TestTableWalkAggregates(t *testing.T) {
-	m := NewTableX_()
+func TestTableTWalkAggregates(t *testing.T) {
+	m := NewTable_[bool]()
 
 	insertKey := Prefix{Address{uint128{0x2001, 0x0180000}}, 112}
 	m.Insert(insertKey, true)
@@ -548,42 +539,38 @@ func TestTableWalkAggregates(t *testing.T) {
 	m.Insert(secondKey, true)
 
 	found := false
-	m.Table().Aggregate().Walk(func(key Prefix, value interface{}) bool {
+	m.Table().Aggregate().Walk(func(key Prefix, value bool) bool {
 		assert.Equal(t, insertKey, key)
-		assert.True(t, value.(bool))
+		assert.True(t, value)
 		found = true
 		return true
 	})
 	assert.True(t, found)
-	assert.True(t, m.m.trie.isValid())
+	assert.True(t, m.t.m.trie.isValid())
 }
 
-func ieq(a, b interface{}) bool {
-	return a == b
-}
+func TestTableTEqual(t *testing.T) {
+	a := NewTable_[bool]()
+	b := NewTable_[bool]()
 
-func TestTableEqual(t *testing.T) {
-	a := NewTableX_()
-	b := NewTableX_()
-
-	assert.True(t, a.m.trie.Equal(b.m.trie, ieq))
-	assert.True(t, b.m.trie.Equal(a.m.trie, ieq))
+	assert.True(t, a.t.m.trie.Equal(b.t.m.trie, ieq))
+	assert.True(t, b.t.m.trie.Equal(a.t.m.trie, ieq))
 
 	a.Insert(Prefix{Address{uint128{0x2001, 0x0180001}}, 112}, true)
-	assert.False(t, a.m.trie.Equal(b.m.trie, ieq))
-	assert.False(t, b.m.trie.Equal(a.m.trie, ieq))
+	assert.False(t, a.t.m.trie.Equal(b.t.m.trie, ieq))
+	assert.False(t, b.t.m.trie.Equal(a.t.m.trie, ieq))
 
 	b.Insert(Prefix{Address{uint128{0x2001, 0x0180000}}, 112}, true)
-	assert.False(t, a.m.trie.Equal(b.m.trie, ieq))
-	assert.False(t, b.m.trie.Equal(a.m.trie, ieq))
+	assert.False(t, a.t.m.trie.Equal(b.t.m.trie, ieq))
+	assert.False(t, b.t.m.trie.Equal(a.t.m.trie, ieq))
 }
 
 // Test that Tables, when passed and copied, refer to the same data
-func TestTableAsReferenceType(t *testing.T) {
-	m := NewTableX_()
+func TestTableTAsReferenceType(t *testing.T) {
+	m := NewTable_[int]()
 
-	manipulate := func(m TableX_) {
-		m.Insert(_a("2001::1"), nil)
+	manipulate := func(m Table_[int]) {
+		m.Insert(_a("2001::1"), 0)
 		m.InsertOrUpdate(_a("2001::1"), 3)
 	}
 	manipulate(m)
@@ -593,8 +580,8 @@ func TestTableAsReferenceType(t *testing.T) {
 	assert.Equal(t, 3, data)
 }
 
-func TestTableConcurrentModification(t *testing.T) {
-	m := NewTableX_()
+func TestTableTConcurrentModification(t *testing.T) {
+	m := NewTable_[bool]()
 
 	wg := new(sync.WaitGroup)
 	wg.Add(2)
@@ -612,18 +599,18 @@ func TestTableConcurrentModification(t *testing.T) {
 	ch := make(chan bool)
 	go func() {
 		defer wrap()
-		m.mutate(func() (bool, *trieNode) {
+		m.t.mutate(func() (bool, *trieNode) {
 			ch <- true
 
-			newHead, _ := m.m.trie.Insert(_p("2001::/112"), nil)
+			newHead, _ := m.t.m.trie.Insert(_p("2001::/112"), nil)
 			return true, newHead
 		})
 	}()
 	go func() {
 		defer wrap()
-		m.mutate(func() (bool, *trieNode) {
+		m.t.mutate(func() (bool, *trieNode) {
 			<-ch
-			newHead, _ := m.m.trie.Insert(_p("2001:0:1::/112"), nil)
+			newHead, _ := m.t.m.trie.Insert(_p("2001::1:0/112"), nil)
 			return true, newHead
 		})
 	}()
@@ -631,22 +618,22 @@ func TestTableConcurrentModification(t *testing.T) {
 	assert.Equal(t, 1, panicked)
 }
 
-func TestNilTableX(t *testing.T) {
-	var table TableX_
+func TestNilTable(t *testing.T) {
+	var table Table_[bool]
 
 	// On-offs
 	assert.Equal(t, int64(0), table.NumEntries())
 	assert.Equal(t, int64(0), table.Table().NumEntries())
-	_, found := table.Get(_a("2001:0:0:123::"))
+	_, found := table.Get(_a("2001::1234:0"))
 	assert.False(t, found)
-	_, matched, _ := table.LongestMatch(_a("2001:0:0:123::"))
+	_, matched, _ := table.LongestMatch(_a("2001::1234:0"))
 	assert.False(t, matched)
 
 	// Walk
-	assert.True(t, table.Table().Walk(func(Prefix, interface{}) bool {
+	assert.True(t, table.Table().Walk(func(Prefix, bool) bool {
 		panic("should not be called")
 	}))
-	assert.True(t, table.Table().Aggregate().Walk(func(Prefix, interface{}) bool {
+	assert.True(t, table.Table().Aggregate().Walk(func(Prefix, bool) bool {
 		panic("should not be called")
 	}))
 
@@ -665,33 +652,33 @@ func TestNilTableX(t *testing.T) {
 
 	t.Run("insert panics", func(t *testing.T) {
 		testPanic(func() {
-			table.Insert(_a("2001:0:0:123::"), nil)
+			table.Insert(_a("2001::1234:0"), false)
 		})
 	})
 	t.Run("update panics", func(t *testing.T) {
 		testPanic(func() {
-			table.Update(_a("2001:0:0:123::"), nil)
+			table.Update(_a("2001::1234:0"), false)
 		})
 	})
 	t.Run("insert or update panics", func(t *testing.T) {
 		testPanic(func() {
-			table.InsertOrUpdate(_a("2001:0:0:123::"), nil)
+			table.InsertOrUpdate(_a("2001::1234:0"), false)
 		})
 	})
 	t.Run("get or insert panics", func(t *testing.T) {
 		testPanic(func() {
-			table.GetOrInsert(_a("2001:0:0:123::"), nil)
+			table.GetOrInsert(_a("2001::1234:0"), false)
 		})
 	})
 	t.Run("remove panics", func(t *testing.T) {
 		testPanic(func() {
-			table.Remove(_a("2001:0:0:123::"))
+			table.Remove(_a("2001::1234:0"))
 		})
 	})
 }
 
-func TestTableXInsertNil(t *testing.T) {
-	m := NewTableX_()
+func TestTableInsertNil(t *testing.T) {
+	m := NewTable_[int]()
 	succeeded := m.Insert(nil, 3)
 	assert.True(t, succeeded)
 	assert.Equal(t, int64(1), m.NumEntries())
@@ -700,9 +687,9 @@ func TestTableXInsertNil(t *testing.T) {
 	assert.Equal(t, 3, value)
 }
 
-func TestTableXUpdateNil(t *testing.T) {
-	m := NewTableX_()
-	m.Insert(_p("::/0"), 10)
+func TestTableUpdateNil(t *testing.T) {
+	m := NewTable_[int]()
+	m.Insert(nil, 10)
 
 	succeeded := m.Update(nil, 3)
 	assert.True(t, succeeded)
@@ -712,8 +699,8 @@ func TestTableXUpdateNil(t *testing.T) {
 	assert.Equal(t, 3, value)
 }
 
-func TestTableXRemoveNil(t *testing.T) {
-	m := NewTableX_()
+func TestTableRemoveNil(t *testing.T) {
+	m := NewTable_[int]()
 	m.Insert(_p("::/0"), 10)
 
 	succeeded := m.Remove(nil)
@@ -723,19 +710,19 @@ func TestTableXRemoveNil(t *testing.T) {
 	assert.False(t, found)
 }
 
-func TestTableXLongestMatch(t *testing.T) {
-	m := NewTableX_()
+func TestTableLongestMatch(t *testing.T) {
+	m := NewTable_[int]()
 	m.Insert(_p("::/0"), 10)
 
 	value, matched, prefix := m.LongestMatch(nil)
 	assert.Equal(t, 10, value)
-	assert.True(t, matched)
 	assert.Equal(t, prefix, Prefix{})
+	assert.True(t, matched)
 	assert.Equal(t, _p("::/0"), prefix)
 }
 
-func TestTableXInsertOrUpdateNil(t *testing.T) {
-	m := NewTableX_()
+func TestTableInsertOrUpdateNil(t *testing.T) {
+	m := NewTable_[int]()
 	m.InsertOrUpdate(nil, 3)
 
 	assert.Equal(t, int64(1), m.NumEntries())
@@ -744,8 +731,8 @@ func TestTableXInsertOrUpdateNil(t *testing.T) {
 	assert.Equal(t, 3, value)
 }
 
-func TestTableXGetOrInsertNil(t *testing.T) {
-	m := NewTableX_()
+func TestTableGetOrInsertNil(t *testing.T) {
+	m := NewTable_[int]()
 	result := m.GetOrInsert(nil, 11)
 	assert.Equal(t, 11, result)
 
@@ -754,20 +741,20 @@ func TestTableXGetOrInsertNil(t *testing.T) {
 	assert.Equal(t, 11, value)
 }
 
-func TestTableXDiff(t *testing.T) {
-	a := TableX{}.Build(func(a_ TableX_) bool {
+func TestTableTDiff(t *testing.T) {
+	a := Table[bool]{}.Build(func(a_ Table_[bool]) bool {
 		a_.Insert(_p("2001::1234:0/115"), true)
 		a_.Insert(_p("2001::1234:6400/115"), true)
 		a_.Insert(_p("2001::1234:0/113"), true)
 		return true
 	})
 
-	a = a.Build(func(a_ TableX_) bool {
+	a = a.Build(func(a_ Table_[bool]) bool {
 		a_.Insert(_p("1900::1234:0/113"), true)
 		return false
 	})
 
-	b := TableX{}.Build(func(b_ TableX_) bool {
+	b := Table[bool]{}.Build(func(b_ Table_[bool]) bool {
 		b_.Insert(_p("2001::1234:0/115"), true)
 		b_.Insert(_p("2001::1234:9600/115"), true)
 		b_.Insert(_p("2001::1234:0/113"), false)
@@ -776,21 +763,21 @@ func TestTableXDiff(t *testing.T) {
 
 	type action struct {
 		prefix        Prefix
-		before, after interface{}
+		before, after bool
 	}
 
 	var actions []action
-	getHandlers := func() (left, right func(Prefix, interface{}) bool, changed func(p Prefix, left, right interface{}) bool) {
+	getHandlers := func() (left, right func(Prefix, bool) bool, changed func(p Prefix, left, right bool) bool) {
 		actions = nil
-		left = func(p Prefix, v interface{}) bool {
-			actions = append(actions, action{p, v, nil})
+		left = func(p Prefix, v bool) bool {
+			actions = append(actions, action{p, v, false})
 			return true
 		}
-		right = func(p Prefix, v interface{}) bool {
-			actions = append(actions, action{p, nil, v})
+		right = func(p Prefix, v bool) bool {
+			actions = append(actions, action{p, false, v})
 			return true
 		}
-		changed = func(p Prefix, l, r interface{}) bool {
+		changed = func(p Prefix, l, r bool) bool {
 			actions = append(actions, action{p, l, r})
 			return true
 		}
@@ -802,8 +789,8 @@ func TestTableXDiff(t *testing.T) {
 		a.Diff(b, changed, left, right, nil)
 		assert.Equal(t, []action{
 			action{_p("2001::1234:0/113"), true, false},
-			action{_p("2001::1234:6400/115"), true, nil},
-			action{_p("2001::1234:9600/115"), nil, true},
+			action{_p("2001::1234:6400/115"), true, false},
+			action{_p("2001::1234:9600/115"), false, true},
 		}, actions)
 	})
 
@@ -812,71 +799,77 @@ func TestTableXDiff(t *testing.T) {
 		b.Diff(a, changed, left, right, nil)
 		assert.Equal(t, []action{
 			action{_p("2001::1234:0/113"), false, true},
-			action{_p("2001::1234:6400/115"), nil, true},
-			action{_p("2001::1234:9600/115"), true, nil},
+			action{_p("2001::1234:6400/115"), false, true},
+			action{_p("2001::1234:9600/115"), true, false},
 		}, actions)
 	})
 }
 
-func TestFixedTable(t *testing.T) {
+func TestFixedTableT(t *testing.T) {
 	addrOne := _a("2001::1")
 	addrTwo := _a("2001::2")
 	addrThree := _a("2001::3")
 
-	m := NewTableX_()
-	succeeded := m.Insert(addrOne, nil)
+	m := NewTable_[int]()
+	succeeded := m.Insert(addrOne, 1)
 	assert.True(t, succeeded)
 
 	im := m.Table()
-	succeeded = m.Insert(addrTwo, nil)
+	succeeded = m.Insert(addrTwo, 2)
 	assert.True(t, succeeded)
 
 	m2 := im.Table_()
-	succeeded = m2.Insert(addrThree, nil)
+	succeeded = m2.Insert(addrThree, 3)
 	assert.True(t, succeeded)
 
 	var found bool
+	var value int
 
-	_, found = m.Get(addrOne)
+	value, found = m.Get(addrOne)
 	assert.True(t, found)
-	_, found = m.Get(addrTwo)
+	assert.Equal(t, 1, value)
+	value, found = m.Get(addrTwo)
 	assert.True(t, found)
+	assert.Equal(t, 2, value)
 	_, found = m.Get(addrThree)
 	assert.False(t, found)
 
 	assert.Equal(t, int64(1), im.NumEntries())
-	_, found = im.Get(addrOne)
+	value, found = im.Get(addrOne)
 	assert.True(t, found)
+	assert.Equal(t, 1, value)
 	_, found = im.Get(addrTwo)
 	assert.False(t, found)
 	_, found = im.Get(addrThree)
 	assert.False(t, found)
 
 	assert.Equal(t, int64(2), m2.NumEntries())
-	_, found = m2.Get(addrOne)
+	value, found = m2.Get(addrOne)
 	assert.True(t, found)
+	assert.Equal(t, 1, value)
 	_, found = m2.Get(addrTwo)
 	assert.False(t, found)
-	_, found = m2.Get(addrThree)
+	value, found = m2.Get(addrThree)
 	assert.True(t, found)
+	assert.Equal(t, 3, value)
 }
 
-func TestTableXMap(t *testing.T) {
-	var a TableX
+func TestTableMap(t *testing.T) {
+	var a Table[bool]
 	assert.Equal(t, a, a.Map(nil))
-	assert.Equal(t, a, a.Map(func(Prefix, interface{}) interface{} {
+	assert.Equal(t, a, a.Map(func(Prefix, bool) bool {
 		panic("this should not be run")
 	}))
 
-	a = func() TableX {
-		a := TableX{}.Table_()
+	a = func() Table[bool] {
+		a := Table[bool]{}.Table_()
 		a.Insert(_p("2001::1234:0/115"), true)
 		a.Insert(_p("2001::1234:6400/115"), true)
 		a.Insert(_p("2001::1234:0/113"), true)
 		return a.Table()
 	}()
 
-	result := a.Map(func(Prefix, interface{}) interface{} {
+	result := a.Map(func(Prefix, bool) bool {
 		return false
 	})
 
@@ -884,36 +877,27 @@ func TestTableXMap(t *testing.T) {
 
 	value, ok := result.Get(_p("2001::1234:0/115"))
 	assert.True(t, ok)
-	assert.False(t, value.(bool))
+	assert.False(t, value)
 	value, ok = result.Get(_p("2001::1234:6400/115"))
 	assert.True(t, ok)
-	assert.False(t, value.(bool))
+	assert.False(t, value)
 	value, ok = result.Get(_p("2001::1234:0/113"))
 	assert.True(t, ok)
-	assert.False(t, value.(bool))
+	assert.False(t, value)
 
-	value, ok = result.Get(_p("::/0"))
+	_, ok = result.Get(_p("::/0"))
 	assert.False(t, ok)
-	assert.Nil(t, value)
 }
 
-type creativeComparable struct {
-	i int
-}
-
-func (me creativeComparable) Equal(other creativeComparable) bool {
-	return me.i <= 2 && other.i <= 2
-}
-
-func TestTableXVariousComparators(t *testing.T) {
+func TestTableVariousComparators(t *testing.T) {
 	tests := []struct {
 		description string
-		table       TableX_
+		table       Table_[creativeComparable]
 		expected    []string
 	}{
 		{
 			description: "comparable",
-			table:       TableX{}.Table_(),
+			table:       Table[creativeComparable]{}.Table_(),
 			expected: []string{
 				"2001::1234:0/118",
 				"2001::1234:0/122",
@@ -923,9 +907,11 @@ func TestTableXVariousComparators(t *testing.T) {
 			},
 		}, {
 			description: "not_comparable",
-			table: NewTableXCustomCompare_(func(a, b interface{}) bool {
-				return false
-			}),
+			table: NewTableCustomCompare_[creativeComparable](
+				func(a, b creativeComparable) bool {
+					return false
+				},
+			),
 			expected: []string{
 				"2001::1234:0/118",
 				"2001::1234:0/120",
@@ -935,9 +921,21 @@ func TestTableXVariousComparators(t *testing.T) {
 				"2001::1234:0/128",
 			},
 		}, {
+			description: "equal_comparable",
+			table: NewTableCustomCompare_[creativeComparable](
+				func(a, b creativeComparable) bool {
+					return a.Equal(b)
+				},
+			),
+			expected: []string{
+				"2001::1234:0/118",
+				"2001::1234:0/126",
+				"2001::1234:0/128",
+			},
+		}, {
 			description: "custom_comparable",
-			table: NewTableXCustomCompare_(func(a, b interface{}) bool {
-				return a.(creativeComparable).i <= 3 && b.(creativeComparable).i <= 3
+			table: NewTableCustomCompare_[creativeComparable](func(a, b creativeComparable) bool {
+				return a.i <= 3 && b.i <= 3
 			}),
 			expected: []string{
 				"2001::1234:0/118",
@@ -956,7 +954,7 @@ func TestTableXVariousComparators(t *testing.T) {
 			tt.table.Insert(_p("2001::1234:0/128"), creativeComparable{4})
 
 			result := []string{}
-			tt.table.Table().Aggregate().Walk(func(prefix Prefix, _ interface{}) bool {
+			tt.table.Table().Aggregate().Walk(func(prefix Prefix, value creativeComparable) bool {
 				result = append(result, prefix.String())
 				return true
 			})
