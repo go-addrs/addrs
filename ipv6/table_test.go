@@ -363,7 +363,7 @@ func TestTableTExample3(t *testing.T) {
 		return false
 	})
 	assert.Equal(t, 1, iterations)
-} 
+}
 
 func TestTableTnsert(t *testing.T) {
 	m := NewTable_[bool]()
@@ -398,7 +398,6 @@ func TestTableTnsertOrUpdate(t *testing.T) {
 	assert.False(t, value)
 	assert.True(t, m.t.m.trie.isValid())
 }
-
 
 func TestTableTUpdate(t *testing.T) {
 	m := NewTable_[bool]()

@@ -288,10 +288,6 @@ func (me *setNode) height() int {
 	return (*trieNode)(me).height()
 }
 
-func (me *setNode) active() bool {
-	return (*trieNode)(me).active()
-}
-
 func (me *setNode) Walk(callback func(Prefix, interface{}) bool) bool {
 	return (*trieNode)(me).Walk(callback)
 }
