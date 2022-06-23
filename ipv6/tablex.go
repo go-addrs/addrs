@@ -1,42 +1,42 @@
 package ipv6
 
-// TableX_ is a mutable version of TableX, allowing inserting, replacing, or
-// removing elements in various ways. You can use it as an TableX builder or on
+// tableX_ is a mutable version of tableX, allowing inserting, replacing, or
+// removing elements in various ways. You can use it as an tableX builder or on
 // its own.
 //
-// The zero value of a TableX_ is unitialized. Reading it is equivalent to
-// reading an empty TableX_. Attempts to modify it will result in a panic.
-// Always use NewTableX_() to get an initialized TableX_.
-type TableX_ struct {
-	// This is an abuse of TableX because it uses its package privileges
+// The zero value of a tableX_ is unitialized. Reading it is equivalent to
+// reading an empty tableX_. Attempts to modify it will result in a panic.
+// Always use newTableX_() to get an initialized tableX_.
+type tableX_ struct {
+	// This is an abuse of tableX because it uses its package privileges
 	// to turn it into a mutable one. This could be refactored to be cleaner
 	// without changing the interface.
 
-	// Be careful not to take an TableX from outside the package and turn
+	// Be careful not to take an tableX from outside the package and turn
 	// it into a mutable one. That would break the contract.
-	m *TableX
+	m *tableX
 }
 
 func defaultComparator(a, b interface{}) bool {
 	return a == b
 }
 
-// NewTableX_ returns a new fully-initialized Table_ optimized for values that
+// newTableX_ returns a new fully-initialized Table_ optimized for values that
 // are comparable with ==.
-func NewTableX_() TableX_ {
-	return TableX_{
-		&TableX{
+func newTableX_() tableX_ {
+	return tableX_{
+		&tableX{
 			nil,
 			defaultComparator,
 		},
 	}
 }
 
-// NewTableXCustomCompare_ returns a new fully-initialized Table_ optimized for
+// newTableXCustomCompare_ returns a new fully-initialized Table_ optimized for
 // data that can be compared used a comparator that you pass.
-func NewTableXCustomCompare_(comparator func(a, b interface{}) bool) TableX_ {
-	return TableX_{
-		&TableX{
+func newTableXCustomCompare_(comparator func(a, b interface{}) bool) tableX_ {
+	return tableX_{
+		&tableX{
 			nil,
 			comparator,
 		},
@@ -56,7 +56,7 @@ const (
 )
 
 // NumEntries returns the number of exact prefixes stored in the table
-func (me TableX_) NumEntries() int64 {
+func (me tableX_) NumEntries() int64 {
 	if me.m == nil {
 		return 0
 	}
@@ -64,7 +64,7 @@ func (me TableX_) NumEntries() int64 {
 }
 
 // mutate should be called by any method that modifies the table in any way
-func (me TableX_) mutate(mutator func() (ok bool, node *trieNode)) {
+func (me tableX_) mutate(mutator func() (ok bool, node *trieNode)) {
 	oldNode := me.m.trie
 	ok, newNode := mutator()
 	if ok && oldNode != newNode {
@@ -77,7 +77,7 @@ func (me TableX_) mutate(mutator func() (ok bool, node *trieNode)) {
 // Insert inserts the given prefix with the given value into the table.
 // If an entry with the same prefix already exists, it will not overwrite it
 // and return false.
-func (me TableX_) Insert(prefix PrefixI, value interface{}) (succeeded bool) {
+func (me tableX_) Insert(prefix PrefixI, value interface{}) (succeeded bool) {
 	if me.m == nil {
 		panic("cannot modify an unitialized Table_")
 	}
@@ -99,7 +99,7 @@ func (me TableX_) Insert(prefix PrefixI, value interface{}) (succeeded bool) {
 // Update inserts the given prefix with the given value into the table. If the
 // prefix already existed, it updates the associated value in place and return
 // true. Otherwise, it returns false.
-func (me TableX_) Update(prefix PrefixI, value interface{}) (succeeded bool) {
+func (me tableX_) Update(prefix PrefixI, value interface{}) (succeeded bool) {
 	if me.m == nil {
 		panic("cannot modify an unitialized Table_")
 	}
@@ -120,7 +120,7 @@ func (me TableX_) Update(prefix PrefixI, value interface{}) (succeeded bool) {
 
 // InsertOrUpdate inserts the given prefix with the given value into the table.
 // If the prefix already existed, it updates the associated value in place.
-func (me TableX_) InsertOrUpdate(prefix PrefixI, value interface{}) {
+func (me tableX_) InsertOrUpdate(prefix PrefixI, value interface{}) {
 	if me.m == nil {
 		panic("cannot modify an unitialized Table_")
 	}
@@ -136,7 +136,7 @@ func (me TableX_) InsertOrUpdate(prefix PrefixI, value interface{}) {
 // with an exact match: both the IP and the prefix length must match. If an
 // exact match is not found, found is false and value is nil and should be
 // ignored.
-func (me TableX_) Get(prefix PrefixI) (interface{}, bool) {
+func (me tableX_) Get(prefix PrefixI) (interface{}, bool) {
 	if me.m == nil {
 		return nil, false
 	}
@@ -146,7 +146,7 @@ func (me TableX_) Get(prefix PrefixI) (interface{}, bool) {
 // GetOrInsert returns the value associated with the given prefix if it already
 // exists. If it does not exist, it inserts it with the given value and returns
 // that.
-func (me TableX_) GetOrInsert(prefix PrefixI, value interface{}) interface{} {
+func (me tableX_) GetOrInsert(prefix PrefixI, value interface{}) interface{} {
 	if me.m == nil {
 		panic("cannot modify an unitialized Table_")
 	}
@@ -166,7 +166,7 @@ func (me TableX_) GetOrInsert(prefix PrefixI, value interface{}) interface{} {
 // using a longest prefix match. If a match is found, it returns true and the
 // Prefix matched, which may be equal to or shorter than the one passed. If no
 // match is found, returns nil, false, and matchPrefix must be ignored.
-func (me TableX_) LongestMatch(prefix PrefixI) (value interface{}, found bool, matchPrefix Prefix) {
+func (me tableX_) LongestMatch(prefix PrefixI) (value interface{}, found bool, matchPrefix Prefix) {
 	if me.m == nil {
 		return nil, false, Prefix{}
 	}
@@ -177,7 +177,7 @@ func (me TableX_) LongestMatch(prefix PrefixI) (value interface{}, found bool, m
 // returns true if it was found. Only a prefix with an exact match will be
 // removed. If no entry with the given prefix exists, it will do nothing and
 // return false.
-func (me TableX_) Remove(prefix PrefixI) (succeeded bool) {
+func (me tableX_) Remove(prefix PrefixI) (succeeded bool) {
 	if me.m == nil {
 		panic("cannot modify an unitialized Table_")
 	}
@@ -193,17 +193,17 @@ func (me TableX_) Remove(prefix PrefixI) (succeeded bool) {
 	return err == nil
 }
 
-// Table returns an immutable snapshot of this TableX_. Due to the COW
+// Table returns an immutable snapshot of this tableX_. Due to the COW
 // nature of the underlying datastructure, it is very cheap to create these --
 // effectively a pointer copy.
-func (me TableX_) Table() TableX {
+func (me tableX_) Table() tableX {
 	if me.m == nil {
-		return TableX{}
+		return tableX{}
 	}
 	return *me.m
 }
 
-// TableX is a structure that maps IP prefixes to values. For example, the
+// tableX is a structure that maps IP prefixes to values. For example, the
 // following values can all exist as distinct prefix/value pairs in the table.
 //
 //     2001::/16 -> 1
@@ -214,9 +214,9 @@ func (me TableX_) Table() TableX {
 // supports efficient aggregation of prefix/value pairs based on equality of
 // values. See the README.md file for a more detailed discussion.
 //
-// The zero value of a TableX is an empty table
-// TableX is immutable. For a mutable equivalent, see TableX_.
-type TableX struct {
+// The zero value of a tableX is an empty table
+// tableX is immutable. For a mutable equivalent, see tableX_.
+type tableX struct {
 	trie *trieNode
 	eq   comparator
 }
@@ -224,11 +224,11 @@ type TableX struct {
 // Table_ returns a mutable table initialized with the contents of this one. Due to
 // the COW nature of the underlying datastructure, it is very cheap to copy
 // these -- effectively a pointer copy.
-func (me TableX) Table_() TableX_ {
+func (me tableX) Table_() tableX_ {
 	if me.eq == nil {
 		me.eq = defaultComparator
 	}
-	return TableX_{&me}
+	return tableX_{&me}
 }
 
 // Build is a convenience method for making modifications to a table within a
@@ -238,7 +238,7 @@ func (me TableX) Table_() TableX_ {
 //
 // If the callback returns false, modifications are aborted and the original
 // fixed table is returned.
-func (me TableX) Build(builder func(TableX_) bool) TableX {
+func (me tableX) Build(builder func(tableX_) bool) tableX {
 	t_ := me.Table_()
 	if builder(t_) {
 		return t_.Table()
@@ -247,7 +247,7 @@ func (me TableX) Build(builder func(TableX_) bool) TableX {
 }
 
 // NumEntries returns the number of exact prefixes stored in the table
-func (me TableX) NumEntries() int64 {
+func (me tableX) NumEntries() int64 {
 	return me.trie.NumNodes()
 }
 
@@ -255,7 +255,7 @@ func (me TableX) NumEntries() int64 {
 // with an exact match: both the IP and the prefix length must match. If an
 // exact match is not found, found is false and value is nil and should be
 // ignored.
-func (me TableX) Get(prefix PrefixI) (interface{}, bool) {
+func (me tableX) Get(prefix PrefixI) (interface{}, bool) {
 	value, matched, _ := me.longestMatch(prefix)
 
 	if matched == matchExact {
@@ -269,7 +269,7 @@ func (me TableX) Get(prefix PrefixI) (interface{}, bool) {
 // using a longest prefix match. If a match is found, it returns true and the
 // Prefix matched, which may be equal to or shorter than the one passed. If no
 // match is found, returns nil, false, and matchPrefix must be ignored.
-func (me TableX) LongestMatch(prefix PrefixI) (value interface{}, found bool, matchPrefix Prefix) {
+func (me tableX) LongestMatch(prefix PrefixI) (value interface{}, found bool, matchPrefix Prefix) {
 	var matched match
 	value, matched, matchPrefix = me.longestMatch(prefix)
 	if matched != matchNone {
@@ -278,7 +278,7 @@ func (me TableX) LongestMatch(prefix PrefixI) (value interface{}, found bool, ma
 	return nil, false, Prefix{}
 }
 
-func (me TableX) longestMatch(prefix PrefixI) (value interface{}, matched match, matchPrefix Prefix) {
+func (me tableX) longestMatch(prefix PrefixI) (value interface{}, matched match, matchPrefix Prefix) {
 	if prefix == nil {
 		prefix = Prefix{}
 	}
@@ -319,8 +319,8 @@ func (me TableX) longestMatch(prefix PrefixI) (value interface{}, matched match,
 // aggregates to neighbors as this will likely lead to poor comparisions by
 // neighboring routers who receive routes aggregated differently from different
 // peers.
-func (me TableX) Aggregate() TableX {
-	return TableX{
+func (me tableX) Aggregate() tableX {
+	return tableX{
 		me.trie.Aggregate(me.eq),
 		me.eq,
 	}
@@ -331,7 +331,7 @@ func (me TableX) Aggregate() TableX {
 //
 // It returns false if iteration was stopped due to a callback returning false
 // or true if it iterated all items.
-func (me TableX) Walk(callback func(Prefix, interface{}) bool) bool {
+func (me tableX) Walk(callback func(Prefix, interface{}) bool) bool {
 	return me.trie.Walk(callback)
 }
 
@@ -351,7 +351,7 @@ func (me TableX) Walk(callback func(Prefix, interface{}) bool) bool {
 //
 // It returns false if iteration was stopped due to a callback returning false
 // or true if it iterated all items.
-func (me TableX) Diff(other TableX, changed func(p Prefix, left, right interface{}) bool, left, right, unchanged func(Prefix, interface{}) bool) bool {
+func (me tableX) Diff(other tableX, changed func(p Prefix, left, right interface{}) bool, left, right, unchanged func(Prefix, interface{}) bool) bool {
 	trieHandler := trieDiffHandler{}
 	if left != nil {
 		trieHandler.Removed = func(n *trieNode) bool {
@@ -394,11 +394,11 @@ func (me TableX) Diff(other TableX, changed func(p Prefix, left, right interface
 // Map avoids all of these inefficiencies by building the resulting table in
 // place takking time that is linear in the number of entries. It also avoids
 // modifying anything if any values compare equal to the original.
-func (me TableX) Map(mapper func(Prefix, interface{}) interface{}) TableX {
+func (me tableX) Map(mapper func(Prefix, interface{}) interface{}) tableX {
 	if mapper == nil {
 		return me
 	}
-	return TableX{
+	return tableX{
 		me.trie.Map(mapper, me.eq),
 		me.eq,
 	}

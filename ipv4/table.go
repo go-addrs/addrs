@@ -11,14 +11,14 @@ package ipv4
 // reading an empty Table_. Attempts to modify it will result in a panic.
 // Always use NewTable_() to get an initialized Table_.
 type Table_[T any] struct {
-	t TableX_
+	t tableX_
 }
 
 // NewTable_ returns a new fully-initialized Table_ optimized for values that
 // are comparable with ==.
 func NewTable_[T comparable]() Table_[T] {
 	return Table_[T]{
-		NewTableX_(),
+		newTableX_(),
 	}
 }
 
@@ -26,7 +26,7 @@ func NewTable_[T comparable]() Table_[T] {
 // data that can be compared used a comparator that you pass.
 func NewTableCustomCompare_[T any](comparator func(a, b T) bool) Table_[T] {
 	return Table_[T]{
-		NewTableXCustomCompare_(
+		newTableXCustomCompare_(
 			func(a, b interface{}) bool {
 				return comparator(a.(T), b.(T))
 			},
@@ -114,7 +114,7 @@ func (me Table_[T]) Remove(prefix PrefixI) (succeeded bool) {
 func (me Table_[T]) Table() Table[T] {
 	if me.t.m == nil {
 		return Table[T]{
-			TableX{},
+			tableX{},
 		}
 	}
 	return Table[T]{
@@ -136,7 +136,7 @@ func (me Table_[T]) Table() Table[T] {
 // The zero value of a Table is an empty table
 // Table is immutable. For a mutable equivalent, see Table_.
 type Table[T any] struct {
-	t TableX
+	t tableX
 }
 
 // Table_ returns a mutable table initialized with the contents of this one. Due to
@@ -219,7 +219,7 @@ func (me Table[T]) LongestMatch(searchPrefix PrefixI) (value T, found bool, pref
 // peers.
 func (me Table[T]) Aggregate() Table[T] {
 	return Table[T]{
-		TableX{
+		tableX{
 			trie: me.t.trie.Aggregate(me.t.eq),
 		},
 	}
@@ -311,7 +311,7 @@ func (me Table[T]) Map(mapper func(Prefix, T) T) Table[T] {
 		return me
 	}
 	return Table[T]{
-		TableX{
+		tableX{
 			me.t.trie.Map(func(p Prefix, value interface{}) interface{} {
 				t, _ := value.(T)
 				return mapper(p, t)
