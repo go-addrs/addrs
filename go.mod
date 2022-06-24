@@ -1,4 +1,4 @@
-module gopkg.in/addrs.v0
+module gopkg.in/addrs.v1
 
 go 1.18
 
