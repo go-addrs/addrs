@@ -51,7 +51,7 @@ func TestAddressComparable(t *testing.T) {
 }
 
 func TestAddressSize(t *testing.T) {
-	assert.Equal(t, 128, Address{}.NumAddresses())
+	assert.Equal(t, 128, Address{}.NumBits())
 }
 
 func TestAddressFromString(t *testing.T) {
