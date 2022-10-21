@@ -392,7 +392,7 @@ func (me tableX) Diff(other tableX, changed func(p Prefix, left, right interface
 //  3. Each insert or update must traverse the result map.
 //
 // Map avoids all of these inefficiencies by building the resulting table in
-// place takking time that is linear in the number of entries. It also avoids
+// place taking time that is linear in the number of entries. It also avoids
 // modifying anything if any values compare equal to the original.
 func (me tableX) Map(mapper func(Prefix, interface{}) interface{}) tableX {
 	if mapper == nil {
