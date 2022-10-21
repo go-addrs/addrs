@@ -206,8 +206,9 @@ func (me *trieNode) GetOrInsert(searchKey Prefix, data interface{}) (head, resul
 // implies the search key is at least as long as any matching node's prefix.
 //
 // Some examples include the following ipv4 and ipv6 matches:
-//     10.0.0.0/24 contains 10.0.0.0/24, 10.0.0.0/25, and 10.0.0.0/32
-//     2001:cafe:beef::/64 contains 2001:cafe:beef::a/124
+//
+//	10.0.0.0/24 contains 10.0.0.0/24, 10.0.0.0/25, and 10.0.0.0/32
+//	2001:cafe:beef::/64 contains 2001:cafe:beef::a/124
 //
 // "longest" means that if multiple existing entries in the trie match the one
 // with the longest length will be returned. It is the most specific match.

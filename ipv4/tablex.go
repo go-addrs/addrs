@@ -206,9 +206,9 @@ func (me tableX_) Table() tableX {
 // tableX is a structure that maps IP prefixes to values. For example, the
 // following values can all exist as distinct prefix/value pairs in the table.
 //
-//     10.0.0.0/16 -> 1
-//     10.0.0.0/24 -> 1
-//     10.0.0.0/32 -> 2
+//	10.0.0.0/16 -> 1
+//	10.0.0.0/24 -> 1
+//	10.0.0.0/32 -> 2
 //
 // The table supports looking up values based on a longest prefix match and also
 // supports efficient aggregation of prefix/value pairs based on equality of
@@ -385,11 +385,11 @@ func (me tableX) Diff(other tableX, changed func(p Prefix, left, right interface
 // original. However, Map is more efficient than that.
 //
 // The walk method is inefficient in the following ways.
-// 1. If inserting into a new map, a new entry is created even if the values
-//    compare equal.
-// 2. Each step in the walk produces an intermediate result that is eventually
-//    thrown away (except the final result).
-// 3. Each insert or update must traverse the result map.
+//  1. If inserting into a new map, a new entry is created even if the values
+//     compare equal.
+//  2. Each step in the walk produces an intermediate result that is eventually
+//     thrown away (except the final result).
+//  3. Each insert or update must traverse the result map.
 //
 // Map avoids all of these inefficiencies by building the resulting table in
 // place takking time that is linear in the number of entries. It also avoids

@@ -92,9 +92,12 @@ func (me uint128) leadingZeros() int {
 }
 
 // compare returns comparison of two uint128s and returns:
-//  O if equal
+//
+//	O if equal
+//
 // -1 if me is less than other
-//  1 if me is greater than other
+//
+//	1 if me is greater than other
 func (me uint128) compare(other uint128) int {
 	if me == other {
 		return 0
