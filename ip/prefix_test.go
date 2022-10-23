@@ -120,3 +120,22 @@ func TestAddressFromPrefix(t *testing.T) {
 		assert.Equal(t, "2001:db8::1", a.String())
 	})
 }
+
+func TestMaskFromPrefix(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
+		m := MaskFromPrefix(nil)
+		assert.Nil(t, m)
+	})
+	t.Run("v4", func(t *testing.T) {
+		p, _ := PrefixFromString("1.2.3.4/24")
+		m := MaskFromPrefix(p)
+		assert.IsType(t, ipv4.Mask{}, m)
+		assert.Equal(t, "255.255.255.0", m.String())
+	})
+	t.Run("v6", func(t *testing.T) {
+		p, _ := PrefixFromString("2001:db8::1/64")
+		m := MaskFromPrefix(p)
+		assert.IsType(t, ipv6.Mask{}, m)
+		assert.Equal(t, "ffff:ffff:ffff:ffff::", m.String())
+	})
+}

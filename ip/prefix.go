@@ -70,3 +70,16 @@ func AddressFromPrefix(prefix Prefix) Address {
 		return nil
 	}
 }
+
+// MaskFromPrefix returns the address part of the given prefix. If the
+// prefix passed in is not an ipv4.Prefix or ipv6.Prefix, then nil is returned.
+func MaskFromPrefix(prefix Prefix) Mask {
+	switch prefix := prefix.(type) {
+	case ipv4.Prefix:
+		return prefix.Mask()
+	case ipv6.Prefix:
+		return prefix.Mask()
+	default:
+		return nil
+	}
+}
