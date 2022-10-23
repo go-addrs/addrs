@@ -139,3 +139,22 @@ func TestMaskFromPrefix(t *testing.T) {
 		assert.Equal(t, "ffff:ffff:ffff:ffff::", m.String())
 	})
 }
+
+func TestRangeFromPrefix(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
+		r := RangeFromPrefix(nil)
+		assert.Nil(t, r)
+	})
+	t.Run("v4", func(t *testing.T) {
+		p, _ := PrefixFromString("1.2.3.4/24")
+		r := RangeFromPrefix(p)
+		assert.IsType(t, ipv4.Range{}, r)
+		assert.Equal(t, "[1.2.3.0,1.2.3.255]", r.String())
+	})
+	t.Run("v6", func(t *testing.T) {
+		p, _ := PrefixFromString("2001:db8::1/64")
+		r := RangeFromPrefix(p)
+		assert.IsType(t, ipv6.Range{}, r)
+		assert.Equal(t, "[2001:db8::,2001:db8::ffff:ffff:ffff:ffff]", r.String())
+	})
+}

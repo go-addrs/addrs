@@ -83,3 +83,16 @@ func MaskFromPrefix(prefix Prefix) Mask {
 		return nil
 	}
 }
+
+// RangeFromPrefix returns the address part of the given prefix. If the
+// prefix passed in is not an ipv4.Prefix or ipv6.Prefix, then nil is returned.
+func RangeFromPrefix(prefix Prefix) Range {
+	switch prefix := prefix.(type) {
+	case ipv4.Prefix:
+		return prefix.Range()
+	case ipv6.Prefix:
+		return prefix.Range()
+	default:
+		return nil
+	}
+}
