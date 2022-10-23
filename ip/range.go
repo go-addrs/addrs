@@ -34,3 +34,29 @@ func RangeFromAddresses(first, last Address) (Range, bool, error) {
 	}
 	return nil, false, fmt.Errorf("unknown first address family")
 }
+
+// FirstFromRange returns the first address of the given range. If the range
+// passed in is not an ipv4.Range or ipv6.Range, then nil is returned.
+func FirstFromRange(r Range) Range {
+	switch r := r.(type) {
+	case ipv4.Range:
+		return r.First()
+	case ipv6.Range:
+		return r.First()
+	default:
+		return nil
+	}
+}
+
+// LastFromRange returns the first address of the given range. If the range
+// passed in is not an ipv4.Range or ipv6.Range, then nil is returned.
+func LastFromRange(r Range) Range {
+	switch r := r.(type) {
+	case ipv4.Range:
+		return r.Last()
+	case ipv6.Range:
+		return r.Last()
+	default:
+		return nil
+	}
+}

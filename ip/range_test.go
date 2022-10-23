@@ -75,3 +75,41 @@ func TestRangeFromAddresses(t *testing.T) {
 		assert.True(t, empty)
 	})
 }
+
+func TestFirstFromRange(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
+		a := FirstFromRange(nil)
+		assert.Nil(t, a)
+	})
+	t.Run("v4", func(t *testing.T) {
+		p, _ := PrefixFromString("1.2.3.0/24")
+		a := FirstFromRange(RangeFromPrefix(p))
+		assert.IsType(t, ipv4.Address{}, a)
+		assert.Equal(t, "1.2.3.0", a.String())
+	})
+	t.Run("v6", func(t *testing.T) {
+		p, _ := PrefixFromString("2001:db8::/64")
+		a := FirstFromRange(RangeFromPrefix(p))
+		assert.IsType(t, ipv6.Address{}, a)
+		assert.Equal(t, "2001:db8::", a.String())
+	})
+}
+
+func TestLastFromRange(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
+		a := LastFromRange(nil)
+		assert.Nil(t, a)
+	})
+	t.Run("v4", func(t *testing.T) {
+		p, _ := PrefixFromString("1.2.3.0/24")
+		a := LastFromRange(RangeFromPrefix(p))
+		assert.IsType(t, ipv4.Address{}, a)
+		assert.Equal(t, "1.2.3.255", a.String())
+	})
+	t.Run("v6", func(t *testing.T) {
+		p, _ := PrefixFromString("2001:db8::/64")
+		a := LastFromRange(RangeFromPrefix(p))
+		assert.IsType(t, ipv6.Address{}, a)
+		assert.Equal(t, "2001:db8::ffff:ffff:ffff:ffff", a.String())
+	})
+}
