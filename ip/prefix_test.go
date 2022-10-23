@@ -101,3 +101,22 @@ func TestPrefixFromNetIP(t *testing.T) {
 		assert.Equal(t, "2001:db8::1/64", p.String())
 	})
 }
+
+func TestAddressFromPrefix(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
+		a := AddressFromPrefix(nil)
+		assert.Nil(t, a)
+	})
+	t.Run("v4", func(t *testing.T) {
+		p, _ := PrefixFromString("1.2.3.4/24")
+		a := AddressFromPrefix(p)
+		assert.IsType(t, ipv4.Address{}, a)
+		assert.Equal(t, "1.2.3.4", a.String())
+	})
+	t.Run("v6", func(t *testing.T) {
+		p, _ := PrefixFromString("2001:db8::1/64")
+		a := AddressFromPrefix(p)
+		assert.IsType(t, ipv6.Address{}, a)
+		assert.Equal(t, "2001:db8::1", a.String())
+	})
+}

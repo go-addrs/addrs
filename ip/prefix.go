@@ -57,3 +57,16 @@ func PrefixFromNetIPNet(ipn *net.IPNet) (Prefix, error) {
 		return nil, fmt.Errorf("invalid net.IPNet with IP of size %d", len(ipn.IP))
 	}
 }
+
+// AddressFromPrefix returns the address part of the given prefix. If the
+// prefix passed in is not an ipv4.Prefix or ipv6.Prefix, then nil is returned.
+func AddressFromPrefix(prefix Prefix) Address {
+	switch prefix := prefix.(type) {
+	case ipv4.Prefix:
+		return prefix.Address()
+	case ipv6.Prefix:
+		return prefix.Address()
+	default:
+		return nil
+	}
+}
