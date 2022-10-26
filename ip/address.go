@@ -38,3 +38,17 @@ func AddressFromNetIP(ip net.IP) (Address, error) {
 		return nil, fmt.Errorf("invalid net.IP of size %d", len(ip))
 	}
 }
+
+// PrefixFromAddress returns the host route prefix (i.e. /32) from the given
+// route. If the address passed in is not an ipv4.Address or ipv6.Address, then
+// nil is returned.
+func PrefixFromAddress(address Address) Prefix {
+	switch address := address.(type) {
+	case ipv4.Address:
+		return address.Prefix()
+	case ipv6.Address:
+		return address.Prefix()
+	default:
+		return nil
+	}
+}

@@ -101,3 +101,60 @@ func TestPrefixFromNetIP(t *testing.T) {
 		assert.Equal(t, "2001:db8::1/64", p.String())
 	})
 }
+
+func TestAddressFromPrefix(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
+		a := AddressFromPrefix(nil)
+		assert.Nil(t, a)
+	})
+	t.Run("v4", func(t *testing.T) {
+		p, _ := PrefixFromString("1.2.3.4/24")
+		a := AddressFromPrefix(p)
+		assert.IsType(t, ipv4.Address{}, a)
+		assert.Equal(t, "1.2.3.4", a.String())
+	})
+	t.Run("v6", func(t *testing.T) {
+		p, _ := PrefixFromString("2001:db8::1/64")
+		a := AddressFromPrefix(p)
+		assert.IsType(t, ipv6.Address{}, a)
+		assert.Equal(t, "2001:db8::1", a.String())
+	})
+}
+
+func TestMaskFromPrefix(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
+		m := MaskFromPrefix(nil)
+		assert.Nil(t, m)
+	})
+	t.Run("v4", func(t *testing.T) {
+		p, _ := PrefixFromString("1.2.3.4/24")
+		m := MaskFromPrefix(p)
+		assert.IsType(t, ipv4.Mask{}, m)
+		assert.Equal(t, "255.255.255.0", m.String())
+	})
+	t.Run("v6", func(t *testing.T) {
+		p, _ := PrefixFromString("2001:db8::1/64")
+		m := MaskFromPrefix(p)
+		assert.IsType(t, ipv6.Mask{}, m)
+		assert.Equal(t, "ffff:ffff:ffff:ffff::", m.String())
+	})
+}
+
+func TestRangeFromPrefix(t *testing.T) {
+	t.Run("nil", func(t *testing.T) {
+		r := RangeFromPrefix(nil)
+		assert.Nil(t, r)
+	})
+	t.Run("v4", func(t *testing.T) {
+		p, _ := PrefixFromString("1.2.3.4/24")
+		r := RangeFromPrefix(p)
+		assert.IsType(t, ipv4.Range{}, r)
+		assert.Equal(t, "[1.2.3.0,1.2.3.255]", r.String())
+	})
+	t.Run("v6", func(t *testing.T) {
+		p, _ := PrefixFromString("2001:db8::1/64")
+		r := RangeFromPrefix(p)
+		assert.IsType(t, ipv6.Range{}, r)
+		assert.Equal(t, "[2001:db8::,2001:db8::ffff:ffff:ffff:ffff]", r.String())
+	})
+}
