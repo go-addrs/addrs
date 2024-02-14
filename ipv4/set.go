@@ -234,8 +234,10 @@ func (me Set) WalkAddresses(callback func(Address) bool) bool {
 	})
 }
 
-// WalkRanges calls `callback` for each address stored in lexographical
-// order. It stops iteration immediately if callback returns false.
+// WalkRanges calls `callback` for each IP range in lexographical order. It
+// stops iteration immediately if callback returns false. It always uses the
+// largest ranges possible so if two ranges are adjacent and can be combined,
+// they will be.
 //
 // It returns false if iteration was stopped due to a callback return false or
 // true if it iterated all items.
