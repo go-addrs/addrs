@@ -1,6 +1,7 @@
 package ipv4
 
 import (
+	"fmt"
 	"math/bits"
 )
 
@@ -295,4 +296,36 @@ func (me *setNode) height() int {
 
 func (me *setNode) Walk(callback func(Prefix, interface{}) bool) bool {
 	return (*trieNode)(me).Walk(callback)
+}
+
+func (me *setNode) FindSmallestContainingPrefix(length uint32) (Prefix, error) {
+	if me == nil || length < me.Prefix.length {
+		return Prefix{}, fmt.Errorf("cannot find containing prefix")
+	}
+	if length == me.Prefix.length {
+		if me.isActive {
+			return me.Prefix, nil
+		}
+	}
+
+	l, r := (*setNode)(me.children[0]), (*setNode)(me.children[1])
+	lPrefix, lErr := l.FindSmallestContainingPrefix(length)
+	rPrefix, rErr := r.FindSmallestContainingPrefix(length)
+	switch {
+	case lErr == nil && rErr == nil:
+		if lPrefix.length < rPrefix.length {
+			return rPrefix, nil
+		} else {
+			return lPrefix, nil
+		}
+	case lErr == nil:
+		return lPrefix, nil
+	case rErr == nil:
+		return rPrefix, nil
+	default:
+		if !me.isActive {
+			return Prefix{}, fmt.Errorf("cannot find containing prefix")
+		}
+		return me.Prefix, nil
+	}
 }

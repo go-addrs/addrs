@@ -953,3 +953,163 @@ func TestSetNumPrefixesStairs(t *testing.T) {
 		})
 	}
 }
+
+func TestFindPrefixWithLength(t *testing.T) {
+	tests := []struct {
+		description string
+		space       []SetI
+		reserved    []SetI
+		length      uint32
+		expected    Prefix
+		err         bool
+		change      int
+	}{
+		{
+			description: "empty",
+			space: []SetI{
+				_p("10.0.0.0/8"),
+			},
+			length: 24,
+			change: 1,
+		}, {
+			description: "find adjacent",
+			space: []SetI{
+				_p("10.0.0.0/8"),
+			},
+			reserved: []SetI{
+				_p("10.224.123.0/24"),
+			},
+			length:   24,
+			expected: _p("10.224.122.0/24"),
+		}, {
+			description: "many fewer prefixes",
+			space: []SetI{
+				_p("10.0.0.0/16"),
+			},
+			reserved: []SetI{
+				_p("10.0.1.0/24"),
+				_p("10.0.2.0/23"),
+				_p("10.0.4.0/22"),
+				_p("10.0.8.0/21"),
+				_p("10.0.16.0/20"),
+				_p("10.0.32.0/19"),
+				_p("10.0.64.0/18"),
+				_p("10.0.128.0/17"),
+			},
+			length: 24,
+			change: -7,
+		}, {
+			description: "toobig",
+			space: []SetI{
+				_p("10.0.0.0/8"),
+			},
+			reserved: []SetI{
+				_p("10.128.0.0/9"),
+				_p("10.64.0.0/10"),
+				_p("10.32.0.0/11"),
+				_p("10.16.0.0/12"),
+			},
+			length: 11,
+			err:    true,
+		}, {
+			description: "full",
+			space: []SetI{
+				_p("10.0.0.0/8"),
+			},
+			length: 7,
+			err:    true,
+		}, {
+			description: "random disjoint example",
+			space: []SetI{
+				_p("10.0.0.0/22"),
+				_p("192.168.0.0/21"),
+				_p("172.16.0.0/20"),
+			},
+			reserved: []SetI{
+				_p("192.168.0.0/21"),
+				_p("172.16.0.0/21"),
+				_p("172.16.8.0/22"),
+				_p("10.0.0.0/22"),
+				_p("172.16.12.0/24"),
+				_p("172.16.14.0/24"),
+				_p("172.16.15.0/24"),
+			},
+			length:   24,
+			expected: _p("172.16.13.0/24"),
+			change:   1,
+		}, {
+			description: "too fragmented",
+			space: []SetI{
+				_p("10.0.0.0/24"),
+			},
+			reserved: []SetI{
+				_p("10.0.0.0/27"),
+				_p("10.0.0.64/27"),
+				_p("10.0.0.128/27"),
+				_p("10.0.0.192/27"),
+			},
+			length: 25,
+			err:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			// This is the full usable IP space
+			space := Set{}.Build(func(s_ Set_) bool {
+				for _, p := range tt.space {
+					s_.Insert(p)
+				}
+				return true
+			})
+			// This is the part of the usable space which has already been allocated
+			reserved := Set{}.Build(func(s_ Set_) bool {
+				for _, p := range tt.reserved {
+					s_.Insert(p)
+				}
+				return true
+			})
+
+			// Call the method under test to find the best allocation to avoid fragmentation.
+			prefix, err := space.FindPrefixWithLength(reserved, tt.length)
+
+			assert.Equal(t, tt.err, err != nil)
+			if err != nil {
+				return
+			}
+
+			assert.Equal(t, int64(0), reserved.Intersection(prefix).NumAddresses())
+
+			// Not all test cases care which prefix is returned but in some
+			// cases, there is only one right answer and so we might check it.
+			// This isn't strictly necessary but was handy with the first few.
+			if tt.expected.length != 0 {
+				assert.Equal(t, tt.expected.String(), prefix.String())
+			}
+
+			// What really matters is that fragmentation in the IP space is
+			// always avoided as much as possible. The `change` field in each
+			// test indicates what should happen to IP space fragmentation.
+			// This test framework measures fragmentation as the change in the
+			// minimal number of prefixes required to span the reserved set.
+			before := countPrefixes(reserved)
+			after := countPrefixes(reserved.Build(func(s_ Set_) bool {
+				s_.Insert(prefix)
+				return true
+			}))
+
+			diff := after - before
+			assert.LessOrEqual(t, diff, 1)
+			assert.LessOrEqual(t, diff, tt.change)
+		})
+	}
+}
+
+func countPrefixes(s Set) int {
+	var numPrefixes int
+	s.WalkPrefixes(func(_ Prefix) bool {
+		numPrefixes += 1
+		return true
+	})
+	return numPrefixes
+}
