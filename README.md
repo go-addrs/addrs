@@ -1,3 +1,5 @@
+[![Go Reference](https://pkg.go.dev/badge/gopkg.in/addrs.v1.svg)](https://pkg.go.dev/gopkg.in/addrs.v1)
+
 # Overview
 
 `addrs` provides IP address related types and data structures for the Go
