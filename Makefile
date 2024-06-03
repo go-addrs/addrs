@@ -1,4 +1,4 @@
-all: test vet staticcheck fmt
+all: test vet fmt
 
 test:
 	go test -v ./...
@@ -7,10 +7,6 @@ test:
 vet:
 	go vet ./...
 .PHONY: vet
-
-staticcheck:
-	staticcheck ./...
-.PHONY: staticcheck
 
 fmt:
 	go fmt ./...

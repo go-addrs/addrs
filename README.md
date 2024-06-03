@@ -1,4 +1,5 @@
 [![Go Reference](https://pkg.go.dev/badge/gopkg.in/addrs.v1.svg)](https://pkg.go.dev/gopkg.in/addrs.v1)
+![Checks](https://github.com/go-addrs/addrs/actions/workflows/go.yml/badge.svg)
 
 # Overview
 
