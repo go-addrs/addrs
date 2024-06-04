@@ -72,6 +72,11 @@ func (me Set_) Remove(other SetI) {
 	})
 }
 
+// IsEmpty returns whether the number of IP addresses is equal to zero
+func (me Set_) IsEmpty() bool {
+	return me.NumAddresses() == 0
+}
+
 // NumAddresses returns the number of IP addresses
 func (me Set_) NumAddresses() int64 {
 	if me.s == nil {
@@ -184,6 +189,11 @@ func (me Set) Build(builder func(Set_) bool) Set {
 // Set implements SetI
 func (me Set) Set() Set {
 	return me
+}
+
+// IsEmpty returns whether the number of IP addresses is equal to zero
+func (me Set) IsEmpty() bool {
+	return me.NumAddresses() == 0
 }
 
 // NumAddresses returns the number of IP addresses
