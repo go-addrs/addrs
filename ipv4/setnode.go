@@ -298,7 +298,31 @@ func (me *setNode) Walk(callback func(Prefix, interface{}) bool) bool {
 	return (*trieNode)(me).Walk(callback)
 }
 
-func (me *setNode) FindSmallestContainingPrefix(length uint32) (Prefix, error) {
+func best(left, right func() (Prefix, error), length uint32) (Prefix, error) {
+	lPrefix, lErr := left()
+	if lErr == nil {
+		if lPrefix.length == length {
+			return lPrefix, nil
+		}
+		rPrefix, rErr := right()
+		if rErr == nil {
+			if lPrefix.length < rPrefix.length {
+				return rPrefix, nil
+			} else {
+				return lPrefix, nil
+			}
+		}
+		return lPrefix, nil
+	}
+
+	rPrefix, rErr := right()
+	if rErr == nil {
+		return rPrefix, nil
+	}
+	return Prefix{}, fmt.Errorf("cannot find containing prefix")
+}
+
+func (me *setNode) findSmallestContainingPrefix(length uint32) (Prefix, error) {
 	if me == nil || length < me.Prefix.length {
 		return Prefix{}, fmt.Errorf("cannot find containing prefix")
 	}
@@ -309,23 +333,74 @@ func (me *setNode) FindSmallestContainingPrefix(length uint32) (Prefix, error) {
 	}
 
 	l, r := (*setNode)(me.children[0]), (*setNode)(me.children[1])
-	lPrefix, lErr := l.FindSmallestContainingPrefix(length)
-	rPrefix, rErr := r.FindSmallestContainingPrefix(length)
-	switch {
-	case lErr == nil && rErr == nil:
-		if lPrefix.length < rPrefix.length {
-			return rPrefix, nil
-		} else {
-			return lPrefix, nil
-		}
-	case lErr == nil:
-		return lPrefix, nil
-	case rErr == nil:
-		return rPrefix, nil
-	default:
-		if !me.isActive {
+	bestPrefix, err := best(
+		func() (Prefix, error) { return l.findSmallestContainingPrefix(length) },
+		func() (Prefix, error) { return r.findSmallestContainingPrefix(length) },
+		length,
+	)
+	if err == nil {
+		return bestPrefix, nil
+	}
+	if !me.isActive {
+		return Prefix{}, fmt.Errorf("cannot find containing prefix")
+	}
+	return me.Prefix, nil
+}
+
+func (me *setNode) FindSmallestContainingPrefix(reserved *setNode, length uint32) (Prefix, error) {
+	if me == nil || length < me.Prefix.length {
+		return Prefix{}, fmt.Errorf("cannot find containing prefix")
+	}
+	if reserved == nil {
+		return me.findSmallestContainingPrefix(length)
+	}
+
+	result, _, _, child := compare(me.Prefix, reserved.Prefix)
+	switch result {
+	case compareIsContained:
+		if reserved.isActive {
 			return Prefix{}, fmt.Errorf("cannot find containing prefix")
 		}
-		return me.Prefix, nil
+		return me.FindSmallestContainingPrefix((*setNode)(reserved.children[child]), length)
+	case compareDisjoint:
+		return me.findSmallestContainingPrefix(length)
 	}
+
+	if !me.isActive {
+		return best(
+			func() (Prefix, error) { return me.Left().FindSmallestContainingPrefix(reserved, length) },
+			func() (Prefix, error) { return me.Right().FindSmallestContainingPrefix(reserved, length) },
+			length,
+		)
+	}
+
+	// Assumes `me` is active as checked above
+	halves := func() (a, b *setNode) {
+		aPrefix, bPrefix := me.Prefix.Halves()
+		return setNodeFromPrefix(aPrefix), setNodeFromPrefix(bPrefix)
+	}
+
+	switch result {
+	case compareSame:
+		if reserved.isActive {
+			return Prefix{}, fmt.Errorf("cannot find containing prefix")
+		}
+		left, right := halves()
+		return best(
+			func() (Prefix, error) { return left.FindSmallestContainingPrefix(reserved.Left(), length) },
+			func() (Prefix, error) { return right.FindSmallestContainingPrefix(reserved.Right(), length) },
+			length,
+		)
+
+	case compareContains:
+		left, right := halves()
+		halves := [2]*setNode{left, right}
+		whole, partial := halves[(child+1)%2], halves[child]
+		return best(
+			func() (Prefix, error) { return whole.findSmallestContainingPrefix(length) },
+			func() (Prefix, error) { return partial.FindSmallestContainingPrefix(reserved, length) },
+			length,
+		)
+	}
+	panic("unreachable")
 }

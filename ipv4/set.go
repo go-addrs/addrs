@@ -346,8 +346,7 @@ func (me Set) isValid() bool {
 // set. The returned Prefix is optimally placed to avoid any further IP space
 // fragmentation. An error is returned if there is not enough space to allocate
 func (me Set) FindPrefixWithLength(reserved SetI, length uint32) (Prefix, error) {
-	diff := me.Difference(reserved)
-	prefix, err := diff.trie.FindSmallestContainingPrefix(length)
+	prefix, err := me.trie.FindSmallestContainingPrefix(reserved.Set().trie, length)
 	if err != nil {
 		return Prefix{}, fmt.Errorf("no room for prefix of given length")
 	}
