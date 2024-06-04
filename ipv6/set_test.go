@@ -215,8 +215,14 @@ func TestSetRemoveNil(t *testing.T) {
 }
 
 func TestFixedSetContainsPrefix(t *testing.T) {
-	s := NewSet_()
-	s.Insert(_p("2001::/64"))
+	s := Set{}.Build(func(s_ Set_) bool {
+		s_.Insert(_p("2001::/64"))
+		return true
+	})
+	s = s.Build(func(s_ Set_) bool {
+		s_.Insert(_p("2001:ffff::/64"))
+		return false
+	})
 	assert.True(t, s.Set().Contains(_p("2001::/112")))
 	assert.True(t, s.Set().Contains(_p("2001::1234:0/115")))
 	assert.True(t, s.Set().Contains(_p("2001:0:0:0:8000:0:0:0/65")))
