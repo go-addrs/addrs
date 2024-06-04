@@ -11,7 +11,7 @@ import (
 func _a(str string) Address {
 	addr, err := AddressFromString(str)
 	if err != nil {
-		panic("only use this is happy cases")
+		panic("only use this in happy cases")
 	}
 	return addr
 }

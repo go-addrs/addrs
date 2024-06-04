@@ -12,7 +12,7 @@ import (
 func _p(cidr string) Prefix {
 	prefix, err := PrefixFromString(cidr)
 	if err != nil {
-		panic("only use this is happy cases")
+		panic("only use this in happy cases")
 	}
 	return prefix
 }
@@ -20,7 +20,7 @@ func _p(cidr string) Prefix {
 func unsafePrefixFromUint32(ip uint32, length int) Prefix {
 	mask, err := MaskFromLength(length)
 	if err != nil {
-		panic("only use this is happy cases")
+		panic("only use this in happy cases")
 	}
 	return PrefixFromAddressMask(Address{ip}, mask)
 }
@@ -28,7 +28,7 @@ func unsafePrefixFromUint32(ip uint32, length int) Prefix {
 func unsafeParseNet(prefix string) *net.IPNet {
 	ipNet, err := parseNet(prefix)
 	if err != nil {
-		panic("only use this is happy cases")
+		panic("only use this in happy cases")
 	}
 	return ipNet
 }

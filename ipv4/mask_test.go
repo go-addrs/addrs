@@ -44,7 +44,7 @@ func TestMaskLength(t *testing.T) {
 func _m(length int) Mask {
 	m, err := MaskFromLength(length)
 	if err != nil {
-		panic("only use this is happy cases")
+		panic("only use this in happy cases")
 	}
 	return m
 }
