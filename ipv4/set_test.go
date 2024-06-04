@@ -1,6 +1,7 @@
 package ipv4
 
 import (
+	"math"
 	"math/rand"
 	"strconv"
 	"sync"
@@ -1103,6 +1104,53 @@ func TestFindPrefixWithLength(t *testing.T) {
 			assert.LessOrEqual(t, diff, tt.change)
 		})
 	}
+
+	t.Run("randomized", func(t *testing.T) {
+		// Start with a space and an empty reserved set.
+		// This test will attempt to fragment the space by pulling out
+		space := _p("10.128.0.0/12").Set()
+		available := space.NumAddresses()
+
+		reserved := NewSet_()
+
+		rand.Seed(29)
+		for available > 0 {
+			// This is the most we can pull out. Assuming we avoid
+			// fragmentation, it should be the largest power of two that is
+			// less than or equal to the number of available addresses.
+			maxExponent := log2(available)
+
+			// Finding the maximum prefix here, proves we are avoiding fragmentation
+			maxPrefix, err := space.FindPrefixWithLength(reserved, 32-maxExponent)
+			assert.Nil(t, err)
+			assert.Equal(t, pow2(maxExponent), maxPrefix.NumAddresses())
+			assert.Equal(t, int64(0), reserved.Intersection(maxPrefix).NumAddresses())
+
+			// Pull out a random sized prefix up to the maximum size to attempt to further fragment the space.
+			randomSize := (rand.Uint32()%maxExponent + 1)
+			if randomSize > 12 {
+				randomSize = 12
+			}
+
+			randomSizePrefix, err := space.FindPrefixWithLength(reserved, 32-randomSize)
+			assert.Nil(t, err)
+			assert.Equal(t, pow2(randomSize), randomSizePrefix.NumAddresses())
+			assert.Equal(t, int64(0), reserved.Intersection(randomSizePrefix).NumAddresses())
+
+			// Reserve only the random sized one
+			reserved.Insert(randomSizePrefix)
+			available -= randomSizePrefix.NumAddresses()
+			assert.Equal(t, available, space.NumAddresses()-reserved.NumAddresses())
+		}
+	})
+}
+
+func pow2(x uint32) int64 {
+	return int64(math.Pow(2, float64(x)))
+}
+
+func log2(available_addresses int64) uint32 {
+	return uint32(math.Log2(float64(available_addresses)))
 }
 
 func countPrefixes(s Set) int {
