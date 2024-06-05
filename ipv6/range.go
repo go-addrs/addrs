@@ -47,6 +47,12 @@ func (me Range) Contains(other SetI) bool {
 	return me.Set().Contains(other)
 }
 
+// NumPrefixes returns the number of prefixes of the given prefix length in
+// this range.
+func (me Range) NumPrefixes(length uint32) (count uint64, err error) {
+	return me.Set().NumPrefixes(length)
+}
+
 // Minus returns a slice of ranges resulting from subtracting the given range
 // The slice will contain from 0 to 2 new ranges depending on how they overlap
 func (me Range) Minus(other Range) []Range {
