@@ -2,6 +2,7 @@ package ipv4
 
 import (
 	"fmt"
+	"math"
 	"net"
 )
 
@@ -173,7 +174,22 @@ func (me Prefix) Contains(other SetI) bool {
 // NumAddresses returns the number of addresses in the prefix, including network and
 // broadcast addresses. It ignores any bits set in the host part of the address.
 func (me Prefix) NumAddresses() int64 {
-	return 1 << (addressSize - me.Length())
+	count, _ := me.NumPrefixes(32)
+	return int64(count)
+}
+
+// NumPrefixes returns the number of prefixes of the given length contained in
+// this prefix.
+func (me Prefix) NumPrefixes(length uint32) (count uint64, err error) {
+	switch {
+	case 32 < length:
+		err = fmt.Errorf("length is greater than 32")
+	case length < me.length:
+		count = 0
+	default:
+		count = uint64(math.Pow(2, float64(length-me.length)))
+	}
+	return
 }
 
 // String returns the string representation of this prefix in dotted-quad cidr

@@ -534,3 +534,46 @@ func TestPrefixAsMapKey(t *testing.T) {
 
 	assert.True(t, m[_p("203.0.113.1/32")])
 }
+
+func TestPrefixNumPrefixes(t *testing.T) {
+	tests := []struct {
+		description string
+		prefix      Prefix
+		length      uint32
+		count       uint64
+		error       bool
+	}{
+		{
+			description: "bad length",
+			length:      33,
+			error:       true,
+		}, {
+			description: "same size",
+			prefix:      _p("203.0.113.0/24"),
+			length:      24,
+			count:       1,
+		}, {
+			description: "too big",
+			prefix:      _p("203.0.113.0/24"),
+			length:      23,
+		}, {
+			description: "28",
+			prefix:      _p("203.0.113.0/24"),
+			length:      30,
+			count:       0x40,
+		}, {
+			description: "26",
+			prefix:      _p("203.0.113.0/24"),
+			length:      26,
+			count:       4,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			count, err := tt.prefix.NumPrefixes(tt.length)
+			assert.Equal(t, tt.error, err != nil)
+			assert.Equal(t, tt.count, count)
+		})
+	}
+}
