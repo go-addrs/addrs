@@ -1,6 +1,10 @@
 package ipv6
 
-import "strings"
+import (
+	"fmt"
+	"math"
+	"strings"
+)
 
 // Set_ is the mutable version of a Set, allowing insertion and deletion of
 // elements.
@@ -219,6 +223,27 @@ func (me Set) String() string {
 	})
 	builder.WriteString("]")
 	return builder.String()
+}
+
+// NumPrefixes returns the number of prefixes of the given prefix length in
+// this set.
+func (me Set) NumPrefixes(length uint32) (count uint64, err error) {
+	// NOTE This could be done more efficiently with its own recursive
+	// implementation that stops descending when the prefixes are too small.
+	me.WalkPrefixes(func(p Prefix) bool {
+		c, e := p.NumPrefixes(length)
+		if e != nil {
+			err = e
+			return false
+		}
+		if math.MaxUint64-c < count {
+			err = fmt.Errorf("overflow")
+			return false
+		}
+		count += c
+		return true
+	})
+	return
 }
 
 // WalkRanges calls `callback` for each IP range in lexographical order. It
