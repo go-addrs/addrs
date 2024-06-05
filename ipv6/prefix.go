@@ -2,6 +2,7 @@ package ipv6
 
 import (
 	"fmt"
+	"math"
 	"net"
 )
 
@@ -114,6 +115,22 @@ func (me Prefix) lessThan(other Prefix) bool {
 // Length returns the number of leading 1s in the mask.
 func (me Prefix) Length() int {
 	return int(me.length)
+}
+
+// NumPrefixes returns the number of prefixes of the given length contained in
+// this prefix.
+func (me Prefix) NumPrefixes(length uint32) (count uint64, err error) {
+	switch {
+	case 128 < length:
+		err = fmt.Errorf("length is greater than 128")
+	case length < me.length:
+		count = 0
+	case length-me.length > 63:
+		err = fmt.Errorf("overflow")
+	default:
+		count = uint64(math.Pow(2, float64(length-me.length)))
+	}
+	return
 }
 
 // Mask returns a new Address with 1s in the first `length` bits and then 0s
