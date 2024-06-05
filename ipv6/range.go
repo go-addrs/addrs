@@ -42,6 +42,11 @@ func (me Range) String() string {
 	return fmt.Sprintf("[%s,%s]", me.first, me.last)
 }
 
+// Contains returns true iff this range entirely contains the given other range
+func (me Range) Contains(other SetI) bool {
+	return me.Set().Contains(other)
+}
+
 // Minus returns a slice of ranges resulting from subtracting the given range
 // The slice will contain from 0 to 2 new ranges depending on how they overlap
 func (me Range) Minus(other Range) []Range {

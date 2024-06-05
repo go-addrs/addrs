@@ -9,7 +9,7 @@ import (
 func _r(first, last Address) Range {
 	r, empty := RangeFromAddresses(first, last)
 	if empty {
-		panic("only use this is non-empty cases")
+		panic("only use this in non-empty cases")
 	}
 	return r
 }

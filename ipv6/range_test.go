@@ -9,7 +9,7 @@ import (
 func _r(first, last Address) Range {
 	r, empty := RangeFromAddresses(first, last)
 	if empty {
-		panic("only use this is non-empty cases")
+		panic("only use this in non-empty cases")
 	}
 	return r
 }
@@ -87,6 +87,31 @@ func TestRangeFirstLast(t *testing.T) {
 		t.Run(tt.description, func(t *testing.T) {
 			assert.Equal(t, tt.first, tt.r.First())
 			assert.Equal(t, tt.last, tt.r.Last())
+		})
+	}
+}
+
+func TestRangeContains(t *testing.T) {
+	tests := []struct {
+		description string
+		a, b        Range
+	}{
+		{
+			description: "larger",
+			a:           _p("::ffff:10.224.24.1/118").Range(),
+			b:           _p("::ffff:10.224.26.1/120").Range(),
+		},
+		{
+			description: "unaligned",
+			a:           _r(Address{ui: uint128{low: 0xffff12345678}}, Address{ui: uint128{low: 0xffff23456789}}),
+			b:           _p("::ffff:20.224.26.1/120").Range(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			assert.True(t, tt.a.Contains(tt.b))
+			// If they're equal then containership goes the other way too.
+			assert.Equal(t, tt.a == tt.b, tt.b.Contains(tt.a))
 		})
 	}
 }
