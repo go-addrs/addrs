@@ -244,6 +244,19 @@ func (me Set) WalkAddresses(callback func(Address) bool) bool {
 	})
 }
 
+// NumPrefixes returns the number of prefixes of the given prefix length in
+// this set.
+func (me Set) NumPrefixes(length uint32) (count uint64, err error) {
+	// NOTE This could be done more efficiently with its own recursive
+	// implementation that stops descending when the prefixes are too small.
+	me.WalkPrefixes(func(p Prefix) bool {
+		c, _ := p.NumPrefixes(length)
+		count += c
+		return true
+	})
+	return
+}
+
 // WalkRanges calls `callback` for each IP range in lexographical order. It
 // stops iteration immediately if callback returns false. It always uses the
 // largest ranges possible so if two ranges are adjacent and can be combined,
