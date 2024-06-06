@@ -1,6 +1,7 @@
 package ipv6
 
 import (
+	"strconv"
 	"sync"
 	"testing"
 
@@ -760,4 +761,113 @@ func TestOldEqualAllIPv6(t *testing.T) {
 	assert.True(t, b.Equal(c))
 	assert.True(t, c.Equal(a))
 	assert.True(t, c.Equal(b))
+}
+
+func TestSetNumPrefixes(t *testing.T) {
+	tests := []struct {
+		description string
+		prefixes    []SetI
+		length      uint32
+		count       uint64
+		error       bool
+	}{
+		{
+			description: "empty set",
+			prefixes:    []SetI{},
+			length:      32,
+			count:       0,
+		}, {
+			description: "single prefix",
+			prefixes:    []SetI{_p("2001:db8::/56")},
+			length:      64,
+			count:       256,
+		}, {
+			description: "overflow",
+			prefixes:    []SetI{_p("2001:db8::/56")},
+			length:      128,
+			error:       true,
+		}, {
+			description: "overflow with multiple valid prefixes",
+			prefixes: []SetI{
+				_p("2001:db8:0:0::/65"),
+				_p("2001:db8:0:1::/65"),
+			},
+			length: 128,
+			error:  true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			s := Set{}.Build(func(s Set_) bool {
+				for _, prefix := range tt.prefixes {
+					s.Insert(prefix)
+				}
+				return true
+			})
+
+			count, err := s.NumPrefixes(tt.length)
+			assert.Equal(t, tt.error, err != nil)
+			if !tt.error {
+				assert.Equal(t, tt.count, count)
+			}
+		})
+	}
+}
+
+func TestSetNumPrefixesStairs(t *testing.T) {
+	tests := []struct {
+		description string
+		length      uint32
+		count       uint64
+	}{
+		{length: 48, count: 0x00001},
+		{length: 49, count: 0x00003},
+		{length: 50, count: 0x00007},
+		{length: 51, count: 0x0000f},
+		{length: 52, count: 0x0001f},
+		{length: 53, count: 0x0003f},
+		{length: 54, count: 0x0007f},
+		{length: 55, count: 0x000ff},
+		{length: 56, count: 0x001ff},
+		{length: 57, count: 0x003ff},
+		{length: 58, count: 0x007ff},
+		{length: 59, count: 0x00fff},
+		{length: 60, count: 0x01fff},
+		{length: 61, count: 0x03fff},
+		{length: 62, count: 0x07fff},
+		{length: 63, count: 0x0ffff},
+		{length: 64, count: 0x1ffff},
+		{length: 65, count: 0x3fffe},
+		{length: 66, count: 0x7fffc},
+	}
+
+	s := Set{}.Build(func(s Set_) bool {
+		s.Insert(_p("2001:db8:0:0000::/48"))
+		s.Insert(_p("2001:db8:1:0000::/49"))
+		s.Insert(_p("2001:db8:1:8000::/50"))
+		s.Insert(_p("2001:db8:1:c000::/51"))
+		s.Insert(_p("2001:db8:1:e000::/52"))
+		s.Insert(_p("2001:db8:1:f000::/53"))
+		s.Insert(_p("2001:db8:1:f800::/54"))
+		s.Insert(_p("2001:db8:1:fc00::/55"))
+		s.Insert(_p("2001:db8:1:fe00::/56"))
+		s.Insert(_p("2001:db8:1:ff00::/57"))
+		s.Insert(_p("2001:db8:1:ff80::/58"))
+		s.Insert(_p("2001:db8:1:ffc0::/59"))
+		s.Insert(_p("2001:db8:1:ffe0::/60"))
+		s.Insert(_p("2001:db8:1:fff0::/61"))
+		s.Insert(_p("2001:db8:1:fff8::/62"))
+		s.Insert(_p("2001:db8:1:fffc::/63"))
+		s.Insert(_p("2001:db8:1:fffe::/64"))
+		return true
+	})
+
+	for _, tt := range tests {
+		t.Run(strconv.FormatUint(uint64(tt.length), 10), func(t *testing.T) {
+			count, err := s.NumPrefixes(tt.length)
+			assert.Nil(t, err)
+			assert.Equal(t, tt.count, count)
+		})
+	}
 }

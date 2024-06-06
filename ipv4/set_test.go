@@ -2,6 +2,7 @@ package ipv4
 
 import (
 	"math/rand"
+	"strconv"
 	"sync"
 	"testing"
 
@@ -859,4 +860,96 @@ func TestOldEqualAllIPv4(t *testing.T) {
 	assert.True(t, b.Equal(c))
 	assert.True(t, c.Equal(a))
 	assert.True(t, c.Equal(b))
+}
+
+func TestSetNumPrefixes(t *testing.T) {
+	tests := []struct {
+		description string
+		prefixes    []SetI
+		length      uint32
+		count       uint64
+		error       bool
+	}{
+		{
+			description: "empty set",
+			prefixes:    []SetI{},
+			length:      32,
+			count:       0,
+		}, {
+			description: "single prefix",
+			prefixes:    []SetI{_p("203.0.113.0/8")},
+			length:      16,
+			count:       256,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			s := Set{}.Build(func(s Set_) bool {
+				for _, prefix := range tt.prefixes {
+					s.Insert(prefix)
+				}
+				return true
+			})
+
+			count, err := s.NumPrefixes(tt.length)
+			assert.Equal(t, tt.error, err != nil)
+			if !tt.error {
+				assert.Equal(t, tt.count, count)
+			}
+		})
+	}
+}
+
+func TestSetNumPrefixesStairs(t *testing.T) {
+	tests := []struct {
+		description string
+		length      uint32
+		count       uint64
+	}{
+		{length: 8, count: 0x00001},
+		{length: 9, count: 0x00003},
+		{length: 10, count: 0x00007},
+		{length: 11, count: 0x0000f},
+		{length: 12, count: 0x0001f},
+		{length: 13, count: 0x0003f},
+		{length: 14, count: 0x0007f},
+		{length: 15, count: 0x000ff},
+		{length: 16, count: 0x001ff},
+		{length: 17, count: 0x003ff},
+		{length: 18, count: 0x007ff},
+		{length: 19, count: 0x00fff},
+		{length: 20, count: 0x01fff},
+		{length: 21, count: 0x03fff},
+		{length: 22, count: 0x07fff},
+		{length: 23, count: 0x0fffe},
+		{length: 24, count: 0x1fffc},
+	}
+
+	s := Set{}.Build(func(s Set_) bool {
+		s.Insert(_p("10.0.0.0/8"))
+		s.Insert(_p("11.0.0.0/9"))
+		s.Insert(_p("11.128.0.0/10"))
+		s.Insert(_p("11.192.0.0/11"))
+		s.Insert(_p("11.224.0.0/12"))
+		s.Insert(_p("11.240.0.0/13"))
+		s.Insert(_p("11.248.0.0/14"))
+		s.Insert(_p("11.252.0.0/15"))
+		s.Insert(_p("11.254.0.0/16"))
+		s.Insert(_p("11.255.0.0/17"))
+		s.Insert(_p("11.255.128.0/18"))
+		s.Insert(_p("11.255.192.0/19"))
+		s.Insert(_p("11.255.224.0/20"))
+		s.Insert(_p("11.255.240.0/21"))
+		s.Insert(_p("11.255.248.0/22"))
+		return true
+	})
+
+	for _, tt := range tests {
+		t.Run(strconv.FormatUint(uint64(tt.length), 10), func(t *testing.T) {
+			count, err := s.NumPrefixes(tt.length)
+			assert.Nil(t, err)
+			assert.Equal(t, tt.count, count)
+		})
+	}
 }

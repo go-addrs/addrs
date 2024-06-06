@@ -394,3 +394,33 @@ func TestRangeAsMapKey(t *testing.T) {
 
 	assert.True(t, m[_r(_a("2001::"), _a("2001::1000:0"))])
 }
+
+func TestRangeNumPrefixes(t *testing.T) {
+	tests := []struct {
+		description string
+		r           Range
+		length      uint32
+		count       uint64
+		error       bool
+	}{
+		{
+			description: "simple",
+			r:           _r(_a("2001::"), _a("2002::")),
+			length:      24,
+			count:       256,
+		}, {
+			description: "bonus",
+			r:           _r(_a("2001::"), _a("2001::1:0")),
+			length:      128,
+			count:       0x10001,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			count, err := tt.r.NumPrefixes(tt.length)
+			assert.Equal(t, tt.error, err != nil)
+			assert.Equal(t, tt.count, count)
+		})
+	}
+}

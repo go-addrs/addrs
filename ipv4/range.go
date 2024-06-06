@@ -28,9 +28,16 @@ func RangeFromAddresses(first, last Address) (r Range, empty bool) {
 	}, false
 }
 
+// NumPrefixes returns the number of prefixes of the given prefix length in
+// this range.
+func (me Range) NumPrefixes(length uint32) (count uint64, err error) {
+	return me.Set().NumPrefixes(length)
+}
+
 // NumAddresses returns the number of addresses in the range
 func (me Range) NumAddresses() int64 {
-	return 1 + int64(me.last.ui-me.first.ui)
+	c, _ := me.NumPrefixes(32)
+	return int64(c)
 }
 
 // First returns the first address in the range
