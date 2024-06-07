@@ -874,7 +874,7 @@ func TestSetNumPrefixesStairs(t *testing.T) {
 	}
 }
 
-func TestFindPrefixWithLength(t *testing.T) {
+func TestFindAvailablePrefix(t *testing.T) {
 	tests := []struct {
 		description string
 		space       []SetI
@@ -991,7 +991,7 @@ func TestFindPrefixWithLength(t *testing.T) {
 			})
 
 			// Call the method under test to find the best allocation to avoid fragmentation.
-			prefix, err := space.FindPrefixWithLength(reserved, tt.length)
+			prefix, err := space.FindAvailablePrefix(reserved, tt.length)
 
 			assert.Equal(t, tt.err, err != nil)
 			if err != nil {
@@ -1040,7 +1040,7 @@ func TestFindPrefixWithLength(t *testing.T) {
 			maxExponent := log2(available)
 
 			// Finding the maximum prefix here, proves we are avoiding fragmentation
-			maxPrefix, err := space.FindPrefixWithLength(reserved, 128-maxExponent)
+			maxPrefix, err := space.FindAvailablePrefix(reserved, 128-maxExponent)
 			assert.Nil(t, err)
 			maxPrefixes, _ := maxPrefix.NumPrefixes(128)
 			assert.Equal(t, pow2(maxExponent), maxPrefixes)
@@ -1052,7 +1052,7 @@ func TestFindPrefixWithLength(t *testing.T) {
 				randomSize = 12
 			}
 
-			randomSizePrefix, err := space.FindPrefixWithLength(reserved, 128-randomSize)
+			randomSizePrefix, err := space.FindAvailablePrefix(reserved, 128-randomSize)
 			assert.Nil(t, err)
 			randomSizePrefixes, _ := randomSizePrefix.NumPrefixes(128)
 			assert.Equal(t, pow2(randomSize), randomSizePrefixes)
@@ -1084,7 +1084,7 @@ func TestFindPrefixWithLength(t *testing.T) {
 			maxExponent := log2(available)
 
 			// Finding the maximum prefix here, proves we are avoiding fragmentation
-			maxPrefix, err := space.FindPrefixWithLength(reserved, 64-maxExponent)
+			maxPrefix, err := space.FindAvailablePrefix(reserved, 64-maxExponent)
 			assert.Nil(t, err)
 			maxPrefixes, _ := maxPrefix.NumPrefixes(64)
 			assert.Equal(t, pow2(maxExponent), maxPrefixes)
@@ -1096,7 +1096,7 @@ func TestFindPrefixWithLength(t *testing.T) {
 				randomSize = 12
 			}
 
-			randomSizePrefix, err := space.FindPrefixWithLength(reserved, 64-randomSize)
+			randomSizePrefix, err := space.FindAvailablePrefix(reserved, 64-randomSize)
 			assert.Nil(t, err)
 			randomSizePrefixes, _ := randomSizePrefix.NumPrefixes(64)
 			assert.Equal(t, pow2(randomSize), randomSizePrefixes)

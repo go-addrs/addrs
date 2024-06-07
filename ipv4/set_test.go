@@ -955,7 +955,7 @@ func TestSetNumPrefixesStairs(t *testing.T) {
 	}
 }
 
-func TestFindPrefixWithLength(t *testing.T) {
+func TestFindAvailablePrefix(t *testing.T) {
 	tests := []struct {
 		description string
 		space       []SetI
@@ -1072,7 +1072,7 @@ func TestFindPrefixWithLength(t *testing.T) {
 			})
 
 			// Call the method under test to find the best allocation to avoid fragmentation.
-			prefix, err := space.FindPrefixWithLength(reserved, tt.length)
+			prefix, err := space.FindAvailablePrefix(reserved, tt.length)
 
 			assert.Equal(t, tt.err, err != nil)
 			if err != nil {
@@ -1121,7 +1121,7 @@ func TestFindPrefixWithLength(t *testing.T) {
 			maxExponent := log2(available)
 
 			// Finding the maximum prefix here, proves we are avoiding fragmentation
-			maxPrefix, err := space.FindPrefixWithLength(reserved, 32-maxExponent)
+			maxPrefix, err := space.FindAvailablePrefix(reserved, 32-maxExponent)
 			assert.Nil(t, err)
 			assert.Equal(t, pow2(maxExponent), maxPrefix.NumAddresses())
 			assert.Equal(t, int64(0), reserved.Intersection(maxPrefix).NumAddresses())
@@ -1132,7 +1132,7 @@ func TestFindPrefixWithLength(t *testing.T) {
 				randomSize = 12
 			}
 
-			randomSizePrefix, err := space.FindPrefixWithLength(reserved, 32-randomSize)
+			randomSizePrefix, err := space.FindAvailablePrefix(reserved, 32-randomSize)
 			assert.Nil(t, err)
 			assert.Equal(t, pow2(randomSize), randomSizePrefix.NumAddresses())
 			assert.Equal(t, int64(0), reserved.Intersection(randomSizePrefix).NumAddresses())
