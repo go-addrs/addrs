@@ -328,3 +328,19 @@ func (me Set) Difference(other SetI) Set {
 func (me Set) isValid() bool {
 	return me.trie.isValid()
 }
+
+// FindAvailablePrefix returns a Prefix with a Mask of the given prefix length
+// that is contained by the current set but does not overlap the given reserved
+// set. The returned Prefix is optimally placed to avoid any further IP space
+// fragmentation. An error is returned if there is not enough space to allocate
+func (me Set) FindAvailablePrefix(reserved SetI, length uint32) (Prefix, error) {
+	prefix, err := me.trie.FindSmallestContainingPrefix(reserved.Set().trie, length)
+	if err != nil {
+		return Prefix{}, fmt.Errorf("no room for prefix of given length")
+	}
+
+	return Prefix{
+		addr:   prefix.Network().addr,
+		length: length,
+	}, nil
+}

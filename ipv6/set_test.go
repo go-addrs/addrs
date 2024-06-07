@@ -1,6 +1,8 @@
 package ipv6
 
 import (
+	"math"
+	"math/rand"
 	"strconv"
 	"sync"
 	"testing"
@@ -870,4 +872,259 @@ func TestSetNumPrefixesStairs(t *testing.T) {
 			assert.Equal(t, tt.count, count)
 		})
 	}
+}
+
+func TestFindAvailablePrefix(t *testing.T) {
+	tests := []struct {
+		description string
+		space       []SetI
+		reserved    []SetI
+		length      uint32
+		expected    Prefix
+		err         bool
+		change      int
+	}{
+		{
+			description: "empty",
+			space: []SetI{
+				_p("::ffff:10.0.0.0/104"),
+			},
+			length: 120,
+			change: 1,
+		}, {
+			description: "find adjacent",
+			space: []SetI{
+				_p("::ffff:10.0.0.0/104"),
+			},
+			reserved: []SetI{
+				_p("::ffff:10.224.123.0/120"),
+			},
+			length:   120,
+			expected: _p("::ffff:10.224.122.0/120"),
+		}, {
+			description: "many fewer prefixes",
+			space: []SetI{
+				_p("::ffff:10.0.0.0/112"),
+			},
+			reserved: []SetI{
+				_p("::ffff:10.0.1.0/120"),
+				_p("::ffff:10.0.2.0/119"),
+				_p("::ffff:10.0.4.0/118"),
+				_p("::ffff:10.0.8.0/117"),
+				_p("::ffff:10.0.16.0/116"),
+				_p("::ffff:10.0.32.0/115"),
+				_p("::ffff:10.0.64.0/114"),
+				_p("::ffff:10.0.128.0/113"),
+			},
+			length: 120,
+			change: -7,
+		}, {
+			description: "toobig",
+			space: []SetI{
+				_p("::ffff:10.0.0.0/104"),
+			},
+			reserved: []SetI{
+				_p("::ffff:10.128.0.0/105"),
+				_p("::ffff:10.64.0.0/106"),
+				_p("::ffff:10.32.0.0/107"),
+				_p("::ffff:10.16.0.0/108"),
+			},
+			length: 107,
+			err:    true,
+		}, {
+			description: "full",
+			space: []SetI{
+				_p("::ffff:10.0.0.0/104"),
+			},
+			length: 103,
+			err:    true,
+		}, {
+			description: "random disjoint example",
+			space: []SetI{
+				_p("::ffff:10.0.0.0/118"),
+				_p("::ffff:192.168.0.0/117"),
+				_p("::ffff:172.16.0.0/116"),
+			},
+			reserved: []SetI{
+				_p("::ffff:192.168.0.0/117"),
+				_p("::ffff:172.16.0.0/117"),
+				_p("::ffff:172.16.8.0/118"),
+				_p("::ffff:10.0.0.0/118"),
+				_p("::ffff:172.16.12.0/120"),
+				_p("::ffff:172.16.14.0/120"),
+				_p("::ffff:172.16.15.0/120"),
+			},
+			length:   120,
+			expected: _p("::ffff:172.16.13.0/120"),
+			change:   1,
+		}, {
+			description: "too fragmented",
+			space: []SetI{
+				_p("::ffff:10.0.0.0/120"),
+			},
+			reserved: []SetI{
+				_p("::ffff:10.0.0.0/123"),
+				_p("::ffff:10.0.0.64/123"),
+				_p("::ffff:10.0.0.128/123"),
+				_p("::ffff:10.0.0.192/123"),
+			},
+			length: 121,
+			err:    true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			// This is the full usable IP space
+			space := Set{}.Build(func(s_ Set_) bool {
+				for _, p := range tt.space {
+					s_.Insert(p)
+				}
+				return true
+			})
+			// This is the part of the usable space which has already been allocated
+			reserved := Set{}.Build(func(s_ Set_) bool {
+				for _, p := range tt.reserved {
+					s_.Insert(p)
+				}
+				return true
+			})
+
+			// Call the method under test to find the best allocation to avoid fragmentation.
+			prefix, err := space.FindAvailablePrefix(reserved, tt.length)
+
+			assert.Equal(t, tt.err, err != nil)
+			if err != nil {
+				return
+			}
+
+			assert.True(t, reserved.Intersection(prefix).IsEmpty())
+
+			// Not all test cases care which prefix is returned but in some
+			// cases, there is only one right answer and so we might check it.
+			// This isn't strictly necessary but was handy with the first few.
+			if tt.expected.length != 0 {
+				assert.Equal(t, tt.expected.String(), prefix.String())
+			}
+
+			// What really matters is that fragmentation in the IP space is
+			// always avoided as much as possible. The `change` field in each
+			// test indicates what should happen to IP space fragmentation.
+			// This test framework measures fragmentation as the change in the
+			// minimal number of prefixes required to span the reserved set.
+			before := countPrefixes(reserved)
+			after := countPrefixes(reserved.Build(func(s_ Set_) bool {
+				s_.Insert(prefix)
+				return true
+			}))
+
+			diff := after - before
+			assert.LessOrEqual(t, diff, 1)
+			assert.LessOrEqual(t, diff, tt.change)
+		})
+	}
+
+	t.Run("randomized", func(t *testing.T) {
+		// Start with a space and an empty reserved set.
+		// This test will attempt to fragment the space by pulling out
+		space := _p("::ffff:10.128.0.0/100").Set()
+		available, _ := space.NumPrefixes(128)
+
+		reserved := NewSet_()
+
+		rand.Seed(29)
+		for available > 0 {
+			// This is the most we can pull out. Assuming we avoid
+			// fragmentation, it should be the largest power of two that is
+			// less than or equal to the number of available addresses.
+			maxExponent := log2(available)
+
+			// Finding the maximum prefix here, proves we are avoiding fragmentation
+			maxPrefix, err := space.FindAvailablePrefix(reserved, 128-maxExponent)
+			assert.Nil(t, err)
+			maxPrefixes, _ := maxPrefix.NumPrefixes(128)
+			assert.Equal(t, pow2(maxExponent), maxPrefixes)
+			assert.True(t, reserved.Intersection(maxPrefix).IsEmpty())
+
+			// Pull out a random sized prefix up to the maximum size to attempt to further fragment the space.
+			randomSize := (rand.Uint32()%maxExponent + 1)
+			if randomSize > 12 {
+				randomSize = 12
+			}
+
+			randomSizePrefix, err := space.FindAvailablePrefix(reserved, 128-randomSize)
+			assert.Nil(t, err)
+			randomSizePrefixes, _ := randomSizePrefix.NumPrefixes(128)
+			assert.Equal(t, pow2(randomSize), randomSizePrefixes)
+			assert.True(t, reserved.Intersection(randomSizePrefix).IsEmpty())
+
+			// Reserve only the random sized one
+			reserved.Insert(randomSizePrefix)
+			available -= randomSizePrefixes
+			spacePrefixes, _ := space.NumPrefixes(128)
+			reservedPrefixes, _ := reserved.Set().NumPrefixes(128)
+			assert.Equal(t, available, spacePrefixes-reservedPrefixes)
+		}
+	})
+
+	t.Run("randomized 64", func(t *testing.T) {
+		// Essentially the same as the previous test but hits the upper 64 of the address range
+		// Start with a space and an empty reserved set.
+		// This test will attempt to fragment the space by pulling out
+		space := _p("2001:db8::/48").Set()
+		available, _ := space.NumPrefixes(64)
+
+		reserved := NewSet_()
+
+		rand.Seed(17)
+		for available > 0 {
+			// This is the most we can pull out. Assuming we avoid
+			// fragmentation, it should be the largest power of two that is
+			// less than or equal to the number of available addresses.
+			maxExponent := log2(available)
+
+			// Finding the maximum prefix here, proves we are avoiding fragmentation
+			maxPrefix, err := space.FindAvailablePrefix(reserved, 64-maxExponent)
+			assert.Nil(t, err)
+			maxPrefixes, _ := maxPrefix.NumPrefixes(64)
+			assert.Equal(t, pow2(maxExponent), maxPrefixes)
+			assert.True(t, reserved.Intersection(maxPrefix).IsEmpty())
+
+			// Pull out a random sized prefix up to the maximum size to attempt to further fragment the space.
+			randomSize := (rand.Uint32()%maxExponent + 1)
+			if randomSize > 12 {
+				randomSize = 12
+			}
+
+			randomSizePrefix, err := space.FindAvailablePrefix(reserved, 64-randomSize)
+			assert.Nil(t, err)
+			randomSizePrefixes, _ := randomSizePrefix.NumPrefixes(64)
+			assert.Equal(t, pow2(randomSize), randomSizePrefixes)
+			assert.True(t, reserved.Intersection(randomSizePrefix).IsEmpty())
+
+			// Reserve only the random sized one
+			reserved.Insert(randomSizePrefix)
+			available -= randomSizePrefixes
+			spacePrefixes, _ := space.NumPrefixes(64)
+			reservedPrefixes, _ := reserved.Set().NumPrefixes(64)
+			assert.Equal(t, available, spacePrefixes-reservedPrefixes)
+		}
+	})
+}
+
+func pow2(x uint32) uint64 {
+	return uint64(math.Pow(2, float64(x)))
+}
+
+func log2(i uint64) uint32 {
+	return uint32(math.Log2(float64(i)))
+}
+
+func countPrefixes(s Set) int {
+	var numPrefixes int
+	s.WalkPrefixes(func(_ Prefix) bool {
+		numPrefixes += 1
+		return true
+	})
+	return numPrefixes
 }
