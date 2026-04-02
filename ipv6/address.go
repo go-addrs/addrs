@@ -33,6 +33,12 @@ func AddressFromUint16(a, b, c, d, e, f, g, h uint16) Address {
 	return Address{uint128{high, low}}
 }
 
+// AddressFromSlice returns the Address from individual bytes, ordered from
+// highest to lowest significance
+func AddressFromSlice(b []byte) (Address, error) {
+	return fromSlice(b)
+}
+
 // AddressFromNetIP converts a NetIP to an Address
 func AddressFromNetIP(ip net.IP) (Address, error) {
 	return fromSlice(ip)
