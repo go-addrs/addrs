@@ -104,6 +104,48 @@ func TestAddressFromNetIP(t *testing.T) {
 	}
 }
 
+func TestAddressFromSlice(t *testing.T) {
+	tests := []struct {
+		description string
+		slice       []byte
+		expected    Address
+		isErr       bool
+	}{
+		{
+			description: "nil",
+			slice:       nil,
+			isErr:       true,
+		},
+		{
+			description: "too short",
+			slice:       []byte{0x20, 0x01, 0x0d, 0xb8},
+			isErr:       true,
+		},
+		{
+			description: "too long",
+			slice:       append(net.ParseIP("2001:0db8:85a3::8a2e:0370:7334"), 0x00),
+			isErr:       true,
+		},
+		{
+			description: "ipv6",
+			slice:       net.ParseIP("2001:0db8:85a3:0000:0000:8a2e:0370:7334"),
+			expected:    AddressFromUint64(0x20010db885a30000, 0x8a2e03707334),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.description, func(t *testing.T) {
+			ip, err := AddressFromSlice(tt.slice)
+			if tt.isErr {
+				assert.NotNil(t, err)
+			} else {
+				assert.Nil(t, err)
+				assert.Equal(t, tt.expected, ip)
+			}
+		})
+	}
+}
+
 func TestAddressEquality(t *testing.T) {
 	first, second := AddressFromUint64(0x20010db885a30000, 0x8a2e03707334), AddressFromUint64(0x20010db885a30000, 0x8a2e03707334)
 	assert.Equal(t, first, second)

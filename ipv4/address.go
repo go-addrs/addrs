@@ -29,6 +29,12 @@ func AddressFromBytes(a, b, c, d byte) Address {
 	}
 }
 
+// AddressFromSlice returns the Address from individual bytes, ordered from
+// highest to lowest significance
+func AddressFromSlice(b []byte) (Address, error) {
+	return fromSlice(b)
+}
+
 // AddressFromNetIP converts a NetIP to an Address
 func AddressFromNetIP(ip net.IP) (Address, error) {
 	return fromSlice(ip.To4())
